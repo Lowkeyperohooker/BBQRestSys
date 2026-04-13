@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
+import StaffModal from "../components/ui/StaffModal.vue";
 
 const staffMembers = ref<any[]>([]);
 const isModalOpen = ref(false);
+const selectedStaff = ref<any>(null);
 
-const formId = ref<number | null>(null);
-const formName = ref("");
-const formRole = ref("Cashier");
-const formPhone = ref("");
-const formStatus = ref("Active");
-
-// Load data using our clean service
+// 1. Fetch data from SQLite
 async function loadStaff() {
   try {
     const result = await staffService.getAllStaff();
@@ -21,18 +17,11 @@ async function loadStaff() {
   }
 }
 
-// Save or Update using our clean service
-async function saveStaff() {
+// 2. Save data to SQLite (Triggered by the Modal)
+async function handleSaveStaff(staffData: any) {
   try {
-    const staffData = {
-      name: formName.value,
-      role: formRole.value,
-      phone: formPhone.value,
-      status: formStatus.value
-    };
-
-    if (formId.value) {
-      await staffService.updateStaff(formId.value, staffData);
+    if (staffData.id) {
+      await staffService.updateStaff(staffData.id, staffData);
     } else {
       await staffService.createStaff(staffData);
     }
@@ -45,54 +34,62 @@ async function saveStaff() {
   }
 }
 
-function openModal(staff?: any) {
-  if (staff) {
-    formId.value = staff.staff_id;
-    formName.value = staff.full_name;
-    formRole.value = staff.role;
-    formPhone.value = staff.phone_number;
-    formStatus.value = staff.status;
-  } else {
-    formId.value = null;
-    formName.value = "";
-    formRole.value = "Cashier";
-    formPhone.value = "";
-    formStatus.value = "Active";
+// Add this right below handleSaveStaff
+async function handleDeleteStaff(id: number, name: string) {
+  // Ask for confirmation before deleting
+  const isConfirmed = confirm(`Are you sure you want to permanently delete ${name}?`);
+  
+  if (isConfirmed) {
+    try {
+      await staffService.deleteStaff(id);
+      await loadStaff(); // Refresh the table automatically
+    } catch (error) {
+      console.error("Failed to delete staff:", error);
+      alert("Error: Cannot delete this staff member because they are linked to existing transactions or prep logs.");
+    }
   }
+}
+
+// 3. Modal Controls
+function openModal(staff?: any) {
+  selectedStaff.value = staff || null;
   isModalOpen.value = true;
 }
 
 function closeModal() {
   isModalOpen.value = false;
+  selectedStaff.value = null;
 }
 
+// Run the load function when the page opens
 onMounted(() => {
   loadStaff();
 });
 </script>
 
 <template>
-  <div class="space-y-6 h-full">
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
+  <div class="h-full flex flex-col">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1">
+      
       <div class="flex justify-between items-center mb-6">
         <div>
           <h3 class="text-xl font-semibold text-gray-800">Staff Directory</h3>
           <p class="text-sm text-gray-500">Manage employee records and system access</p>
         </div>
         <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors font-semibold flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           Add Staff Member
         </button>
       </div>
       
-      <div class="overflow-x-auto flex-1">
+      <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
               <th class="pb-3 font-semibold">Name</th>
               <th class="pb-3 font-semibold">Role</th>
               <th class="pb-3 font-semibold">Contact Number</th>
-              <th class="pb-3 font-semibold">Status</th>
-              <th class="pb-3 font-semibold text-right">Actions</th>
+              <th class="pb-3 font-semibold">Account Status</th> <th class="pb-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="text-gray-700">
@@ -109,54 +106,28 @@ onMounted(() => {
                 </span>
               </td>
               <td class="py-4 text-right">
-                <button @click="openModal(staff)" class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1">
-                  Edit
-                </button>
+                <div class="flex justify-end gap-2">
+                  <button @click="openModal(staff)" class="p-1.5 border border-blue-200 text-blue-600 rounded bg-blue-50 hover:bg-blue-100 transition-colors" title="Edit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                  </button>
+                  <button @click="handleDeleteStaff(staff.staff_id, staff.full_name)" class="p-1.5 border border-red-200 text-red-500 rounded bg-red-50 hover:bg-red-100 transition-colors" title="Delete">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
     </div>
 
-    <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-bold text-gray-800">{{ formId ? 'Edit Staff Member' : 'Add New Staff' }}</h3>
-          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-        </div>
-        
-        <form @submit.prevent="saveStaff" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input v-model="formName" type="text" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Primary Role</label>
-            <select v-model="formRole" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="Cashier">Cashier</option>
-              <option value="Prep Station">Prep Station</option>
-              <option value="Grill Cook">Grill Cook</option>
-              <option value="Manager">Manager</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input v-model="formPhone" type="tel" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select v-model="formStatus" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-          <div class="pt-4 flex gap-3">
-            <button type="button" @click="closeModal" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">Cancel</button>
-            <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold">Save Details</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <StaffModal 
+      :isOpen="isModalOpen" 
+      :staffData="selectedStaff" 
+      @close="closeModal" 
+      @save="handleSaveStaff" 
+    />
+    
   </div>
 </template>
