@@ -13,11 +13,12 @@ fn check_system() -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Define the initial database schema
-    let migrations = vec![Migration {
-        version: 1,
-        description: "create_initial_tables",
-        sql: "
+    // Define the database schema and starter data
+    let migrations = vec![
+        Migration {
+            version: 1,
+            description: "create_initial_tables",
+            sql: "
                 CREATE TABLE IF NOT EXISTS Staff (
                     staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     full_name TEXT NOT NULL,
@@ -97,8 +98,40 @@ pub fn run() {
                     FOREIGN KEY (staff_id) REFERENCES Staff(staff_id)
                 );
             ",
-        kind: MigrationKind::Up,
-    }];
+            kind: MigrationKind::Up,
+        },
+        // NEW: Version 2 Migration for Starter Data
+        Migration {
+            version: 2,
+            description: "insert_starter_data",
+            sql: "
+                INSERT INTO Staff (full_name, role, phone_number, status) VALUES
+                ('Juan Dela Cruz', 'Grill Cook', '09123456789', 'Active'),
+                ('Jane Smith', 'Prep Station', '555-0101', 'Active');
+
+                INSERT INTO Raw_Inventory (category, specific_part, current_stock_kg, alert_threshold_kg) VALUES
+                ('Chicken', 'Intestine', 14.5, 5.0),
+                ('Chicken', 'Neck', 18.0, 8.0),
+                ('Chicken', 'Leg Quarter', 42.5, 15.0),
+                ('Chicken', 'Liver', 2.1, 5.0),
+                ('Pork', 'Intestine', 22.0, 10.0),
+                ('Pork', 'Liver', 4.5, 8.0),
+                ('Seafood', 'Milk Fish Fillet', 15.0, 5.0),
+                ('Seafood', 'Tuna Fillet', 18.5, 5.0);
+
+                INSERT INTO Prepared_Inventory (raw_item_id, pos_display_name, current_stock_pieces, unit_price) VALUES
+                (1, 'Chicken Isaw', 145, 1.75),
+                (2, 'Chicken Neck', 80, 2.00),
+                (3, 'Chicken Leg Quarter', 120, 4.50),
+                (4, 'Chicken Liver', 12, 2.00),
+                (5, 'Pork Isaw', 205, 2.25),
+                (6, 'Pork Liver', 35, 2.00),
+                (7, 'Bangus Fillet', 85, 5.50),
+                (8, 'Tuna Fillet', 90, 6.00);
+            ",
+            kind: MigrationKind::Up,
+        }
+    ];
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

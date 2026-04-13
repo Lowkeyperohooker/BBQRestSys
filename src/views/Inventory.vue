@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import type { RawInventoryItem } from '../services/inventoryService';
 import { inventoryService } from '../services/inventoryService';
+import AddStockModal from '../components/ui/AddStockModal.vue';
 
-const rawInventory = ref<any[]>([]);
+const rawInventory = ref<RawInventoryItem[]>([]);
 const preparedInventory = ref<any[]>([]);
 const viewMode = ref('raw'); // 'raw' or 'skewered'
+
+// Modal State
+const isModalOpen = ref(false);
+const selectedRawItem = ref<RawInventoryItem | null>(null);
 
 async function loadData() {
   try {
@@ -15,7 +21,29 @@ async function loadData() {
   }
 }
 
-// Function to determine the status badge style
+// Modal Controls
+function openAddStockModal(item: RawInventoryItem | null = null) {
+  selectedRawItem.value = item;
+  isModalOpen.value = true;
+}
+
+function closeModal() {
+  isModalOpen.value = false;
+  selectedRawItem.value = null;
+}
+
+// Handle the save event from your new modal
+async function handleSaveStock(data: { itemId: number; kilos: number; category: string; part: string }) {
+  try {
+    await inventoryService.addRawStock(data.itemId, data.kilos);
+    closeModal();
+    await loadData(); // Refresh the table so the new stock appears!
+  } catch (error) {
+    console.error("Error adding stock:", error);
+    alert("Failed to update stock.");
+  }
+}
+
 function getStatusBadge(current: number, threshold: number) {
   if (current <= threshold * 0.5) return { text: 'Critically Low', class: 'bg-red-100 text-red-800' };
   if (current <= threshold) return { text: 'Low Stock', class: 'bg-orange-100 text-orange-800' };
@@ -57,8 +85,8 @@ onMounted(() => {
             </button>
           </div>
           
-          <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors text-sm font-semibold">
-            Generate Vendor Order
+          <button @click="openAddStockModal(null)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors text-sm font-semibold">
+            Add Stock Delivery
           </button>
         </div>
       </div>
@@ -72,20 +100,29 @@ onMounted(() => {
               <th class="pb-3 font-semibold">Current Stock</th>
               <th class="pb-3 font-semibold">Alert Threshold</th>
               <th class="pb-3 font-semibold">Status</th>
+              <th class="pb-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="text-gray-700">
-            <tr v-for="item in rawInventory" :key="item.raw_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <tr v-if="rawInventory.length === 0">
+              <td colspan="6" class="py-8 text-center text-gray-500">No raw inventory found in database.</td>
+            </tr>
+            <tr v-for="item in rawInventory" :key="item.raw_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="py-4 font-semibold text-gray-900">{{ item.category }}</td>
               <td class="py-4">{{ item.specific_part }}</td>
-              <td class="py-4 font-bold" :class="item.current_stock <= item.alert_threshold ? 'text-red-600' : 'text-gray-800'">
-                {{ item.current_stock }} kg
+              <td class="py-4 font-bold" :class="item.current_stock_kg <= item.alert_threshold_kg ? 'text-red-600' : 'text-gray-800'">
+                {{ item.current_stock_kg }} kg
               </td>
-              <td class="py-4 text-gray-400">{{ item.alert_threshold }} kg</td>
+              <td class="py-4 text-gray-400">{{ item.alert_threshold_kg }} kg</td>
               <td class="py-4">
-                <span :class="getStatusBadge(item.current_stock, item.alert_threshold).class" class="px-3 py-1 rounded-full text-xs font-bold">
-                  {{ getStatusBadge(item.current_stock, item.alert_threshold).text }}
+                <span :class="getStatusBadge(item.current_stock_kg, item.alert_threshold_kg).class" class="px-3 py-1 rounded-full text-xs font-bold">
+                  {{ getStatusBadge(item.current_stock_kg, item.alert_threshold_kg).text }}
                 </span>
+              </td>
+              <td class="py-4 text-right">
+                <button @click="openAddStockModal(item)" class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1">
+                  + Add Stock
+                </button>
               </td>
             </tr>
           </tbody>
@@ -103,10 +140,13 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody class="text-gray-700">
-            <tr v-for="item in preparedInventory" :key="item.prepared_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <tr v-if="preparedInventory.length === 0">
+              <td colspan="4" class="py-8 text-center text-gray-500">No prepared inventory found in database.</td>
+            </tr>
+            <tr v-for="item in preparedInventory" :key="item.prep_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="py-4 font-semibold text-gray-900">{{ item.category }}</td>
-              <td class="py-4">{{ item.specific_part }}</td>
-              <td class="py-4 font-bold text-gray-800">{{ item.prepared_stock }} sticks</td>
+              <td class="py-4">{{ item.pos_display_name }}</td>
+              <td class="py-4 font-bold text-gray-800">{{ item.current_stock_pieces }} sticks</td>
               <td class="py-4">
                 <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Adequate</span>
               </td>
@@ -116,5 +156,13 @@ onMounted(() => {
       </div>
 
     </div>
+
+    <AddStockModal 
+      :is-open="isModalOpen" 
+      :item="selectedRawItem" 
+      @close="closeModal" 
+      @save="handleSaveStock" 
+    />
+
   </div>
 </template>

@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
-// These 'props' allow the main page to tell the modal if it should be open, 
-// and pass in existing staff data if we are editing someone.
 const props = defineProps({
   isOpen: Boolean,
-  staffData: Object
+  staffData: Object as () => any | null
 });
 
-// These 'emits' allow the modal to talk back to the main page
 const emit = defineEmits(['close', 'save']);
 
 const formId = ref<number | null>(null);
@@ -17,17 +14,14 @@ const formRole = ref("Cashier");
 const formPhone = ref("");
 const formStatus = ref("Active");
 
-// Watch for when the modal opens to populate the form correctly
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.staffData) {
-    // Editing existing staff
     formId.value = props.staffData.staff_id;
     formName.value = props.staffData.full_name;
     formRole.value = props.staffData.role;
-    formPhone.value = props.staffData.phone_number;
+    formPhone.value = props.staffData.phone_number || "";
     formStatus.value = props.staffData.status;
   } else if (newVal) {
-    // Adding new staff: clear the form
     formId.value = null;
     formName.value = "";
     formRole.value = "Cashier";
@@ -36,7 +30,6 @@ watch(() => props.isOpen, (newVal) => {
   }
 });
 
-// Send the data back to the main page when the user clicks Save
 function handleSubmit() {
   emit('save', {
     id: formId.value,
@@ -49,7 +42,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm">
+  <div v-if="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
       
       <div class="flex justify-between items-center mb-6">
