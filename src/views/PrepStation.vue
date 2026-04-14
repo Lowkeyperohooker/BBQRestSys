@@ -18,6 +18,7 @@ const availableParts = ref<RawInventoryItem[]>([]);
 const currentStockInfo = ref<RawInventoryItem | null>(null);
 
 // Loading states
+const isLoadingData = ref(true);
 const isLoadingParts = ref(false);
 
 // Computed properties for validation
@@ -116,7 +117,7 @@ async function loadRecentLogs() {
 async function handleSavePrep() {
   if (!canPrep.value) {
     if (rawKilos.value && currentStockInfo.value && rawKilos.value > currentStockInfo.value.current_stock_kg) {
-      alert(`❌ Insufficient stock! Available: ${currentStockInfo.value.current_stock_kg.toFixed(2)}kg, Requested: ${rawKilos.value}kg`);
+      alert(`Insufficient stock! Available: ${currentStockInfo.value.current_stock_kg.toFixed(2)}kg, Requested: ${rawKilos.value}kg`);
     } else {
       alert("Please fill out all fields correctly.");
     }
@@ -141,11 +142,11 @@ async function handleSavePrep() {
     rawKilos.value = null;
     skewersProduced.value = null;
     
-    alert("✅ Prep log successfully saved! Inventory has been updated.");
+    alert("Prep log successfully saved! Inventory has been updated.");
 
   } catch (error) {
     console.error("Failed to log prep:", error);
-    alert(`❌ ${error instanceof Error ? error.message : 'Database error occurred'}`);
+    alert(`Error: ${error instanceof Error ? error.message : 'Database error occurred'}`);
   }
 }
 
@@ -162,21 +163,36 @@ watch([selectedPart, availableParts], () => {
 });
 
 onMounted(async () => {
-  await loadStaff();
-  await loadCategories();
-  await loadRecentLogs();
+  isLoadingData.value = true;
+  try {
+    await loadStaff();
+    await loadCategories();
+    await loadRecentLogs();
+  } finally {
+    setTimeout(() => {
+      isLoadingData.value = false;
+    }, 600);
+  }
 });
 </script>
 
 <template>
   <div class="h-full flex flex-col">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-8">
+    
+    <div v-if="isLoadingData" class="flex flex-col items-center justify-center py-16 flex-1 bg-white rounded-xl shadow-sm border border-gray-100">
+      <svg class="w-10 h-10 animate-spin text-blue-500 mb-4" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-gray-500 font-medium animate-pulse">Loading preparation environment...</p>
+    </div>
+
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-8">
         
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-1 h-fit">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Log Skewering Task</h3>
         
         <form @submit.prevent="handleSavePrep" class="space-y-4">
-          <!-- Category Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Meat Category</label>
             <select 
@@ -188,11 +204,10 @@ onMounted(async () => {
               <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
             <p v-if="availableCategories.length === 0" class="text-sm text-orange-600 mt-1">
-              ⚠️ No categories with available stock
+              No categories with available stock
             </p>
           </div>
           
-          <!-- Part Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Specific Part / Cut</label>
             <select 
@@ -208,13 +223,11 @@ onMounted(async () => {
             <p v-if="isLoadingParts" class="text-sm text-gray-500 mt-1">Loading parts...</p>
           </div>
           
-          <!-- Stock Info -->
           <div v-if="currentStockInfo" class="bg-blue-50 p-3 rounded-lg">
             <p class="text-sm font-medium" :class="stockStatus.class">{{ stockStatus.text }}</p>
             <p class="text-xs text-gray-600 mt-1">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
           </div>
           
-          <!-- Kilos Input -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Raw Kilos Used 
@@ -234,11 +247,10 @@ onMounted(async () => {
               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
             />
             <p v-if="rawKilos && currentStockInfo && rawKilos > currentStockInfo.current_stock_kg" class="text-sm text-red-600 mt-1">
-              ❌ Exceeds available stock!
+              Exceeds available stock.
             </p>
           </div>
           
-          <!-- Sticks Input -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Skewers Produced</label>
             <input 
@@ -252,7 +264,6 @@ onMounted(async () => {
             />
           </div>
           
-          <!-- Staff Selection -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Staff Member</label>
             <select 
@@ -266,7 +277,6 @@ onMounted(async () => {
             </select>
           </div>
           
-          <!-- Submit Button -->
           <button 
             type="submit" 
             :disabled="!canPrep"
@@ -277,7 +287,6 @@ onMounted(async () => {
         </form>
       </div>
 
-      <!-- Recent Activity Table -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Skewering Activity</h3>
         <div class="overflow-x-auto">

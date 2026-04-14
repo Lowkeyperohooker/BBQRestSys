@@ -2,18 +2,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { posService, type PosItem, type CartItem } from '../services/posService';
 
-// State
 const availableItems = ref<PosItem[]>([]);
 const cart = ref<CartItem[]>([]);
-
-// Hardcoded for now
 const currentStaffId = 1; 
 
+// Loading State
+const isLoadingData = ref(true);
+
 async function loadItems() {
+  isLoadingData.value = true;
   try {
     availableItems.value = await posService.getAvailablePosItems();
   } catch (error) {
     console.error("Failed to load POS items:", error);
+  } finally {
+    setTimeout(() => {
+      isLoadingData.value = false;
+    }, 600);
   }
 }
 
@@ -22,8 +27,6 @@ const subtotal = computed(() => {
   return cart.value.reduce((sum, item) => sum + (item.unit_price * item.qty), 0);
 });
 
-// Setting Tax to 0% since standard street BBQs usually do straight pricing. 
-// You can change this to 0.12 if you are VAT registered later!
 const tax = computed(() => subtotal.value * 0.0); 
 const total = computed(() => subtotal.value + tax.value);
 
@@ -31,11 +34,10 @@ const total = computed(() => subtotal.value + tax.value);
 function addToCart(item: PosItem) {
   let finalPrice = item.unit_price;
 
-  // 1. Ask for price if it's a variable item!
   if (item.is_variable_price === 1) {
-    const userInput = prompt(`Enter custom price for ${item.pos_display_name} (₱):`, item.unit_price.toString());
+    const userInput = prompt(`Enter custom price for ${item.pos_display_name} (PHP):`, item.unit_price.toString());
     
-    if (userInput === null) return; // Cashier clicked Cancel
+    if (userInput === null) return; 
     
     const parsedPrice = parseFloat(userInput);
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
@@ -45,7 +47,6 @@ function addToCart(item: PosItem) {
     finalPrice = parsedPrice;
   }
 
-  // 2. Count how many of this physical item are ALREADY in the cart
   const totalQtyInCart = cart.value
     .filter(c => c.prep_item_id === item.prep_item_id)
     .reduce((sum, c) => sum + c.qty, 0);
@@ -55,13 +56,12 @@ function addToCart(item: PosItem) {
     return;
   }
 
-  // 3. Find if this item WITH THIS EXACT PRICE is already in the cart
   const existing = cart.value.find(c => c.prep_item_id === item.prep_item_id && c.unit_price === finalPrice);
 
   if (existing) {
-    existing.qty++; // Same price? Stack them.
+    existing.qty++; 
   } else {
-    cart.value.push({ ...item, unit_price: finalPrice, qty: 1 }); // Different price? New row.
+    cart.value.push({ ...item, unit_price: finalPrice, qty: 1 }); 
   }
 }
 
@@ -111,7 +111,15 @@ onMounted(() => {
         </button>
       </div>
       
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div v-if="isLoadingData" class="flex flex-col items-center justify-center py-16">
+        <svg class="w-10 h-10 animate-spin text-blue-500 mb-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-gray-500 font-medium animate-pulse">Loading menu items...</p>
+      </div>
+
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         
         <div 
           v-for="item in availableItems" 
@@ -130,7 +138,7 @@ onMounted(() => {
           <div class="flex justify-between items-center mt-1">
             <p class="text-blue-600 font-bold">
               <span v-if="item.is_variable_price === 1" class="text-xs text-gray-400 font-normal mr-1">Starts at</span>
-              ₱{{ item.unit_price.toFixed(2) }}
+              PHP {{ item.unit_price.toFixed(2) }}
             </p>
             <p class="text-xs text-gray-400">{{ item.current_stock_pieces }} left</p>
           </div>
@@ -159,10 +167,10 @@ onMounted(() => {
           <div v-for="(cartItem, index) in cart" :key="index" class="flex justify-between items-center group">
             <div class="flex-1">
               <p class="font-semibold text-gray-800">{{ cartItem.pos_display_name }}</p>
-              <p class="text-sm text-gray-500">₱{{ cartItem.unit_price.toFixed(2) }} x {{ cartItem.qty }}</p>
+              <p class="text-sm text-gray-500">PHP {{ cartItem.unit_price.toFixed(2) }} x {{ cartItem.qty }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <span class="font-bold text-gray-800">₱{{ (cartItem.unit_price * cartItem.qty).toFixed(2) }}</span>
+              <span class="font-bold text-gray-800">PHP {{ (cartItem.unit_price * cartItem.qty).toFixed(2) }}</span>
               <button @click="removeFromCart(index)" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               </button>
@@ -174,11 +182,11 @@ onMounted(() => {
       <div class="p-6 bg-gray-50 border-t border-gray-200">
         <div class="flex justify-between mb-2 text-gray-600">
           <span>Subtotal</span>
-          <span>₱{{ subtotal.toFixed(2) }}</span>
+          <span>PHP {{ subtotal.toFixed(2) }}</span>
         </div>
         <div class="flex justify-between mb-6 text-xl font-bold text-gray-900 border-t border-gray-200 pt-4">
           <span>Total</span>
-          <span>₱{{ total.toFixed(2) }}</span>
+          <span>PHP {{ total.toFixed(2) }}</span>
         </div>
         <button 
           @click="handleCheckout"

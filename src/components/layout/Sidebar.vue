@@ -1,8 +1,16 @@
 <template>
   <aside class="w-64 bg-gray-900 text-white flex flex-col z-20 shadow-xl h-full">
-    <div class="p-6 border-b border-gray-800">
-      <h1 class="text-2xl font-bold uppercase tracking-wider text-white">BBQ System</h1>
-      <p class="text-sm text-gray-400 mt-1">Admin Portal</p>
+    
+    <div class="flex items-center gap-3 px-6 py-6 border-b border-gray-800">
+      <div class="w-10 h-10 min-w-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-xl shadow-md flex items-center justify-center text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"></path>
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-white font-black text-xl tracking-tight leading-none">BBQ<span class="text-blue-500">SYS</span></span>
+        <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Admin Portal</span>
+      </div>
     </div>
     
     <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
