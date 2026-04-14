@@ -53,6 +53,7 @@ pub fn run() {
                     pos_display_name TEXT NOT NULL,
                     current_stock_pieces INTEGER DEFAULT 0,
                     unit_price DECIMAL(10,2) NOT NULL,
+                    is_variable_price BOOLEAN DEFAULT 0, -- NEW: 0 = Fixed Price, 1 = Ask Cashier
                     FOREIGN KEY (raw_item_id) REFERENCES Raw_Inventory(raw_item_id)
                 );
 
@@ -100,7 +101,6 @@ pub fn run() {
             ",
             kind: MigrationKind::Up,
         },
-        // NEW: Version 2 Migration for Starter Data
         Migration {
             version: 2,
             description: "insert_starter_data",
@@ -119,15 +119,16 @@ pub fn run() {
                 ('Seafood', 'Milk Fish Fillet', 15.0, 5.0),
                 ('Seafood', 'Tuna Fillet', 18.5, 5.0);
 
-                INSERT INTO Prepared_Inventory (raw_item_id, pos_display_name, current_stock_pieces, unit_price) VALUES
-                (1, 'Chicken Isaw', 145, 1.75),
-                (2, 'Chicken Neck', 80, 2.00),
-                (3, 'Chicken Leg Quarter', 120, 4.50),
-                (4, 'Chicken Liver', 12, 2.00),
-                (5, 'Pork Isaw', 205, 2.25),
-                (6, 'Pork Liver', 35, 2.00),
-                (7, 'Bangus Fillet', 85, 5.50),
-                (8, 'Tuna Fillet', 90, 6.00);
+                -- NOTE: The last number is the is_variable_price flag (0 = false/fixed, 1 = true/variable)
+                INSERT INTO Prepared_Inventory (raw_item_id, pos_display_name, current_stock_pieces, unit_price, is_variable_price) VALUES
+                (1, 'Chicken Isaw', 145, 15.00, 0),        
+                (2, 'Chicken Neck', 80, 20.00, 1),          
+                (3, 'Chicken Leg Quarter', 120, 120.00, 1), 
+                (4, 'Chicken Liver', 12, 20.00, 0),         
+                (5, 'Pork Isaw', 205, 15.00, 0),            
+                (6, 'Pork Liver', 35, 20.00, 0),            
+                (7, 'Bangus Fillet', 85, 150.00, 1),        
+                (8, 'Tuna Fillet', 90, 200.00, 1);          
             ",
             kind: MigrationKind::Up,
         }
@@ -135,7 +136,6 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        // Register the SQL plugin ONLY ONCE and execute migrations
         .plugin(
             SqlBuilder::default()
                 .add_migrations("sqlite:bbq_system.db", migrations)

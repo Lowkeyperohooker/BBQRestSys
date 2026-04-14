@@ -25,12 +25,12 @@
 
 ### Phase 4: Meat Inventory & Prep Station
 **Goal:** Track raw meat and convert it into ready-to-sell skewers.
-- [ ] 4.1 Create `src/services/inventoryService.ts`.
-- [ ] 4.2 Create `src/views/Inventory.vue` with a toggle for Raw vs. Prepared tables.
-- [ ] 4.3 Create `src/views/PrepStation.vue` with the form for skewering meat.
-- [ ] 4.4 Update `src/router/index.ts` to add the `/inventory` and `/prep` routes.
-- [ ] 4.5 Write `logPrepTransaction()` in the service to deduct raw kilos and add skewers.
-- [ ] 4.6 Test the Prep Station form to ensure inventory updates correctly.
+- [x] 4.1 Create `src/services/inventoryService.ts`.
+- [x] 4.2 Create `src/views/Inventory.vue` with a toggle for Raw vs. Prepared tables.
+- [x] 4.3 Create `src/views/PrepStation.vue` with the form for skewering meat.
+- [x] 4.4 Update `src/router/index.ts` to add the `/inventory` and `/prep` routes.
+- [x] 4.5 Write `logPrepTransaction()` in the service to deduct raw kilos and add skewers.
+- [x] 4.6 Test the Prep Station form to ensure inventory updates correctly.
 
 ### Phase 5: Point of Sale (POS) & Checkout
 **Goal:** Allow cashiers to ring up customers and deduct sold items from stock.
