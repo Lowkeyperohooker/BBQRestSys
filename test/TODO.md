@@ -34,11 +34,11 @@
 
 ### Phase 5: Point of Sale (POS) & Checkout
 **Goal:** Allow cashiers to ring up customers and deduct sold items from stock.
-- [ ] 5.1 Create `src/services/posService.ts`.
-- [ ] 5.2 Update `src/views/Pos.vue` to fetch the `Prepared_Inventory` as clickable buttons.
-- [ ] 5.3 Implement the `cart` logic (add items, calculate Subtotal, Tax, Total).
-- [ ] 5.4 Write `processCheckout()` in the service to handle the complex SQL transaction.
-- [ ] 5.5 Test the checkout process and verify inventory goes down.
+- [x] 5.1 Create `src/services/posService.ts`.
+- [x] 5.2 Update `src/views/Pos.vue` to fetch the `Prepared_Inventory` as clickable buttons.
+- [x] 5.3 Implement the `cart` logic (add items, calculate Subtotal, Tax, Total).
+- [x] 5.4 Write `processCheckout()` in the service to handle the complex SQL transaction.
+- [x] 5.5 Test the checkout process and verify inventory goes down.
 
 ### Phase 6: Scheduling, System Logs & Dashboard
 **Goal:** Track employee hours, audit system actions, and view business analytics.
