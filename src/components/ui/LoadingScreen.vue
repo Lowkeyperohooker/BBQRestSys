@@ -16,7 +16,7 @@ defineProps<{
       </svg>
       
       <h1 class="text-3xl font-bold tracking-wider mb-2">BBQ SYSTEM</h1>
-      <p class="text-sm text-gray-400 font-medium animate-pulse">Initializing Database Environment...</p>
+      <p class="text-sm text-gray-400 font-medium animate-pulse">Initializing System Environment...</p>
     </div>
   </transition>
 </template>

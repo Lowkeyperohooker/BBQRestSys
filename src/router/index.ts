@@ -4,6 +4,7 @@ import Inventory from '../views/Inventory.vue'
 import PrepStation from '../views/PrepStation.vue'
 import Pos from '../views/Pos.vue'
 import Logs from '../views/Logs.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,7 +33,12 @@ const router = createRouter({
       path: '/logs',
       name: 'logs',
       component: Logs
-    }
+    },
+    {
+      path: '/',
+      name: 'dashboard',
+      component: Dashboard
+    },
   ]
 })
 
