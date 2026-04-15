@@ -1,1 +1,19 @@
+/* This single line imports all of Tailwind v4! */
 @import "tailwindcss";
+
+/* This is where your custom theme variables go now (instead of tailwind.config.js) */
+@theme {
+  --color-brand-blue: #1E3A8A;
+  --color-brand-light: #DBEAFE;
+  
+  /* Example of adding a custom font */
+  --font-sans: 'Inter', sans-serif;
+}
+
+/* Custom overrides (if you ever need them) go here */
+@layer base {
+  body {
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-900);
+  }
+}
