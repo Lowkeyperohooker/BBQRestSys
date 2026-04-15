@@ -249,7 +249,7 @@ onMounted(() => {
         <input 
           v-model="customerName" 
           type="text" 
-          placeholder="Customer Name or Table #" 
+          placeholder="Table #" 
           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 bg-white"
         />
         <div class="flex bg-gray-200 rounded-lg p-1 w-full">
