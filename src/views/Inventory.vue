@@ -4,15 +4,14 @@ import type { RawInventoryItem } from '../services/inventoryService';
 import { inventoryService } from '../services/inventoryService';
 import AddStockModal from '../components/ui/AddStockModal.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseBadge from '../components/ui/BaseBadge.vue';
 
 const rawInventory = ref<RawInventoryItem[]>([]);
 const preparedInventory = ref<any[]>([]);
-const viewMode = ref('raw'); // 'raw' or 'skewered'
+const viewMode = ref('raw'); 
 
-// Loading State
 const isLoadingData = ref(true);
-
-// Modal State
 const isModalOpen = ref(false);
 const selectedRawItem = ref<RawInventoryItem | null>(null);
 
@@ -30,7 +29,6 @@ async function loadData() {
   }
 }
 
-// Modal Controls
 function openAddStockModal(item: RawInventoryItem | null = null) {
   selectedRawItem.value = item;
   isModalOpen.value = true;
@@ -41,22 +39,27 @@ function closeModal() {
   selectedRawItem.value = null;
 }
 
-// Handle the save event from your new modal
 async function handleSaveStock(data: { itemId: number; kilos: number; category: string; part: string }) {
   try {
     await inventoryService.addRawStock(data.itemId, data.kilos);
     closeModal();
-    await loadData(); // Refresh the table so the new stock appears!
+    await loadData(); 
   } catch (error) {
     console.error("Error adding stock:", error);
     alert("Failed to update stock.");
   }
 }
 
-function getStatusBadge(current: number, threshold: number) {
-  if (current <= threshold * 0.5) return { text: 'Critically Low', class: 'bg-red-100 text-red-800' };
-  if (current <= threshold) return { text: 'Low Stock', class: 'bg-orange-100 text-orange-800' };
-  return { text: 'Adequate', class: 'bg-green-100 text-green-800' };
+function getStatusBadge(current: number, threshold: number): 'danger' | 'warning' | 'success' {
+  if (current <= threshold * 0.5) return 'danger';
+  if (current <= threshold) return 'warning';
+  return 'success';
+}
+
+function getStatusText(current: number, threshold: number): string {
+  if (current <= threshold * 0.5) return 'Critically Low';
+  if (current <= threshold) return 'Low Stock';
+  return 'Adequate';
 }
 
 onMounted(() => {
@@ -94,9 +97,9 @@ onMounted(() => {
             </button>
           </div>
           
-          <button @click="openAddStockModal(null)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors text-sm font-semibold">
+          <BaseButton variant="primary" @click="openAddStockModal(null)">
             Add Stock Delivery
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -127,9 +130,10 @@ onMounted(() => {
                 </td>
                 <td class="py-4 text-gray-400">{{ item.alert_threshold_kg }} kg</td>
                 <td class="py-4">
-                  <span :class="getStatusBadge(item.current_stock_kg, item.alert_threshold_kg).class" class="px-3 py-1 rounded-full text-xs font-bold">
-                    {{ getStatusBadge(item.current_stock_kg, item.alert_threshold_kg).text }}
-                  </span>
+                  <BaseBadge 
+                    :text="getStatusText(item.current_stock_kg, item.alert_threshold_kg)"
+                    :variant="getStatusBadge(item.current_stock_kg, item.alert_threshold_kg)"
+                  />
                 </td>
                 <td class="py-4 text-right">
                   <button @click="openAddStockModal(item)" class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1">
@@ -160,7 +164,7 @@ onMounted(() => {
                 <td class="py-4">{{ item.pos_display_name }}</td>
                 <td class="py-4 font-bold text-gray-800">{{ item.current_stock_pieces }} sticks</td>
                 <td class="py-4">
-                  <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Adequate</span>
+                  <BaseBadge text="Adequate" variant="success" />
                 </td>
               </tr>
             </tbody>

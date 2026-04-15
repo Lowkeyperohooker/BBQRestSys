@@ -3,12 +3,13 @@ import { ref, onMounted, computed } from 'vue';
 import { staffService } from '../services/staffService';
 import { scheduleService, type Shift } from '../services/scheduleService';
 import DataLoader from '../components/ui/DataLoader.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseBadge from '../components/ui/BaseBadge.vue';
 
 const isLoadingData = ref(true);
 const staffMembers = ref<any[]>([]);
 const todayShifts = ref<Shift[]>([]);
 
-// Selection for the Timeclock
 const selectedStaffId = ref<number | ''>('');
 
 async function loadTimeclockData() {
@@ -19,7 +20,6 @@ async function loadTimeclockData() {
       scheduleService.getTodayShifts()
     ]);
     
-    // Only allow Active staff members to clock in
     staffMembers.value = (staff as any[]).filter(s => s.status === 'Active');
     todayShifts.value = shifts;
     
@@ -32,16 +32,14 @@ async function loadTimeclockData() {
   }
 }
 
-// Check if the selected staff member is already clocked in
 const currentActiveShift = computed(() => {
   if (!selectedStaffId.value) return null;
   return todayShifts.value.find(s => s.staff_id === selectedStaffId.value && s.status === 'Active Shift');
 });
 
-// Format timestamp for display (e.g., 2026-04-14 08:30:00 -> 8:30 AM)
 function formatTimeOnly(datetimeStr: string | null) {
   if (!datetimeStr) return '--:--';
-  const date = new Date(datetimeStr.replace(' ', 'T')); // Standardize for JS parsing
+  const date = new Date(datetimeStr.replace(' ', 'T')); 
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -50,7 +48,7 @@ async function handleClockIn() {
   try {
     await scheduleService.clockIn(Number(selectedStaffId.value));
     alert("Clocked in successfully!");
-    selectedStaffId.value = ''; // Reset dropdown
+    selectedStaffId.value = ''; 
     await loadTimeclockData();
   } catch (error: any) {
     alert(error.message || "Failed to clock in.");
@@ -62,10 +60,10 @@ async function handleClockOut() {
   try {
     await scheduleService.clockOut(currentActiveShift.value.shift_id, Number(selectedStaffId.value));
     alert("Clocked out successfully! Shift recorded.");
-    selectedStaffId.value = ''; // Reset dropdown
+    selectedStaffId.value = ''; 
     await loadTimeclockData();
   } catch (error: any) {
-    alert("Failed to clock out.");
+    alert(error.message || "Failed to clock out.");
   }
 }
 
@@ -98,24 +96,26 @@ onMounted(() => {
         </div>
 
         <div class="w-full md:w-auto flex gap-3 h-13">
-          <button 
+          <BaseButton 
             v-if="!currentActiveShift"
+            variant="success"
             @click="handleClockIn"
             :disabled="!selectedStaffId"
-            class="flex-1 md:w-48 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold rounded-lg transition-colors shadow-md flex items-center justify-center gap-2"
+            class="flex-1 md:w-48 py-3"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
             Clock IN
-          </button>
+          </BaseButton>
 
-          <button 
+          <BaseButton 
             v-else
+            variant="danger"
             @click="handleClockOut"
-            class="flex-1 md:w-48 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors shadow-md flex items-center justify-center gap-2"
+            class="flex-1 md:w-48 py-3"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
             Clock OUT
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -154,12 +154,11 @@ onMounted(() => {
                 {{ shift.total_rendered_hours ? shift.total_rendered_hours + ' hrs' : '-' }}
               </td>
               <td class="p-4 text-right">
-                <span 
-                  :class="shift.status === 'Active Shift' ? 'bg-green-100 text-green-800 animate-pulse' : 'bg-gray-100 text-gray-600'" 
-                  class="px-3 py-1 rounded-full text-xs font-bold"
-                >
-                  {{ shift.status === 'Active Shift' ? 'On Duty' : 'Completed' }}
-                </span>
+                <BaseBadge 
+                  :text="shift.status === 'Active Shift' ? 'On Duty' : 'Completed'"
+                  :variant="shift.status === 'Active Shift' ? 'success' : 'default'"
+                  :class="{'animate-pulse': shift.status === 'Active Shift'}"
+                />
               </td>
             </tr>
           </tbody>

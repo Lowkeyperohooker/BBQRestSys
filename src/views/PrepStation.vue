@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { inventoryService, type RawInventoryItem, type PrepLog } from '../services/inventoryService';
 import { staffService } from '../services/staffService';
 import DataLoader from '../components/ui/DataLoader.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
 
 // Form State
 const selectedCategory = ref('');
@@ -22,7 +23,6 @@ const currentStockInfo = ref<RawInventoryItem | null>(null);
 const isLoadingData = ref(true);
 const isLoadingParts = ref(false);
 
-// Computed properties for validation
 const maxKilosAllowed = computed(() => {
   if (!currentStockInfo.value) return 0;
   return currentStockInfo.value.current_stock_kg;
@@ -134,12 +134,10 @@ async function handleSavePrep() {
       selectedStaff.value
     );
 
-    // Refresh data
     await loadCategories();
     await loadParts(selectedCategory.value);
     await loadRecentLogs();
     
-    // Clear the numbers for the next task
     rawKilos.value = null;
     skewersProduced.value = null;
     
@@ -151,14 +149,12 @@ async function handleSavePrep() {
   }
 }
 
-// Watch for category changes
 watch(selectedCategory, async (newCategory) => {
   if (newCategory) {
     await loadParts(newCategory);
   }
 });
 
-// Watch for part changes
 watch([selectedPart, availableParts], () => {
   updateCurrentStockInfo();
 });
@@ -243,9 +239,6 @@ onMounted(async () => {
               placeholder="e.g., 5.0" 
               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
             />
-            <p v-if="rawKilos && currentStockInfo && rawKilos > currentStockInfo.current_stock_kg" class="text-sm text-red-600 mt-1">
-              Exceeds available stock.
-            </p>
           </div>
           
           <div>
@@ -274,13 +267,14 @@ onMounted(async () => {
             </select>
           </div>
           
-          <button 
+          <BaseButton 
             type="submit" 
+            variant="primary"
             :disabled="!canPrep"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 mt-4 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            class="w-full py-3 mt-4"
           >
             Save Prep Log
-          </button>
+          </BaseButton>
         </form>
       </div>
 

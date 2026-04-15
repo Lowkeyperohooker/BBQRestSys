@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import BaseButton from './BaseButton.vue';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -42,12 +43,12 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
+  <div v-if="isOpen" class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
       
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-lg font-bold text-gray-800">{{ formId ? 'Edit Staff Member' : 'Add New Staff' }}</h3>
-        <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <button type="button" @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
@@ -78,8 +79,8 @@ function handleSubmit() {
           </select>
         </div>
         <div class="pt-4 flex gap-3">
-          <button type="button" @click="$emit('close')" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">Cancel</button>
-          <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold">Save Details</button>
+          <BaseButton type="button" variant="secondary" class="flex-1" @click="$emit('close')">Cancel</BaseButton>
+          <BaseButton type="submit" variant="primary" class="flex-1">Save Details</BaseButton>
         </div>
       </form>
 

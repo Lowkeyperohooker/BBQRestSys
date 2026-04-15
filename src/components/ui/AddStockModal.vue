@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue';
 import type { RawInventoryItem } from '../../services/inventoryService';
 import { inventoryService } from '../../services/inventoryService';
+import BaseButton from './BaseButton.vue';
 
 // Props
 const props = defineProps<{
@@ -72,7 +73,7 @@ function quickAdd(amount: number) {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
+  <div v-if="isOpen" class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 m-4 max-h-[90vh] overflow-y-auto">
       
       <div class="flex justify-between items-center mb-6">
@@ -80,7 +81,7 @@ function quickAdd(amount: number) {
           <h3 class="text-lg font-bold text-gray-800">Add Raw Meat Stock</h3>
           <p class="text-sm text-gray-500 mt-1">Restock raw inventory items</p>
         </div>
-        <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <button type="button" @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -141,16 +142,13 @@ function quickAdd(amount: number) {
         </div>
         
         <div class="flex gap-3 pt-6">
-          <button type="button" @click="$emit('close')" class="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">Cancel</button>
-          
-          <button type="submit" :disabled="isFormInvalid" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed shadow">
-            <span class="flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Add Stock
-            </span>
-          </button>
+          <BaseButton type="button" variant="secondary" class="flex-1" @click="$emit('close')">Cancel</BaseButton>
+          <BaseButton type="submit" variant="success" class="flex-1" :disabled="isFormInvalid">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add Stock
+          </BaseButton>
         </div>
 
       </form>

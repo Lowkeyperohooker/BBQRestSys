@@ -2,6 +2,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { logService, type SystemLog } from '../services/logService';
 import DataLoader from '../components/ui/DataLoader.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import BaseBadge from '../components/ui/BaseBadge.vue';
 
 const logs = ref<SystemLog[]>([]);
 const isLoadingData = ref(true);
@@ -10,7 +12,7 @@ const filterCategory = ref('All');
 async function loadLogs() {
   isLoadingData.value = true;
   try {
-    logs.value = await logService.getRecentLogs(200); // Fetch up to 200 recent events
+    logs.value = await logService.getRecentLogs(200); 
   } catch (error) {
     console.error("Failed to load system logs:", error);
   } finally {
@@ -20,21 +22,18 @@ async function loadLogs() {
   }
 }
 
-// Compute available categories for the filter dropdown based on actual data
 const availableCategories = computed(() => {
   const categories = new Set(logs.value.map(log => log.log_category));
   return ['All', ...Array.from(categories)];
 });
 
-// Filter the logs based on the selected category
 const filteredLogs = computed(() => {
   if (filterCategory.value === 'All') return logs.value;
   return logs.value.filter(log => log.log_category === filterCategory.value);
 });
 
-// Format SQLite timestamp (UTC) to a readable local format
 function formatTime(timestampStr: string) {
-  const date = new Date(timestampStr + 'Z'); // Add Z to specify it is UTC from SQLite
+  const date = new Date(timestampStr + 'Z'); 
   return date.toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -43,6 +42,14 @@ function formatTime(timestampStr: string) {
     minute: '2-digit',
     second: '2-digit'
   });
+}
+
+function getCategoryVariant(category: string): 'info' | 'warning' | 'success' | 'danger' | 'default' {
+  if (category === 'POS') return 'info';
+  if (category === 'PREP') return 'warning';
+  if (category === 'INVENTORY') return 'success';
+  if (category === 'ADMIN') return 'danger';
+  return 'default';
 }
 
 onMounted(() => {
@@ -70,9 +77,9 @@ onMounted(() => {
               {{ category }}
             </option>
           </select>
-          <button @click="loadLogs" class="p-2 border border-gray-200 text-gray-600 rounded bg-gray-50 hover:bg-gray-100 transition-colors" title="Refresh Logs">
+          <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-3">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -100,9 +107,7 @@ onMounted(() => {
             <tr v-for="log in filteredLogs" :key="log.log_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="p-4 text-sm whitespace-nowrap">{{ formatTime(log.timestamp) }}</td>
               <td class="p-4">
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
-                  {{ log.log_category }}
-                </span>
+                <BaseBadge :text="log.log_category" :variant="getCategoryVariant(log.log_category)" />
               </td>
               <td class="p-4 font-medium">{{ log.staff_name || 'System Admin' }}</td>
               <td class="p-4 text-gray-900">{{ log.description }}</td>
