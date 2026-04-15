@@ -59,7 +59,7 @@ function formatTime(timestampStr: string) {
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 bg-white min-h-[300px] flex flex-col">
+      <div class="flex-1 overflow-y-auto p-6 bg-white min-h-75 flex flex-col">
         
         <div v-if="isLoading" class="flex-1 flex items-center justify-center">
           <DataLoader message="Loading recent transactions..." />

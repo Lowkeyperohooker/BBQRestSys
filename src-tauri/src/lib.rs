@@ -71,11 +71,13 @@ pub fn run() {
                 CREATE TABLE IF NOT EXISTS Orders (
                     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     staff_id INTEGER NOT NULL,
+                    customer_identifier TEXT NOT NULL, -- NEW: e.g., 'Table 4' or 'Takeout - Juan'
+                    order_type TEXT NOT NULL,          -- NEW: 'Dine-in' or 'Takeout'
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                     subtotal DECIMAL(10,2) NOT NULL,
                     tax_amount DECIMAL(10,2) NOT NULL,
                     total_amount DECIMAL(10,2) NOT NULL,
-                    status TEXT DEFAULT 'Completed',
+                    status TEXT DEFAULT 'Cooking',     -- CHANGED: Defaults to Cooking instead of Completed
                     FOREIGN KEY (staff_id) REFERENCES Staff(staff_id)
                 );
 
@@ -138,6 +140,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(
             SqlBuilder::default()
+                // Renamed to v2 so it forces a fresh database creation!
                 .add_migrations("sqlite:bbq_system.db", migrations)
                 .build(),
         )

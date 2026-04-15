@@ -1,24 +1,35 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { posService, type PosItem, type CartItem } from '../services/posService';
+import { posService, type PosItem, type CartItem, type ActiveOrder } from '../services/posService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import PosLogsModal from '../components/ui/PosLogsModal.vue';
 
 const availableItems = ref<PosItem[]>([]);
 const cart = ref<CartItem[]>([]);
+const activeOrders = ref<ActiveOrder[]>([]);
 const currentStaffId = 1; 
 
 // UI States
 const isLoadingData = ref(true);
-const isLogsModalOpen = ref(false); // NEW: Tracks the modal state
+const isLogsModalOpen = ref(false);
+const viewMode = ref<'new' | 'active'>('new'); // Switch between Menu and Active Tabs
 
-async function loadItems() {
+// Order Details
+const customerName = ref('');
+const orderType = ref<'Dine-in' | 'Takeout'>('Dine-in');
+
+async function loadData() {
   isLoadingData.value = true;
   try {
-    availableItems.value = await posService.getAvailablePosItems();
+    const [items, orders] = await Promise.all([
+      posService.getAvailablePosItems(),
+      posService.getActiveOrders()
+    ]);
+    availableItems.value = items;
+    activeOrders.value = orders;
   } catch (error) {
-    console.error("Failed to load POS items:", error);
+    console.error("Failed to load POS data:", error);
   } finally {
     setTimeout(() => {
       isLoadingData.value = false;
@@ -73,22 +84,34 @@ function removeFromCart(index: number) {
   cart.value.splice(index, 1);
 }
 
-// Master Checkout
-async function handleCheckout() {
+// 1. Send Order to the Grill (Unpaid Tab)
+async function handleSendToGrill() {
   if (cart.value.length === 0) return;
+  if (!customerName.value.trim()) {
+    alert("Please enter a customer name or table number.");
+    return;
+  }
 
   try {
-    const orderId = await posService.processCheckout(
+    const orderId = await posService.sendToGrill(
       currentStaffId,
+      customerName.value,
+      orderType.value,
       cart.value,
       subtotal.value,
       tax.value,
       total.value
     );
 
-    alert(`Payment Processed!\nOrder #${orderId} complete.\nInventory has been deducted.`);
+    alert(`Ticket #${orderId} sent to grill for ${customerName.value}!`);
+    
+    // Reset Form
     cart.value = [];
-    await loadItems();
+    customerName.value = '';
+    orderType.value = 'Dine-in';
+    
+    // Refresh lists
+    await loadData();
 
   } catch (error) {
     console.error("Checkout failed:", error);
@@ -96,30 +119,68 @@ async function handleCheckout() {
   }
 }
 
+// 2. Settle the Customer's Tab when they are done eating
+async function handleSettlePayment(order: ActiveOrder) {
+  const confirmPayment = confirm(`Settle payment of PHP ${order.total_amount.toFixed(2)} for ${order.customer_identifier}?`);
+  if (!confirmPayment) return;
+
+  try {
+    await posService.settlePayment(order.order_id, currentStaffId);
+    alert(`Payment settled for ${order.customer_identifier}!`);
+    await loadData(); // Refresh the active tabs list
+  } catch (error) {
+    console.error("Failed to settle payment:", error);
+    alert("An error occurred while settling payment.");
+  }
+}
+
 onMounted(() => {
-  loadItems();
+  loadData();
 });
 </script>
 
 <template>
   <div class="h-full flex bg-gray-50 rounded-xl overflow-hidden shadow-sm border border-gray-100">
     
-    <div class="flex-1 p-6 overflow-y-auto">
-      <div class="mb-6 flex justify-between items-center">
+    <div class="flex-1 p-6 overflow-y-auto flex flex-col">
+      <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 class="text-2xl font-bold text-gray-800">Point of Sale</h2>
-          <p class="text-sm text-gray-500">Select items to add to the current order.</p>
+          <p class="text-sm text-gray-500">Manage orders and customer tabs.</p>
         </div>
         
-        <BaseButton variant="secondary" @click="isLogsModalOpen = true">
-          View Logs
-        </BaseButton>
+        <div class="flex items-center gap-4">
+          <div class="flex bg-gray-200 rounded-lg p-1">
+            <button 
+              @click="viewMode = 'new'"
+              :class="viewMode === 'new' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'"
+              class="px-4 py-1.5 text-sm font-medium rounded-md transition-all"
+            >
+              Take Order
+            </button>
+            <button 
+              @click="viewMode = 'active'"
+              :class="viewMode === 'active' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'"
+              class="px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2"
+            >
+              Active Tabs
+              <span v-if="activeOrders.length > 0" class="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {{ activeOrders.length }}
+              </span>
+            </button>
+          </div>
+
+          <BaseButton variant="secondary" @click="isLogsModalOpen = true">
+            View Logs
+          </BaseButton>
+        </div>
       </div>
       
-      <DataLoader v-if="isLoadingData" message="Loading menu items..." />
+      <div v-if="isLoadingData" class="flex-1 flex items-center justify-center">
+        <DataLoader message="Loading register data..." />
+      </div>
 
-      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        
+      <div v-else-if="viewMode === 'new'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div 
           v-for="item in availableItems" 
           :key="item.prep_item_id"
@@ -146,20 +207,61 @@ onMounted(() => {
         <div v-if="availableItems.length === 0" class="col-span-full py-12 text-center text-gray-500">
           No items currently available. Please prepare skewers in the Prep Station first.
         </div>
+      </div>
 
+      <div v-else-if="viewMode === 'active'" class="flex-1">
+        <div v-if="activeOrders.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
+          <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          <p class="text-lg font-medium">No active tabs currently open.</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="order in activeOrders" :key="order.order_id" class="bg-white border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-orange-400"></div>
+            
+            <div class="flex justify-between items-start mb-3 mt-1">
+              <span class="text-sm text-gray-500 font-medium">Order #{{ order.order_id }}</span>
+              <span class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-bold animate-pulse">
+                {{ order.status }}
+              </span>
+            </div>
+            
+            <h3 class="text-xl font-bold text-gray-900 truncate" :title="order.customer_identifier">
+              {{ order.customer_identifier }}
+            </h3>
+            <p class="text-sm text-gray-500 mb-6">{{ order.order_type }}</p>
+            
+            <div class="mt-auto flex justify-between items-center border-t border-gray-100 pt-4">
+              <span class="text-xl font-black text-gray-900">PHP {{ order.total_amount.toFixed(2) }}</span>
+              <BaseButton variant="success" @click="handleSettlePayment(order)">
+                Settle Payment
+              </BaseButton>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="w-96 bg-white border-l border-gray-200 flex flex-col h-full z-10">
+    <div v-show="viewMode === 'new'" class="w-96 bg-white border-l border-gray-200 flex flex-col h-full z-10 transition-all">
       
       <div class="p-4 border-b border-gray-100 bg-gray-50">
-        <h3 class="text-lg font-bold text-gray-800">Current Order</h3>
-        <p class="text-sm text-gray-500">Cashier ID: {{ currentStaffId }}</p>
+        <h3 class="text-lg font-bold text-gray-800 mb-3">Order Details</h3>
+        <input 
+          v-model="customerName" 
+          type="text" 
+          placeholder="Customer Name or Table #" 
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 bg-white"
+        />
+        <div class="flex bg-gray-200 rounded-lg p-1 w-full">
+          <button @click="orderType = 'Dine-in'" :class="orderType === 'Dine-in' ? 'bg-white shadow text-gray-800' : 'text-gray-500'" class="flex-1 py-1 text-sm font-medium rounded-md transition-all">Dine-in</button>
+          <button @click="orderType = 'Takeout'" :class="orderType === 'Takeout' ? 'bg-white shadow text-gray-800' : 'text-gray-500'" class="flex-1 py-1 text-sm font-medium rounded-md transition-all">Takeout</button>
+        </div>
       </div>
       
       <div class="flex-1 p-4 overflow-y-auto bg-white">
-        <div v-if="cart.length === 0" class="h-full flex items-center justify-center text-gray-400">
-          <p>Select items to begin</p>
+        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400">
+          <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          <p>Cart is empty</p>
         </div>
         
         <div v-else class="space-y-4">
@@ -188,13 +290,16 @@ onMounted(() => {
           <span>PHP {{ total.toFixed(2) }}</span>
         </div>
         <BaseButton 
-          variant="success"
-          @click="handleCheckout"
-          :disabled="cart.length === 0"
+          variant="primary"
+          @click="handleSendToGrill"
+          :disabled="cart.length === 0 || !customerName.trim()"
           class="w-full py-4 text-lg"
         >
-          Process Payment
+          Send to Grill
         </BaseButton>
+        <p v-if="cart.length > 0 && !customerName.trim()" class="text-xs text-red-500 text-center mt-2 font-medium">
+          * Please enter customer name/table
+        </p>
       </div>
       
     </div>

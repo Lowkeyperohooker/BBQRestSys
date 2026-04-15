@@ -77,7 +77,7 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col space-y-6">
     
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-shrink-0">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 shrink-0">
       <div class="mb-6">
         <h3 class="text-xl font-bold text-gray-800">Staff Timeclock</h3>
         <p class="text-sm text-gray-500">Select your name to punch in or out for your shift.</p>
@@ -97,7 +97,7 @@ onMounted(() => {
           </select>
         </div>
 
-        <div class="w-full md:w-auto flex gap-3 h-[52px]">
+        <div class="w-full md:w-auto flex gap-3 h-13">
           <button 
             v-if="!currentActiveShift"
             @click="handleClockIn"
