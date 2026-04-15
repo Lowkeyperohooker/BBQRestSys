@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, shallowRef, watch } from 'vue';
+import { ref, onMounted, shallowRef, watch, nextTick } from 'vue';
 import { dashboardService } from '../services/dashboardService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import Chart from 'chart.js/auto';
@@ -81,8 +81,13 @@ async function loadDashboard() {
   } catch (error) {
     console.error("Error loading dashboard metrics:", error);
   } finally {
-    setTimeout(() => {
+    // We use async here so we can await nextTick
+    setTimeout(async () => {
       isLoadingData.value = false;
+      
+      // Wait for Vue to render the <canvas> elements into the DOM
+      await nextTick(); 
+      
       initCharts();
     }, 600);
   }

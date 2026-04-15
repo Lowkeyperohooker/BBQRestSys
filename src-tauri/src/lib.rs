@@ -121,7 +121,6 @@ pub fn run() {
                 ('Seafood', 'Milk Fish Fillet', 15.0, 5.0),
                 ('Seafood', 'Tuna Fillet', 18.5, 5.0);
 
-                -- NOTE: The last number is the is_variable_price flag (0 = false/fixed, 1 = true/variable)
                 INSERT INTO Prepared_Inventory (raw_item_id, pos_display_name, current_stock_pieces, unit_price, is_variable_price) VALUES
                 (1, 'Chicken Isaw', 145, 15.00, 0),        
                 (2, 'Chicken Neck', 80, 20.00, 1),          
@@ -131,6 +130,39 @@ pub fn run() {
                 (6, 'Pork Liver', 35, 20.00, 0),            
                 (7, 'Bangus Fillet', 85, 150.00, 1),        
                 (8, 'Tuna Fillet', 90, 200.00, 1);          
+
+                -- ==========================================
+                -- NEW: MOCK HISTORICAL DATA FOR CHARTS
+                -- ==========================================
+
+                -- 1. Mock Historical Orders (Last 7 Days) for Sales Chart
+                INSERT INTO Orders (staff_id, customer_identifier, order_type, timestamp, subtotal, tax_amount, total_amount, status) VALUES
+                (1, 'Table 1', 'Dine-in', datetime('now'), 850.00, 68.00, 918.00, 'Completed'),
+                (2, 'Takeout - Ana', 'Takeout', datetime('now', '-1 day'), 1200.00, 96.00, 1296.00, 'Completed'),
+                (1, 'Table 4', 'Dine-in', datetime('now', '-2 days'), 1850.00, 148.00, 1998.00, 'Completed'),
+                (2, 'Table 2', 'Dine-in', datetime('now', '-3 days'), 2100.00, 168.00, 2268.00, 'Completed'),
+                (1, 'Takeout - Ben', 'Takeout', datetime('now', '-4 days'), 1400.00, 112.00, 1512.00, 'Completed'),
+                (2, 'Table 5', 'Dine-in', datetime('now', '-5 days'), 2800.00, 224.00, 3024.00, 'Completed'),
+                (1, 'Table 8', 'Dine-in', datetime('now', '-6 days'), 1650.00, 132.00, 1782.00, 'Completed');
+
+                -- 2. Mock Order Items
+                INSERT INTO Order_Item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES
+                (1, 1, 10, 15.00), (1, 3, 5, 140.00),
+                (2, 5, 20, 15.00), (2, 7, 6, 150.00),
+                (3, 1, 30, 15.00), (3, 8, 7, 200.00),
+                (4, 3, 10, 140.00), (4, 5, 40, 15.00),
+                (5, 2, 20, 20.00), (5, 6, 50, 20.00),
+                (6, 7, 10, 150.00), (6, 8, 6, 200.00),
+                (7, 1, 50, 15.00), (7, 4, 45, 20.00);
+
+                -- 3. Mock Prep Logs (for Meat Distribution Doughnut Chart)
+                INSERT INTO Prep_Log (staff_id, raw_item_id, timestamp, kilos_deducted, skewers_added) VALUES
+                (2, 1, datetime('now', '-1 day'), 25.5, 255), -- Chicken
+                (2, 3, datetime('now', '-2 days'), 40.0, 120), -- Chicken
+                (2, 5, datetime('now', '-2 days'), 35.0, 350), -- Pork
+                (2, 6, datetime('now', '-3 days'), 15.0, 150), -- Pork
+                (2, 7, datetime('now', '-4 days'), 22.0, 88),  -- Seafood
+                (2, 8, datetime('now', '-5 days'), 18.5, 74);  -- Seafood
             ",
             kind: MigrationKind::Up,
         }
@@ -140,7 +172,6 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(
             SqlBuilder::default()
-                // Renamed to v2 so it forces a fresh database creation!
                 .add_migrations("sqlite:bbq_system.db", migrations)
                 .build(),
         )
