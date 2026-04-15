@@ -20,6 +20,9 @@ export interface StaffInput {
   status: string;
 }
 
+// Hardcoded Admin ID for the prototype
+const CURRENT_ADMIN_ID = 1;
+
 export const staffService = {
   
   async getAllStaff(): Promise<StaffMember[]> {
@@ -35,6 +38,12 @@ export const staffService = {
       "INSERT INTO Staff (full_name, role, phone_number, status) VALUES ($1, $2, $3, $4)",
       [staff.name, staff.role, staff.phone, staff.status]
     );
+
+    // Connect to System Logs
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'ADMIN', $1, 'Created Staff Profile', $2)",
+      [CURRENT_ADMIN_ID, `Added ${staff.name} as ${staff.role}`]
+    );
   },
 
   async updateStaff(id: number, staff: StaffInput): Promise<void> {
@@ -43,14 +52,25 @@ export const staffService = {
       "UPDATE Staff SET full_name = $1, role = $2, phone_number = $3, status = $4 WHERE staff_id = $5",
       [staff.name, staff.role, staff.phone, staff.status, id]
     );
+
+    // Connect to System Logs
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'ADMIN', $1, 'Updated Staff Profile', $2)",
+      [CURRENT_ADMIN_ID, `Updated details for ${staff.name}`]
+    );
   },
 
   async deleteStaff(id: number): Promise<void> {
     const db = await getDb();
     await db.execute("DELETE FROM Staff WHERE staff_id = $1", [id]);
+
+    // Connect to System Logs
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'ADMIN', $1, 'Deleted Staff Profile', $2)",
+      [CURRENT_ADMIN_ID, `Permanently removed staff ID: ${id}`]
+    );
   },
   
-  // Optional: Get active staff only
   async getActiveStaff(): Promise<StaffMember[]> {
     const db = await getDb();
     return await db.select<StaffMember[]>(
@@ -58,7 +78,6 @@ export const staffService = {
     );
   },
   
-  // Optional: Search staff by name or role
   async searchStaff(query: string): Promise<StaffMember[]> {
     const db = await getDb();
     return await db.select<StaffMember[]>(

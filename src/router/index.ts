@@ -5,6 +5,7 @@ import PrepStation from '../views/PrepStation.vue'
 import Pos from '../views/Pos.vue'
 import Logs from '../views/Logs.vue'
 import Dashboard from '../views/Dashboard.vue'
+import Schedule from '../views/Schedule.vue' 
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,6 +40,11 @@ const router = createRouter({
       name: 'dashboard',
       component: Dashboard
     },
+    {
+      path: '/schedule',
+      name: 'schedule',
+      component: Schedule
+    }
   ]
 })
 

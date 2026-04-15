@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
 import StaffModal from "../components/ui/StaffModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
+import BaseButton from "../components/ui/BaseButton.vue";
 
 const staffMembers = ref<any[]>([]);
 const isModalOpen = ref(false);
@@ -82,10 +83,10 @@ onMounted(() => {
           <h3 class="text-xl font-semibold text-gray-800">Staff Directory</h3>
           <p class="text-sm text-gray-500">Manage employee records and system access</p>
         </div>
-        <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition-colors font-semibold flex items-center gap-2">
+        <BaseButton variant="primary" @click="openModal()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           Add Staff Member
-        </button>
+        </BaseButton>
       </div>
       
       <DataLoader v-if="isLoadingData" message="Loading staff records..." />

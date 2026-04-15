@@ -29,6 +29,9 @@ export interface PrepLog {
   skewers_added: number;
 }
 
+// Hardcoded Admin ID for actions where a specific staff isn't selected
+const CURRENT_ADMIN_ID = 1;
+
 export const inventoryService = {
   
   async getRawInventory(): Promise<RawInventoryItem[]> {
@@ -45,16 +48,20 @@ export const inventoryService = {
     );
   },
   
-  // NEW: Add stock to raw inventory
   async addRawStock(itemId: number, kilosToAdd: number): Promise<void> {
     const db = await getDb();
     await db.execute(
       "UPDATE Raw_Inventory SET current_stock_kg = current_stock_kg + $1 WHERE raw_item_id = $2",
       [kilosToAdd, itemId]
     );
+
+    // NEW: Connect to System Logs
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'Stock Delivery Added', $2)",
+      [CURRENT_ADMIN_ID, `Added ${kilosToAdd}kg to Item ID: ${itemId}`]
+    );
   },
   
-  // NEW: Get available categories from existing inventory
   async getAvailableCategories(): Promise<string[]> {
     const db = await getDb();
     const result = await db.select<{category: string}[]>(
@@ -63,7 +70,6 @@ export const inventoryService = {
     return result.map(r => r.category);
   },
   
-  // NEW: Get available parts for a category
   async getAvailableParts(category: string): Promise<RawInventoryItem[]> {
     const db = await getDb();
     return await db.select<RawInventoryItem[]>(
@@ -72,7 +78,6 @@ export const inventoryService = {
     );
   },
   
-  // NEW: Check if stock is available for prep
   async checkStockAvailability(category: string, part: string, kilosNeeded: number): Promise<{available: boolean, currentStock: number}> {
     const db = await getDb();
     const result = await db.select<{current_stock_kg: number}[]>(
@@ -133,7 +138,9 @@ export const inventoryService = {
         [sticks, rawItemId]
       );
       
-      // Optional: Get staff_id if staffName provided
+      let actualStaffId = CURRENT_ADMIN_ID;
+
+      // Get staff_id if staffName provided
       if (staffName) {
         const staff = await db.select<{staff_id: number}[]>(
           "SELECT staff_id FROM Staff WHERE full_name = $1",
@@ -141,14 +148,21 @@ export const inventoryService = {
         );
         
         if (staff.length > 0) {
+          actualStaffId = staff[0].staff_id;
           // Log the prep activity
           await db.execute(
             `INSERT INTO Prep_Log (staff_id, raw_item_id, kilos_deducted, skewers_added) 
              VALUES ($1, $2, $3, $4)`,
-            [staff[0].staff_id, rawItemId, kilos, sticks]
+            [actualStaffId, rawItemId, kilos, sticks]
           );
         }
       }
+      
+      // NEW: Connect to System Logs
+      await db.execute(
+        "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'PREP', $1, 'Skewers Prepared', $2)",
+        [actualStaffId, `${staffName || 'System'} converted ${kilos}kg into ${sticks} sticks`]
+      );
       
       await db.execute("COMMIT");
     } catch (error) {

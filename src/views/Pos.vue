@@ -2,13 +2,16 @@
 import { ref, computed, onMounted } from 'vue';
 import { posService, type PosItem, type CartItem } from '../services/posService';
 import DataLoader from '../components/ui/DataLoader.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
+import PosLogsModal from '../components/ui/PosLogsModal.vue';
 
 const availableItems = ref<PosItem[]>([]);
 const cart = ref<CartItem[]>([]);
 const currentStaffId = 1; 
 
-// Loading State
+// UI States
 const isLoadingData = ref(true);
+const isLogsModalOpen = ref(false); // NEW: Tracks the modal state
 
 async function loadItems() {
   isLoadingData.value = true;
@@ -107,9 +110,10 @@ onMounted(() => {
           <h2 class="text-2xl font-bold text-gray-800">Point of Sale</h2>
           <p class="text-sm text-gray-500">Select items to add to the current order.</p>
         </div>
-        <button class="px-4 py-2 bg-gray-800 text-white rounded-lg font-semibold shadow hover:bg-gray-700 transition-colors">
+        
+        <BaseButton variant="secondary" @click="isLogsModalOpen = true">
           View Logs
-        </button>
+        </BaseButton>
       </div>
       
       <DataLoader v-if="isLoadingData" message="Loading menu items..." />
@@ -183,15 +187,21 @@ onMounted(() => {
           <span>Total</span>
           <span>PHP {{ total.toFixed(2) }}</span>
         </div>
-        <button 
+        <BaseButton 
+          variant="success"
           @click="handleCheckout"
           :disabled="cart.length === 0"
-          class="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
+          class="w-full py-4 text-lg"
         >
           Process Payment
-        </button>
+        </BaseButton>
       </div>
       
     </div>
+
+    <PosLogsModal 
+      :is-open="isLogsModalOpen" 
+      @close="isLogsModalOpen = false" 
+    />
   </div>
 </template>
