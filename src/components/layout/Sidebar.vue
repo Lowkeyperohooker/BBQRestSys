@@ -52,8 +52,16 @@
 
     </nav>
     
-    <div class="p-4 border-t border-gray-800 text-sm text-gray-500 text-center">
-      <p>System Status: <span class="text-green-400 font-semibold">Online</span></p>
-    </div>
+    <!-- <div class="p-4">
+      <div class="bg-gray-800 rounded-xl p-4 flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-white">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+          <span class="font-bold text-sm">System Status</span>
+        </div>
+        <p class="text-xs text-gray-400 leading-relaxed">
+          BBQSYS Administrative Portal. All systems are currently fully operational.
+        </p>
+      </div>
+    </div> -->
   </aside>
 </template>
