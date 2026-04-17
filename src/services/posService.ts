@@ -26,6 +26,22 @@ export interface ActiveOrder {
   timestamp: string;
 }
 
+// Helper function to fetch the itemized receipt from the database for existing orders
+async function getOrderReceiptString(db: Database, orderId: number): Promise<string> {
+  const items = await db.select<{pos_display_name: string, quantity: number, price_at_time_of_sale: number}[]>(`
+    SELECT pi.pos_display_name, oi.quantity, oi.price_at_time_of_sale 
+    FROM Order_Item oi
+    JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id
+    WHERE oi.order_id = $1
+  `, [orderId]);
+
+  if (items.length === 0) return "No items found.";
+
+  return items.map(item => 
+    `- ${item.quantity}x ${item.pos_display_name} (PHP ${(item.price_at_time_of_sale * item.quantity).toFixed(2)})`
+  ).join('\n');
+}
+
 export const posService = {
   
   async getAvailablePosItems(): Promise<PosItem[]> {
@@ -74,14 +90,12 @@ export const posService = {
         );
       }
 
-      // ==========================================
-      // NEW: Generate a detailed, itemized receipt string for the log
-      // ==========================================
+      // Generate the initial detailed receipt for the log
       const itemizedList = cartItems.map(item => 
-        `- ${item.qty}x ${item.pos_display_name} (₱${(item.unit_price * item.qty).toFixed(2)})`
+        `- ${item.qty}x ${item.pos_display_name} (PHP ${(item.unit_price * item.qty).toFixed(2)})`
       ).join('\n');
 
-      const detailedLogMessage = `Order Type: ${orderType}\nCustomer/Table: ${customerIdentifier}\n\nItems Ordered:\n${itemizedList}\n\nTotal Amount: ₱${total.toFixed(2)}`;
+      const detailedLogMessage = `Order Type: ${orderType}\nCustomer/Table: ${customerIdentifier}\n\nItems Ordered:\n${itemizedList}\n\nTotal Amount: PHP ${total.toFixed(2)}`;
 
       await db.execute(
         "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'Order Sent to Grill', $2)",
@@ -99,6 +113,10 @@ export const posService = {
 
   async updateOrderStatus(orderId: number, status: string, staffId: number): Promise<void> {
     const db = await getDb();
+    
+    // Fetch the detailed receipt before logging
+    const receipt = await getOrderReceiptString(db, orderId);
+
     await db.execute(
       "UPDATE Orders SET status = $1 WHERE order_id = $2",
       [status, orderId]
@@ -106,12 +124,15 @@ export const posService = {
 
     await db.execute(
       "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'Order Status Updated', $2)",
-      [staffId, `Order #${orderId} marked as ${status}`]
+      [staffId, `Order #${orderId} marked as ${status}\n\nOrder Contents:\n${receipt}`]
     );
   },
 
   async settlePayment(orderId: number, staffId: number): Promise<void> {
     const db = await getDb();
+    
+    // Fetch the detailed receipt before logging
+    const receipt = await getOrderReceiptString(db, orderId);
     
     await db.execute(
       "UPDATE Orders SET status = 'Completed' WHERE order_id = $1",
@@ -120,7 +141,7 @@ export const posService = {
 
     await db.execute(
       "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'Payment Settled', $2)",
-      [staffId, `Order #${orderId} has been paid in full.`]
+      [staffId, `Order #${orderId} has been paid in full.\n\nOrder Contents:\n${receipt}`]
     );
   }
 };

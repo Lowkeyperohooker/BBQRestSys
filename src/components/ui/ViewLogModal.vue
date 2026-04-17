@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watch } from 'vue';
 import type { SystemLog } from '../../services/logService';
 import BaseBadge from './BaseBadge.vue';
 

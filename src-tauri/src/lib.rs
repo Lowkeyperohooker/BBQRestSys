@@ -132,37 +132,51 @@ pub fn run() {
                 (8, 'Tuna Fillet', 90, 200.00, 1);          
 
                 -- ==========================================
-                -- NEW: MOCK HISTORICAL DATA FOR CHARTS
+                -- MOCK HISTORICAL DATA
                 -- ==========================================
 
                 -- 1. Mock Historical Orders (Last 7 Days) for Sales Chart
                 INSERT INTO Orders (staff_id, customer_identifier, order_type, timestamp, subtotal, tax_amount, total_amount, status) VALUES
                 (1, 'Table 1', 'Dine-in', datetime('now'), 850.00, 68.00, 918.00, 'Completed'),
                 (2, 'Takeout - Ana', 'Takeout', datetime('now', '-1 day'), 1200.00, 96.00, 1296.00, 'Completed'),
-                (1, 'Table 4', 'Dine-in', datetime('now', '-2 days'), 1850.00, 148.00, 1998.00, 'Completed'),
-                (2, 'Table 2', 'Dine-in', datetime('now', '-3 days'), 2100.00, 168.00, 2268.00, 'Completed'),
-                (1, 'Takeout - Ben', 'Takeout', datetime('now', '-4 days'), 1400.00, 112.00, 1512.00, 'Completed'),
-                (2, 'Table 5', 'Dine-in', datetime('now', '-5 days'), 2800.00, 224.00, 3024.00, 'Completed'),
-                (1, 'Table 8', 'Dine-in', datetime('now', '-6 days'), 1650.00, 132.00, 1782.00, 'Completed');
+                (1, 'Table 4', 'Dine-in', datetime('now', '-2 days'), 1850.00, 148.00, 1998.00, 'Completed');
 
                 -- 2. Mock Order Items
                 INSERT INTO Order_Item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES
                 (1, 1, 10, 15.00), (1, 3, 5, 140.00),
                 (2, 5, 20, 15.00), (2, 7, 6, 150.00),
-                (3, 1, 30, 15.00), (3, 8, 7, 200.00),
-                (4, 3, 10, 140.00), (4, 5, 40, 15.00),
-                (5, 2, 20, 20.00), (5, 6, 50, 20.00),
-                (6, 7, 10, 150.00), (6, 8, 6, 200.00),
-                (7, 1, 50, 15.00), (7, 4, 45, 20.00);
+                (3, 1, 30, 15.00), (3, 8, 7, 200.00);
 
-                -- 3. Mock Prep Logs (for Meat Distribution Doughnut Chart)
+                -- 3. Mock Prep Logs
                 INSERT INTO Prep_Log (staff_id, raw_item_id, timestamp, kilos_deducted, skewers_added) VALUES
                 (2, 1, datetime('now', '-1 day'), 25.5, 255), -- Chicken
-                (2, 3, datetime('now', '-2 days'), 40.0, 120), -- Chicken
-                (2, 5, datetime('now', '-2 days'), 35.0, 350), -- Pork
-                (2, 6, datetime('now', '-3 days'), 15.0, 150), -- Pork
-                (2, 7, datetime('now', '-4 days'), 22.0, 88),  -- Seafood
-                (2, 8, datetime('now', '-5 days'), 18.5, 74);  -- Seafood
+                (2, 3, datetime('now', '-2 days'), 40.0, 120); -- Chicken
+
+                -- 4. NEW: Mock Detailed System Logs to match the detailed format
+                INSERT INTO System_Log (log_id, log_category, staff_id, timestamp, description, details) VALUES
+                (hex(randomblob(8)), 'POS', 1, datetime('now'), 'Order Sent to Grill', 'Order Type: Dine-in
+Customer/Table: Table 1
+
+Items Ordered:
+- 10x Chicken Isaw (₱150.00)
+- 5x Chicken Leg Quarter (₱700.00)
+
+Total Amount: ₱918.00'),
+
+                (hex(randomblob(8)), 'PREP', 2, datetime('now', '-1 day'), 'Skewers Prepared', 'Meat Category: Chicken
+Specific Part / Cut: Intestine
+Raw Meat Consumed: 25.50 kg
+Yield Produced: 255 pieces/sticks
+Staff Member: Jane Smith'),
+
+                (hex(randomblob(8)), 'POS', 2, datetime('now', '-1 day'), 'Order Sent to Grill', 'Order Type: Takeout
+Customer/Table: Takeout - Ana
+
+Items Ordered:
+- 20x Pork Isaw (₱300.00)
+- 6x Bangus Fillet (₱900.00)
+
+Total Amount: ₱1296.00');
             ",
             kind: MigrationKind::Up,
         }
