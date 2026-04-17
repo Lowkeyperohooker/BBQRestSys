@@ -50,19 +50,29 @@ export const inventoryService = {
   
   async addRawStock(itemId: number, kilosToAdd: number): Promise<void> {
     const db = await getDb();
+    
+    // Fetch the item details first so we can log exactly what was added
+    const itemResult = await db.select<{category: string, specific_part: string}[]>(
+      "SELECT category, specific_part FROM Raw_Inventory WHERE raw_item_id = $1", 
+      [itemId]
+    );
+    
+    const itemName = itemResult.length > 0 ? `${itemResult[0].category} - ${itemResult[0].specific_part}` : `Item #${itemId}`;
+
     await db.execute(
       "UPDATE Raw_Inventory SET current_stock_kg = current_stock_kg + $1 WHERE raw_item_id = $2",
       [kilosToAdd, itemId]
     );
 
+    // ==========================================
+    // NEW: Detailed Stock Log
+    // ==========================================
     await db.execute(
       "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'Stock Delivery Added', $2)",
-      [CURRENT_ADMIN_ID, `Added ${kilosToAdd}kg to Item ID: ${itemId}`]
+      [CURRENT_ADMIN_ID, `Item Restocked: ${itemName}\nAmount Added: ${kilosToAdd.toFixed(2)} kg`]
     );
   },
 
-  // NEW: Function to create a completely new raw meat item
-  // NEW: Function to create a completely new raw meat item
   async addNewRawItem(category: string, part: string, initialKilos: number, alertThreshold: number): Promise<void> {
     const db = await getDb();
     await db.execute("BEGIN TRANSACTION");
@@ -74,10 +84,9 @@ export const inventoryService = {
       
       const newItemId = result.lastInsertId as number;
 
-      // We now use the newItemId variable right here in the details string!
       await db.execute(
         "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'New Raw Item Added', $2)",
-        [CURRENT_ADMIN_ID, `Created Item #${newItemId} (${category} - ${part}) with initial stock ${initialKilos}kg`]
+        [CURRENT_ADMIN_ID, `Created Item #${newItemId} (${category} - ${part})\nInitial Stock: ${initialKilos.toFixed(2)} kg\nAlert Threshold: ${alertThreshold.toFixed(2)} kg`]
       );
       await db.execute("COMMIT");
     } catch (error) {
@@ -88,6 +97,14 @@ export const inventoryService = {
 
   async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: number): Promise<void> {
     const db = await getDb();
+    
+    // Fetch item name for detailed logging
+    const itemResult = await db.select<{pos_display_name: string}[]>(
+      "SELECT pos_display_name FROM Prepared_Inventory WHERE prep_item_id = $1", 
+      [prepItemId]
+    );
+    const itemName = itemResult.length > 0 ? itemResult[0].pos_display_name : `Item #${prepItemId}`;
+
     await db.execute(
       "UPDATE Prepared_Inventory SET unit_price = $1, is_variable_price = $2 WHERE prep_item_id = $3",
       [newPrice, isVariable, prepItemId]
@@ -95,7 +112,7 @@ export const inventoryService = {
 
     await db.execute(
       "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'Updated Menu Pricing', $2)",
-      [CURRENT_ADMIN_ID, `Item ID ${prepItemId} set to PHP ${newPrice.toFixed(2)} (Variable: ${isVariable === 1 ? 'Yes' : 'No'})`]
+      [CURRENT_ADMIN_ID, `Item: ${itemName}\nNew Base Price: ₱${newPrice.toFixed(2)}\nPricing Type: ${isVariable === 1 ? 'Variable (Ask Cashier)' : 'Fixed Price'}`]
     );
   },
   
@@ -189,9 +206,14 @@ export const inventoryService = {
         }
       }
       
+      // ==========================================
+      // NEW: Detailed Prep Log
+      // ==========================================
+      const detailedLogMessage = `Meat Category: ${category}\nSpecific Part / Cut: ${part}\nRaw Meat Consumed: ${kilos.toFixed(2)} kg\nYield Produced: ${sticks} pieces/sticks\nStaff Member: ${staffName || 'System Admin'}`;
+
       await db.execute(
         "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'PREP', $1, 'Skewers Prepared', $2)",
-        [actualStaffId, `${staffName || 'System'} converted ${kilos}kg into ${sticks} sticks`]
+        [actualStaffId, detailedLogMessage]
       );
       
       await db.execute("COMMIT");

@@ -86,7 +86,7 @@ function getCategoryVariant(category: string | undefined): 'info' | 'warning' | 
         <div class="border-t border-gray-100 pt-4">
           <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">Extended Details / Data</p>
           <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-             <p class="text-sm text-gray-700 font-mono whitespace-pre-wrap break-words">
+             <p class="text-sm text-gray-700 font-mono whitespace-pre-wrap wrap-break-word">
               {{ log.details || 'No extended details recorded for this event.' }}
             </p>
           </div>

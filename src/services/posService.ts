@@ -74,10 +74,18 @@ export const posService = {
         );
       }
 
-      const totalItems = cartItems.reduce((sum, item) => sum + item.qty, 0);
+      // ==========================================
+      // NEW: Generate a detailed, itemized receipt string for the log
+      // ==========================================
+      const itemizedList = cartItems.map(item => 
+        `- ${item.qty}x ${item.pos_display_name} (₱${(item.unit_price * item.qty).toFixed(2)})`
+      ).join('\n');
+
+      const detailedLogMessage = `Order Type: ${orderType}\nCustomer/Table: ${customerIdentifier}\n\nItems Ordered:\n${itemizedList}\n\nTotal Amount: ₱${total.toFixed(2)}`;
+
       await db.execute(
         "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'Order Sent to Grill', $2)",
-        [staffId, `Order #${orderId} (${customerIdentifier}) - ${totalItems} items`]
+        [staffId, detailedLogMessage]
       );
 
       await db.execute("COMMIT");
@@ -89,7 +97,6 @@ export const posService = {
     }
   },
 
-  // NEW: Allows updating the status (e.g. from Cooking to Cooked)
   async updateOrderStatus(orderId: number, status: string, staffId: number): Promise<void> {
     const db = await getDb();
     await db.execute(

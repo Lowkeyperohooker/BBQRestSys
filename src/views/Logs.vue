@@ -130,7 +130,7 @@ onMounted(() => {
               </td>
               <td class="p-4 font-medium">{{ log.staff_name || 'System Admin' }}</td>
               <td class="p-4 text-gray-900 group-hover:text-blue-700 transition-colors">{{ log.description }}</td>
-              <td class="p-4 text-sm text-gray-500 text-right truncate max-w-[200px]">{{ log.details || '-' }}</td>
+              <td class="p-4 text-sm text-gray-500 text-right truncate max-w-50">{{ log.details || '-' }}</td>
             </tr>
           </tbody>
         </table>
