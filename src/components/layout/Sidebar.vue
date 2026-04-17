@@ -1,5 +1,34 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+import { posService } from '../../services/posService';
+
+const activeTabCount = ref(0);
+let pollInterval: any = null;
+
+// Function to silently check the database for active orders
+async function checkActiveTabs() {
+  try {
+    const orders = await posService.getActiveOrders();
+    activeTabCount.value = orders.length;
+  } catch (error) {
+    console.error("Failed to check active tabs for sidebar:", error);
+  }
+}
+
+onMounted(() => {
+  checkActiveTabs();
+  // Set an interval to re-check every 3 seconds. 
+  // Because it's a local SQLite database, this is incredibly fast and costs zero network bandwidth!
+  pollInterval = setInterval(checkActiveTabs, 3000);
+});
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval);
+});
+</script>
+
 <template>
-  <aside class="w-64 bg-gray-900 text-white flex flex-col z-20 shadow-xl h-full">
+  <aside class="w-64 bg-gray-900 text-white flex flex-col z-20 shadow-xl h-full shrink-0">
     
     <div class="flex items-center gap-3 px-6 py-6 border-b border-gray-800">
       <div class="w-10 h-10 min-w-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-xl shadow-md flex items-center justify-center text-white">
@@ -20,9 +49,14 @@
         Dashboard
       </router-link>
       
-      <router-link to="/pos" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-        Point of Sale
+      <router-link to="/pos" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          Point of Sale
+        </div>
+        <span v-if="activeTabCount > 0" class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm transition-all duration-300">
+          {{ activeTabCount }}
+        </span>
       </router-link>
 
       <router-link to="/inventory" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
@@ -52,16 +86,5 @@
 
     </nav>
     
-    <!-- <div class="p-4">
-      <div class="bg-gray-800 rounded-xl p-4 flex flex-col gap-2">
-        <div class="flex items-center gap-2 text-white">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-          <span class="font-bold text-sm">System Status</span>
-        </div>
-        <p class="text-xs text-gray-400 leading-relaxed">
-          BBQSYS Administrative Portal. All systems are currently fully operational.
-        </p>
-      </div>
-    </div> -->
-  </aside>
+    </aside>
 </template>

@@ -10,12 +10,10 @@ const cart = ref<CartItem[]>([]);
 const activeOrders = ref<ActiveOrder[]>([]);
 const currentStaffId = 1; 
 
-// UI States
 const isLoadingData = ref(true);
 const isLogsModalOpen = ref(false);
-const viewMode = ref<'new' | 'active'>('new'); // Switch between Menu and Active Tabs
+const viewMode = ref<'new' | 'active'>('new'); 
 
-// Order Details
 const customerName = ref('');
 const orderType = ref<'Dine-in' | 'Takeout'>('Dine-in');
 
@@ -37,15 +35,18 @@ async function loadData() {
   }
 }
 
-// Financial Computations
+// Financial & Cart Computations
 const subtotal = computed(() => {
   return cart.value.reduce((sum, item) => sum + (item.unit_price * item.qty), 0);
 });
-
 const tax = computed(() => subtotal.value * 0.0); 
 const total = computed(() => subtotal.value + tax.value);
 
-// Cart Actions
+// NEW: Item counter for the sidebar
+const totalCartItems = computed(() => {
+  return cart.value.reduce((sum, item) => sum + item.qty, 0);
+});
+
 function addToCart(item: PosItem) {
   let finalPrice = item.unit_price;
 
@@ -84,7 +85,6 @@ function removeFromCart(index: number) {
   cart.value.splice(index, 1);
 }
 
-// 1. Send Order to the Grill (Unpaid Tab)
 async function handleSendToGrill() {
   if (cart.value.length === 0) return;
   if (!customerName.value.trim()) {
@@ -105,12 +105,10 @@ async function handleSendToGrill() {
 
     alert(`Ticket #${orderId} sent to grill for ${customerName.value}!`);
     
-    // Reset Form
     cart.value = [];
     customerName.value = '';
     orderType.value = 'Dine-in';
     
-    // Refresh lists
     await loadData();
 
   } catch (error) {
@@ -119,7 +117,17 @@ async function handleSendToGrill() {
   }
 }
 
-// 2. Settle the Customer's Tab when they are done eating
+// NEW: Update status from Cooking to Cooked
+async function handleUpdateStatus(order: ActiveOrder, newStatus: string) {
+  try {
+    await posService.updateOrderStatus(order.order_id, newStatus, currentStaffId);
+    await loadData(); // Refresh the tabs list
+  } catch (error) {
+    console.error("Failed to update status:", error);
+    alert("An error occurred while updating the order status.");
+  }
+}
+
 async function handleSettlePayment(order: ActiveOrder) {
   const confirmPayment = confirm(`Settle payment of PHP ${order.total_amount.toFixed(2)} for ${order.customer_identifier}?`);
   if (!confirmPayment) return;
@@ -127,7 +135,7 @@ async function handleSettlePayment(order: ActiveOrder) {
   try {
     await posService.settlePayment(order.order_id, currentStaffId);
     alert(`Payment settled for ${order.customer_identifier}!`);
-    await loadData(); // Refresh the active tabs list
+    await loadData(); 
   } catch (error) {
     console.error("Failed to settle payment:", error);
     alert("An error occurred while settling payment.");
@@ -218,11 +226,14 @@ onMounted(() => {
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div v-for="order in activeOrders" :key="order.order_id" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-orange-400"></div>
+            <div :class="order.status === 'Cooking' ? 'bg-orange-400' : 'bg-green-400'" class="absolute top-0 left-0 w-full h-1"></div>
             
             <div class="flex justify-between items-start mb-4">
               <span class="text-sm text-gray-500 font-semibold tracking-wide">Order #{{ order.order_id }}</span>
-              <span class="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-md text-xs font-bold animate-pulse">
+              <span 
+                :class="order.status === 'Cooking' ? 'bg-orange-50 text-orange-600 animate-pulse' : 'bg-green-50 text-green-600'" 
+                class="px-2.5 py-1 rounded-md text-xs font-bold"
+              >
                 {{ order.status }}
               </span>
             </div>
@@ -232,11 +243,24 @@ onMounted(() => {
             </h3>
             <p class="text-sm font-medium text-gray-500 mb-6">{{ order.order_type }}</p>
             
-            <div class="mt-auto flex justify-between items-center border-t border-gray-50 pt-5">
-              <span class="text-2xl font-black text-gray-900">₱{{ order.total_amount.toFixed(2) }}</span>
-              <BaseButton variant="success" @click="handleSettlePayment(order)" class="py-2 text-sm">
-                Settle
-              </BaseButton>
+            <div class="mt-auto flex flex-col gap-3 border-t border-gray-50 pt-4">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500 font-medium">Total</span>
+                <span class="text-2xl font-black text-gray-900">₱{{ order.total_amount.toFixed(2) }}</span>
+              </div>
+              <div class="flex gap-2 w-full mt-2">
+                <BaseButton 
+                  v-if="order.status === 'Cooking'" 
+                  variant="secondary" 
+                  @click="handleUpdateStatus(order, 'Cooked')" 
+                  class="flex-1 py-2 text-sm"
+                >
+                  Mark Cooked
+                </BaseButton>
+                <BaseButton variant="success" @click="handleSettlePayment(order)" class="flex-1 py-2 text-sm">
+                  Settle Payment
+                </BaseButton>
+              </div>
             </div>
           </div>
         </div>
@@ -246,7 +270,11 @@ onMounted(() => {
     <div v-show="viewMode === 'new'" class="w-80 bg-white border-l border-gray-100 flex flex-col h-full shrink-0">
       
       <div class="p-6 border-b border-gray-50">
-        <h3 class="text-xl font-extrabold text-gray-900 mb-4">Order Details</h3>
+        <h3 class="text-xl font-extrabold text-gray-900 mb-4">
+          Order Details
+          <span v-if="totalCartItems > 0" class="text-sm font-medium text-blue-500 ml-2">({{ totalCartItems }} items)</span>
+        </h3>
+        
         <input 
           v-model="customerName" 
           type="text" 

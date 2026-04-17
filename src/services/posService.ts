@@ -68,7 +68,6 @@ export const posService = {
           [orderId, item.prep_item_id, item.qty, item.unit_price]
         );
 
-        // Deduct inventory IMMEDIATELY because the physical sticks are going to the grill
         await db.execute(
           "UPDATE Prepared_Inventory SET current_stock_pieces = current_stock_pieces - $1 WHERE prep_item_id = $2",
           [item.qty, item.prep_item_id]
@@ -88,6 +87,20 @@ export const posService = {
       await db.execute("ROLLBACK");
       throw error;
     }
+  },
+
+  // NEW: Allows updating the status (e.g. from Cooking to Cooked)
+  async updateOrderStatus(orderId: number, status: string, staffId: number): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE Orders SET status = $1 WHERE order_id = $2",
+      [status, orderId]
+    );
+
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'Order Status Updated', $2)",
+      [staffId, `Order #${orderId} marked as ${status}`]
+    );
   },
 
   async settlePayment(orderId: number, staffId: number): Promise<void> {

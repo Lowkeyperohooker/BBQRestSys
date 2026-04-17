@@ -4,10 +4,15 @@ import { logService, type SystemLog } from '../services/logService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
+import ViewLogModal from '../components/ui/ViewLogModal.vue';
 
 const logs = ref<SystemLog[]>([]);
 const isLoadingData = ref(true);
 const filterCategory = ref('All');
+
+// Modal State
+const isLogModalOpen = ref(false);
+const selectedLog = ref<SystemLog | null>(null);
 
 async function loadLogs() {
   isLoadingData.value = true;
@@ -52,13 +57,23 @@ function getCategoryVariant(category: string): 'info' | 'warning' | 'success' | 
   return 'default';
 }
 
+function openLogDetails(log: SystemLog) {
+  selectedLog.value = log;
+  isLogModalOpen.value = true;
+}
+
+function closeLogDetails() {
+  isLogModalOpen.value = false;
+  selectedLog.value = null;
+}
+
 onMounted(() => {
   loadLogs();
 });
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="h-full flex flex-col relative">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col">
       
       <div class="flex justify-between items-center mb-6">
@@ -83,9 +98,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-if="isLoadingData" class="flex-1 flex items-center justify-center">
-        <DataLoader message="Retrieving secure audit trails..." />
-      </div>
+      <DataLoader v-if="isLoadingData" message="Retrieving secure audit trails..." />
 
       <div v-else class="flex-1 overflow-auto border border-gray-100 rounded-lg">
         <table class="w-full text-left border-collapse">
@@ -104,19 +117,32 @@ onMounted(() => {
                 No system activity recorded yet.
               </td>
             </tr>
-            <tr v-for="log in filteredLogs" :key="log.log_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <tr 
+              v-for="log in filteredLogs" 
+              :key="log.log_id" 
+              @click="openLogDetails(log)"
+              class="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group"
+              title="Click to view full details"
+            >
               <td class="p-4 text-sm whitespace-nowrap">{{ formatTime(log.timestamp) }}</td>
               <td class="p-4">
                 <BaseBadge :text="log.log_category" :variant="getCategoryVariant(log.log_category)" />
               </td>
               <td class="p-4 font-medium">{{ log.staff_name || 'System Admin' }}</td>
-              <td class="p-4 text-gray-900">{{ log.description }}</td>
-              <td class="p-4 text-sm text-gray-500 text-right">{{ log.details || '-' }}</td>
+              <td class="p-4 text-gray-900 group-hover:text-blue-700 transition-colors">{{ log.description }}</td>
+              <td class="p-4 text-sm text-gray-500 text-right truncate max-w-[200px]">{{ log.details || '-' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
     </div>
+
+    <ViewLogModal 
+      :is-open="isLogModalOpen"
+      :log="selectedLog"
+      @close="closeLogDetails"
+    />
+
   </div>
 </template>
