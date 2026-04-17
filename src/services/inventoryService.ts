@@ -18,6 +18,7 @@ export interface PreparedInventoryItem {
   pos_display_name: string;
   current_stock_pieces: number;
   unit_price: number;
+  is_variable_price: number;
 }
 
 export interface PrepLog {
@@ -29,7 +30,6 @@ export interface PrepLog {
   skewers_added: number;
 }
 
-// Hardcoded Admin ID for actions where a specific staff isn't selected
 const CURRENT_ADMIN_ID = 1;
 
 export const inventoryService = {
@@ -55,10 +55,47 @@ export const inventoryService = {
       [kilosToAdd, itemId]
     );
 
-    // NEW: Connect to System Logs
     await db.execute(
       "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'Stock Delivery Added', $2)",
       [CURRENT_ADMIN_ID, `Added ${kilosToAdd}kg to Item ID: ${itemId}`]
+    );
+  },
+
+  // NEW: Function to create a completely new raw meat item
+  // NEW: Function to create a completely new raw meat item
+  async addNewRawItem(category: string, part: string, initialKilos: number, alertThreshold: number): Promise<void> {
+    const db = await getDb();
+    await db.execute("BEGIN TRANSACTION");
+    try {
+      const result = await db.execute(
+        "INSERT INTO Raw_Inventory (category, specific_part, current_stock_kg, alert_threshold_kg) VALUES ($1, $2, $3, $4)",
+        [category, part, initialKilos, alertThreshold]
+      );
+      
+      const newItemId = result.lastInsertId as number;
+
+      // We now use the newItemId variable right here in the details string!
+      await db.execute(
+        "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'New Raw Item Added', $2)",
+        [CURRENT_ADMIN_ID, `Created Item #${newItemId} (${category} - ${part}) with initial stock ${initialKilos}kg`]
+      );
+      await db.execute("COMMIT");
+    } catch (error) {
+      await db.execute("ROLLBACK");
+      throw error;
+    }
+  },
+
+  async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: number): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE Prepared_Inventory SET unit_price = $1, is_variable_price = $2 WHERE prep_item_id = $3",
+      [newPrice, isVariable, prepItemId]
+    );
+
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'INVENTORY', $1, 'Updated Menu Pricing', $2)",
+      [CURRENT_ADMIN_ID, `Item ID ${prepItemId} set to PHP ${newPrice.toFixed(2)} (Variable: ${isVariable === 1 ? 'Yes' : 'No'})`]
     );
   },
   
@@ -105,7 +142,6 @@ export const inventoryService = {
   ) {
     const db = await getDb();
     
-    // Check stock availability first
     const stockCheck = await this.checkStockAvailability(category, part, kilos);
     if (!stockCheck.available) {
       throw new Error(`Insufficient stock! Available: ${stockCheck.currentStock}kg, Needed: ${kilos}kg`);
@@ -114,7 +150,6 @@ export const inventoryService = {
     await db.execute("BEGIN TRANSACTION");
     
     try {
-      // First, get the raw_item_id
       const rawItems = await db.select<{raw_item_id: number}[]>(
         "SELECT raw_item_id FROM Raw_Inventory WHERE category = $1 AND specific_part = $2",
         [category, part]
@@ -126,13 +161,11 @@ export const inventoryService = {
       
       const rawItemId = rawItems[0].raw_item_id;
       
-      // Deduct raw kilos
       await db.execute(
         "UPDATE Raw_Inventory SET current_stock_kg = current_stock_kg - $1 WHERE raw_item_id = $2",
         [kilos, rawItemId]
       );
 
-      // Add prepared sticks
       await db.execute(
         "UPDATE Prepared_Inventory SET current_stock_pieces = current_stock_pieces + $1 WHERE raw_item_id = $2",
         [sticks, rawItemId]
@@ -140,7 +173,6 @@ export const inventoryService = {
       
       let actualStaffId = CURRENT_ADMIN_ID;
 
-      // Get staff_id if staffName provided
       if (staffName) {
         const staff = await db.select<{staff_id: number}[]>(
           "SELECT staff_id FROM Staff WHERE full_name = $1",
@@ -149,7 +181,6 @@ export const inventoryService = {
         
         if (staff.length > 0) {
           actualStaffId = staff[0].staff_id;
-          // Log the prep activity
           await db.execute(
             `INSERT INTO Prep_Log (staff_id, raw_item_id, kilos_deducted, skewers_added) 
              VALUES ($1, $2, $3, $4)`,
@@ -158,7 +189,6 @@ export const inventoryService = {
         }
       }
       
-      // NEW: Connect to System Logs
       await db.execute(
         "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'PREP', $1, 'Skewers Prepared', $2)",
         [actualStaffId, `${staffName || 'System'} converted ${kilos}kg into ${sticks} sticks`]
