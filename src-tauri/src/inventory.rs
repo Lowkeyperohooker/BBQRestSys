@@ -17,14 +17,28 @@ pub struct LogPrepReq { pub category: String, pub part: String, pub kilos: f64, 
 pub struct LimitQuery { pub limit: i64 }
 
 pub async fn get_raw_inventory(State(pool): State<PgPool>) -> AppResult<Vec<RawInventory>> {
-    let items = sqlx::query_as::<_, RawInventory>("SELECT * FROM Raw_Inventory ORDER BY category, specific_part")
-        .fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // FIX: Explicitly cast NUMERIC columns to float8
+    let items = sqlx::query_as::<_, RawInventory>(
+        "SELECT raw_item_id, category, specific_part, current_stock_kg::float8, alert_threshold_kg::float8 
+         FROM Raw_Inventory ORDER BY category, specific_part"
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
     Ok(Json(items))
 }
 
 pub async fn get_prepared_inventory(State(pool): State<PgPool>) -> AppResult<Vec<PreparedInventoryItem>> {
-    let items = sqlx::query_as::<_, PreparedInventoryItem>("SELECT * FROM Prepared_Inventory ORDER BY pos_display_name")
-        .fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // FIX: Explicitly cast the unit_price NUMERIC column to float8
+    let items = sqlx::query_as::<_, PreparedInventoryItem>(
+        "SELECT prep_item_id, raw_item_id, pos_display_name, current_stock_pieces, unit_price::float8, is_variable_price 
+         FROM Prepared_Inventory ORDER BY pos_display_name"
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
     Ok(Json(items))
 }
 
