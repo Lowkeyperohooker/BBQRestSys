@@ -10,7 +10,9 @@ export interface Shift {
   status: string | null;
 }
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000/api' 
+  : `http://${window.location.hostname}:3000/api`;
 
 export const scheduleService = {
   async getTodayShifts(): Promise<Shift[]> {

@@ -14,7 +14,9 @@ export interface StaffInput {
   status: string;
 }
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000/api' 
+  : `http://${window.location.hostname}:3000/api`;
 const CURRENT_ADMIN_ID = 1;
 
 export const staffService = {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { staffService } from '../services/staffService';
 import { scheduleService, type Shift } from '../services/scheduleService';
 import DataLoader from '../components/ui/DataLoader.vue';
@@ -7,10 +7,12 @@ import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
 
 const isLoadingData = ref(true);
+const isProcessing = ref(false);
 const staffMembers = ref<any[]>([]);
 const todayShifts = ref<Shift[]>([]);
 
 const selectedStaffId = ref<number | ''>('');
+const currentActiveShift = ref<Shift | null>(null);
 
 async function loadTimeclockData() {
   isLoadingData.value = true;
@@ -32,9 +34,17 @@ async function loadTimeclockData() {
   }
 }
 
-const currentActiveShift = computed(() => {
-  if (!selectedStaffId.value) return null;
-  return todayShifts.value.find(s => s.staff_id === selectedStaffId.value && s.status === 'Active Shift');
+// BULLETPROOF FIX: The moment a name is selected, ask the database for their exact status
+watch(selectedStaffId, async (newId) => {
+  if (!newId) {
+    currentActiveShift.value = null;
+    return;
+  }
+  try {
+    currentActiveShift.value = await scheduleService.getActiveShiftForStaff(Number(newId));
+  } catch (error) {
+    console.error("Failed to check active shift status:", error);
+  }
 });
 
 function formatTimeOnly(datetimeStr: string | null) {
@@ -45,6 +55,7 @@ function formatTimeOnly(datetimeStr: string | null) {
 
 async function handleClockIn() {
   if (!selectedStaffId.value) return;
+  isProcessing.value = true;
   try {
     await scheduleService.clockIn(Number(selectedStaffId.value));
     alert("Clocked in successfully!");
@@ -52,11 +63,14 @@ async function handleClockIn() {
     await loadTimeclockData();
   } catch (error: any) {
     alert(error.message || "Failed to clock in.");
+  } finally {
+    isProcessing.value = false;
   }
 }
 
 async function handleClockOut() {
   if (!selectedStaffId.value || !currentActiveShift.value) return;
+  isProcessing.value = true;
   try {
     await scheduleService.clockOut(currentActiveShift.value.shift_id, Number(selectedStaffId.value));
     alert("Clocked out successfully! Shift recorded.");
@@ -64,6 +78,8 @@ async function handleClockOut() {
     await loadTimeclockData();
   } catch (error: any) {
     alert(error.message || "Failed to clock out.");
+  } finally {
+    isProcessing.value = false;
   }
 }
 
@@ -87,6 +103,7 @@ onMounted(() => {
           <select 
             v-model="selectedStaffId"
             class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-lg"
+            :disabled="isProcessing"
           >
             <option value="" disabled>-- Select Your Name --</option>
             <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.staff_id">
@@ -100,21 +117,22 @@ onMounted(() => {
             v-if="!currentActiveShift"
             variant="success"
             @click="handleClockIn"
-            :disabled="!selectedStaffId"
+            :disabled="!selectedStaffId || isProcessing"
             class="flex-1 md:w-48 py-3"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-            Clock IN
+            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+            {{ isProcessing ? 'Processing...' : 'Clock IN' }}
           </BaseButton>
 
           <BaseButton 
             v-else
             variant="danger"
             @click="handleClockOut"
+            :disabled="!selectedStaffId || isProcessing"
             class="flex-1 md:w-48 py-3"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-            Clock OUT
+            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            {{ isProcessing ? 'Processing...' : 'Clock OUT' }}
           </BaseButton>
         </div>
       </div>

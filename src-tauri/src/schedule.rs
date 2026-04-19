@@ -22,7 +22,8 @@ pub async fn get_today_shifts(State(pool): State<PgPool>) -> AppResult<Vec<Shift
                 sh.total_rendered_hours::float8, sh.status
          FROM Shift sh
          JOIN Staff s ON sh.staff_id = s.staff_id
-         WHERE sh.shift_date = CURRENT_DATE AT TIME ZONE 'Asia/Manila'
+         WHERE sh.shift_date = CURRENT_DATE AT TIME ZONE 'Asia/Manila' 
+            OR sh.status = 'Active Shift'
          ORDER BY sh.clock_in_time DESC"
     )
     .fetch_all(&pool)

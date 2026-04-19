@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { posService } from '../../services/posService';
 
 const activeTabCount = ref(0);
 let pollInterval: any = null;
+
+// Mobile responsive state
+const isMobileOpen = ref(false);
+const route = useRoute();
+
+// Automatically close the sidebar on mobile when navigating to a new page
+watch(route, () => {
+  isMobileOpen.value = false;
+});
 
 // Function to silently check the database for active orders
 async function checkActiveTabs() {
@@ -18,7 +28,7 @@ async function checkActiveTabs() {
 onMounted(() => {
   checkActiveTabs();
   // Set an interval to re-check every 3 seconds. 
-  // Because it's a local SQLite database, this is incredibly fast and costs zero network bandwidth!
+  // Because it's a local database, this is incredibly fast and costs zero network bandwidth!
   pollInterval = setInterval(checkActiveTabs, 3000);
 });
 
@@ -28,7 +38,31 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <aside class="w-64 bg-gray-900 text-white flex flex-col z-20 shadow-xl h-full shrink-0">
+  <div 
+    v-if="isMobileOpen" 
+    @click="isMobileOpen = false" 
+    class="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm transition-opacity"
+  ></div>
+
+  <button 
+    @click="isMobileOpen = !isMobileOpen" 
+    class="md:hidden fixed bottom-6 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition-transform active:scale-95"
+  >
+    <svg v-if="!isMobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+    <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    </svg>
+  </button>
+
+  <aside 
+    :class="[
+      'w-64 bg-gray-900 text-white flex flex-col z-50 shadow-xl h-full shrink-0',
+      'fixed md:relative inset-y-0 left-0 transition-transform duration-300 ease-in-out',
+      isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    ]"
+  >
     
     <div class="flex items-center gap-3 px-6 py-6 border-b border-gray-800">
       <div class="w-10 h-10 min-w-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-xl shadow-md flex items-center justify-center text-white">
@@ -42,7 +76,7 @@ onUnmounted(() => {
       </div>
     </div>
     
-    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto pb-24 md:pb-6">
       
       <router-link to="/" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path></svg>
@@ -86,5 +120,5 @@ onUnmounted(() => {
 
     </nav>
     
-    </aside>
+  </aside>
 </template>
