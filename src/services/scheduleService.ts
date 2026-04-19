@@ -25,21 +25,30 @@ export const scheduleService = {
     return await res.json();
   },
   
-  async clockIn(staffId: number): Promise<void> {
+  async clockIn(staffId: number | string): Promise<void> {
     const res = await fetch(`${API_BASE}/schedule/clock-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ staff_id: staffId })
+      body: JSON.stringify({ staff_id: Number(staffId) }) // Force it to be a number
     });
-    if (!res.ok) throw new Error('Failed to clock in');
+    
+    if (!res.ok) {
+      // Extract the actual error message sent by Rust
+      const errorText = await res.text();
+      throw new Error(errorText || 'Failed to clock in');
+    }
   },
   
-  async clockOut(shiftId: number, staffId: number): Promise<void> {
+  async clockOut(shiftId: number | string, staffId: number | string): Promise<void> {
     const res = await fetch(`${API_BASE}/schedule/clock-out`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shift_id: shiftId, staff_id: staffId })
+      body: JSON.stringify({ shift_id: Number(shiftId), staff_id: Number(staffId) }) // Force numbers
     });
-    if (!res.ok) throw new Error('Failed to clock out');
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || 'Failed to clock out');
+    }
   },
 };
