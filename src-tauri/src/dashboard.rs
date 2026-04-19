@@ -1,9 +1,6 @@
 use axum::{extract::State, Json, http::StatusCode};
 use sqlx::PgPool;
-use crate::models::{LowStockAlert, TopSellingItem};
-
-// A helper type to make returning errors cleaner
-pub type AppResult<T> = Result<Json<T>, (StatusCode, String)>;
+use crate::models::*;
 
 pub async fn get_today_sales(State(pool): State<PgPool>) -> AppResult<f64> {
     let row: (Option<f64>,) = sqlx::query_as(

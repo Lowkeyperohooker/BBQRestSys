@@ -8,31 +8,25 @@ pub mod schedule;
 
 use axum::{routing::{get, post}, Router};
 use sqlx::PgPool;
-use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|_app| {
-            // Spawn a background thread to run the Axum Web Server
             tauri::async_runtime::spawn(async {
                 
-                // 1. Connect to the database using your provided credentials
                 let pool = PgPool::connect("postgres://postgres:nigmagalaxy@localhost/bbq_system")
                     .await.expect("Failed to connect to PostgreSQL");
 
-                // 2. Run migrations
                 sqlx::migrate!("./migrations").run(&pool).await.expect("Failed to run migrations");
                 println!("Database connected and migrated.");
 
-                // 3. Configure CORS to allow Raspberry Pis to connect
                 let cors = CorsLayer::new()
                     .allow_origin(Any)
                     .allow_methods(Any)
                     .allow_headers(Any);
 
-                // 4. Combine all routes
                 let dashboard_routes = Router::new()
                     .route("/sales", get(dashboard::get_today_sales))
                     .route("/staff-count", get(dashboard::get_active_staff_count))
@@ -80,15 +74,14 @@ pub fn run() {
                     .nest("/staff", staff_routes)
                     .nest("/logs", log_routes);
 
+                // CRITICAL FIX: .with_state() MUST be before .layer(cors)
                 let app_router = Router::new()
                     .nest("/api", api_routes)
-                    .layer(cors)
-                    .with_state(pool);
+                    .with_state(pool)
+                    .layer(cors);
 
-                // 5. Start the Axum Server on port 3000
-                let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-                println!("Axum API Server running on http://{}", addr);
-                let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+                let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+                println!("Axum API Server running on http://0.0.0.0:3000");
                 axum::serve(listener, app_router).await.unwrap();
             });
 
