@@ -1,5 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
-
 export interface SystemLog {
   log_id: string;
   log_category: string;
@@ -10,8 +8,12 @@ export interface SystemLog {
   details: string | null;
 }
 
+const API_BASE = 'http://localhost:3000/api';
+
 export const logService = {
   async getRecentLogs(limit: number = 100): Promise<SystemLog[]> {
-    return await invoke('get_recent_logs', { limit });
+    const res = await fetch(`${API_BASE}/logs/recent?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch recent logs');
+    return await res.json();
   },
 };

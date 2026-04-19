@@ -1,5 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
-
 export interface StaffMember {
   staff_id: number;
   full_name: string;
@@ -16,26 +14,51 @@ export interface StaffInput {
   status: string;
 }
 
+const API_BASE = 'http://localhost:3000/api';
 const CURRENT_ADMIN_ID = 1;
 
 export const staffService = {
   async getAllStaff(): Promise<StaffMember[]> {
-    return await invoke('get_all_staff_full');
+    const res = await fetch(`${API_BASE}/staff/all`);
+    if (!res.ok) throw new Error('Failed to fetch staff list');
+    return await res.json();
   },
+  
   async createStaff(staff: StaffInput): Promise<void> {
-    await invoke('create_staff', { staff, adminId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/staff/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staff, admin_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to create staff member');
   },
+  
   async updateStaff(id: number, staff: StaffInput): Promise<void> {
-    await invoke('update_staff', { id, staff, adminId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/staff/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, staff, admin_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to update staff member');
   },
+  
   async deleteStaff(id: number): Promise<void> {
-    await invoke('delete_staff', { id, adminId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/staff/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, admin_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to delete staff member');
   },
+  
   async getActiveStaff(): Promise<StaffMember[]> {
-    const all: StaffMember[] = await invoke('get_all_staff_full');
+    const all = await this.getAllStaff();
     return all.filter(s => s.status === 'Active');
   },
+  
   async searchStaff(query: string): Promise<StaffMember[]> {
-    return await invoke('search_staff', { query });
+    const res = await fetch(`${API_BASE}/staff/search?query=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error('Failed to search staff');
+    return await res.json();
   },
 };

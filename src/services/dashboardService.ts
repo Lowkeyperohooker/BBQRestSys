@@ -1,16 +1,27 @@
-import { invoke } from '@tauri-apps/api/core';
+const API_BASE = 'http://localhost:3000/api';
 
 export const dashboardService = {
   async getTodaySales(): Promise<number> {
-    return await invoke('get_today_sales');
+    const res = await fetch(`${API_BASE}/dashboard/sales`);
+    if (!res.ok) throw new Error('Failed to fetch sales');
+    return await res.json();
   },
+  
   async getActiveStaffCount(): Promise<number> {
-    return await invoke('get_active_staff_count');
+    const res = await fetch(`${API_BASE}/dashboard/staff-count`);
+    if (!res.ok) throw new Error('Failed to fetch staff count');
+    return await res.json();
   },
+  
   async getLowStockAlerts(): Promise<any[]> {
-    return await invoke('get_low_stock_alerts');
+    const res = await fetch(`${API_BASE}/dashboard/low-stock`);
+    if (!res.ok) throw new Error('Failed to fetch stock alerts');
+    return await res.json();
   },
+  
   async getTopSellingItems(): Promise<any[]> {
-    return await invoke('get_top_selling_items');
+    const res = await fetch(`${API_BASE}/dashboard/top-items`);
+    if (!res.ok) throw new Error('Failed to fetch top items');
+    return await res.json();
   },
 };

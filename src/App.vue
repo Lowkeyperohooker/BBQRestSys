@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import Database from "@tauri-apps/plugin-sql";
 import Sidebar from './components/layout/Sidebar.vue';
 import Header from './components/layout/Header.vue';
 import LoadingScreen from './components/ui/LoadingScreen.vue';
+// import { useAuthStore } from './stores/authStore';
 
 const isAppReady = ref(false);
-
-async function initializeApp() {
-  try {
-    await Database.load("sqlite:bbq_system.db");
-    setTimeout(() => {
-      isAppReady.value = true;
-    }, 1500);
-  } catch (error) {
-    console.error("Critical Error: Failed to initialize app", error);
-    alert("Database failed to load. Please restart the application.");
-  }
-}
+// const authStore = useAuthStore();
 
 onMounted(() => {
-  initializeApp();
+  try {
+    // Restore the logged-in user session when the app starts
+    // authStore.loadUserFromStorage();
+  } catch (error) {
+    console.error("Error loading user session:", error);
+  } finally {
+    // The Rust backend connects instantly, so we can drop the SQLite check
+    // and artificial timeout, immediately showing the app layout.
+    isAppReady.value = true;
+  }
 });
 </script>
 

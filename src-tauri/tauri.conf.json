@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "bbqrestsys",
-        "width": 800,
-        "height": 600
+        "title": "BBQ POS System - Server",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 768
       }
     ],
     "security": {

@@ -1,5 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
-
 export interface RawInventoryItem {
   raw_item_id: number;
   category: string;
@@ -26,43 +24,86 @@ export interface PrepLog {
   skewers_added: number;
 }
 
+const API_BASE = 'http://localhost:3000/api';
 const CURRENT_ADMIN_ID = 1;
 
 export const inventoryService = {
   async getRawInventory(): Promise<RawInventoryItem[]> {
-    return await invoke('get_raw_inventory');
+    const res = await fetch(`${API_BASE}/inventory/raw`);
+    if (!res.ok) throw new Error('Failed to fetch raw inventory');
+    return await res.json();
   },
+  
   async getPreparedInventory(): Promise<PreparedInventoryItem[]> {
-    return await invoke('get_prepared_inventory');
+    const res = await fetch(`${API_BASE}/inventory/prepared`);
+    if (!res.ok) throw new Error('Failed to fetch prepared inventory');
+    return await res.json();
   },
+  
   async addRawStock(itemId: number, kilosToAdd: number): Promise<void> {
-    await invoke('add_raw_stock', { itemId, kilosToAdd, staffId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/inventory/add-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_id: itemId, kilos_to_add: kilosToAdd, staff_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to add raw stock');
   },
+  
   async addNewRawItem(category: string, part: string, initialKilos: number, alertThreshold: number): Promise<void> {
-    await invoke('add_new_raw_item', { category, part, initialKilos, alertThreshold, staffId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/inventory/add-new`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, part, initial_kilos: initialKilos, alert_threshold: alertThreshold, staff_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to add new raw item');
   },
+  
   async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean): Promise<void> {
-    await invoke('update_prepared_item_pricing', { prepItemId, newPrice, isVariable, staffId: CURRENT_ADMIN_ID });
+    const res = await fetch(`${API_BASE}/inventory/update-pricing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prep_item_id: prepItemId, new_price: newPrice, is_variable: isVariable, staff_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to update pricing');
   },
+  
   async getAvailableCategories(): Promise<string[]> {
-    return await invoke('get_available_categories');
+    const res = await fetch(`${API_BASE}/inventory/categories`);
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    return await res.json();
   },
+  
   async getAvailableParts(category: string): Promise<RawInventoryItem[]> {
-    return await invoke('get_available_parts', { category });
+    const res = await fetch(`${API_BASE}/inventory/parts?category=${encodeURIComponent(category)}`);
+    if (!res.ok) throw new Error('Failed to fetch parts');
+    return await res.json();
   },
+  
   async checkStockAvailability(category: string, part: string, kilosNeeded: number): Promise<{ available: boolean; currentStock: number }> {
-    const parts: RawInventoryItem[] = await invoke('get_available_parts', { category });
+    const parts = await this.getAvailableParts(category);
     const item = parts.find(p => p.specific_part === part);
     if (!item) return { available: false, currentStock: 0 };
     return { available: item.current_stock_kg >= kilosNeeded, currentStock: item.current_stock_kg };
   },
+  
   async logPrepTransaction(category: string, part: string, kilos: number, sticks: number, staffName?: string): Promise<void> {
-    await invoke('log_prep_transaction', { category, part, kilos, sticks, staffName: staffName ?? null });
+    const res = await fetch(`${API_BASE}/inventory/log-prep`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, part, kilos, sticks, staff_name: staffName ?? null })
+    });
+    if (!res.ok) throw new Error('Failed to log prep transaction');
   },
+  
   async getLowStockRawItems(): Promise<RawInventoryItem[]> {
-    return await invoke('get_low_stock_alerts');
+    const res = await fetch(`${API_BASE}/dashboard/low-stock`);
+    if (!res.ok) throw new Error('Failed to fetch low stock alerts');
+    return await res.json();
   },
+  
   async getRecentPrepLogs(limit: number = 10): Promise<PrepLog[]> {
-    return await invoke('get_recent_prep_logs', { limit });
+    const res = await fetch(`${API_BASE}/inventory/recent-prep?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch recent prep logs');
+    return await res.json();
   },
 };
