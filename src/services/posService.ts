@@ -1,7 +1,7 @@
 import Database from "@tauri-apps/plugin-sql";
 
 async function getDb() {
-  return await Database.load("sqlite:bbq_system.db"); 
+  return await Database.load("postgres://postgres:nigmagalaxy@localhost:5432/bbq_system"); 
 }
 
 export interface PosItem {
@@ -53,8 +53,9 @@ export const posService = {
 
   async getActiveOrders(): Promise<ActiveOrder[]> {
     const db = await getDb();
+    // We filter out 'Pending PIN' so they don't show up on the grill screen until paid/activated!
     return await db.select<ActiveOrder[]>(
-      "SELECT order_id, customer_identifier, order_type, total_amount, status, timestamp FROM Orders WHERE status != 'Completed' ORDER BY timestamp ASC"
+      "SELECT order_id, customer_identifier, order_type, total_amount, status, timestamp FROM Orders WHERE status != 'Completed' AND status != 'Pending PIN' ORDER BY timestamp ASC"
     );
   },
 
@@ -110,6 +111,97 @@ export const posService = {
       throw error;
     }
   },
+
+  // ==========================================
+  // KIOSK PIN FUNCTIONS
+  // ==========================================
+
+  // 1. Generate a PIN and hold the order (Client/Touchpad action)
+  async holdOrderWithPin(
+    staffId: number, 
+    customerIdentifier: string, 
+    orderType: string, 
+    cartItems: CartItem[], 
+    subtotal: number, 
+    tax: number, 
+    total: number
+  ): Promise<string> {
+    const db = await getDb();
+    
+    // Generate a random 4-digit PIN (1000 - 9999)
+    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    await db.execute("BEGIN TRANSACTION");
+    try {
+      // Save order with status 'Pending PIN'
+      const orderResult = await db.execute(
+        "INSERT INTO Orders (staff_id, customer_identifier, order_type, pin, subtotal, tax_amount, total_amount, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending PIN')",
+        [staffId, customerIdentifier, orderType, pin, subtotal, tax, total]
+      );
+      
+      const orderId = orderResult.lastInsertId as number;
+
+      for (const item of cartItems) {
+        await db.execute(
+          "INSERT INTO Order_Item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES ($1, $2, $3, $4)",
+          [orderId, item.prep_item_id, item.qty, item.unit_price]
+        );
+        // NOTE: We do NOT deduct inventory yet, because they haven't paid!
+      }
+
+      await db.execute("COMMIT");
+      return pin; // Return the PIN to show on the client screen
+    } catch (error) {
+      await db.execute("ROLLBACK");
+      throw error;
+    }
+  },
+
+  // 2. Cashier enters PIN to retrieve and activate the order
+  async activateOrderByPin(pin: string, staffId: number): Promise<ActiveOrder | null> {
+    const db = await getDb();
+    
+    // Find the order
+    const orders = await db.select<ActiveOrder[]>(
+      "SELECT * FROM Orders WHERE pin = $1 AND status = 'Pending PIN'",
+      [pin]
+    );
+
+    if (orders.length === 0) return null; // Invalid PIN
+    
+    const order = orders[0];
+
+    // Change status to Cooking, clear the PIN so it can't be used again
+    await db.execute(
+      "UPDATE Orders SET status = 'Cooking', pin = NULL WHERE order_id = $1",
+      [order.order_id]
+    );
+
+    // Now that it is confirmed, deduct the inventory items
+    const items = await db.select<{prep_item_id: number, quantity: number}[]>(
+      "SELECT prep_item_id, quantity FROM Order_Item WHERE order_id = $1",
+      [order.order_id]
+    );
+
+    for (const item of items) {
+      await db.execute(
+        "UPDATE Prepared_Inventory SET current_stock_pieces = current_stock_pieces - $1 WHERE prep_item_id = $2",
+        [item.quantity, item.prep_item_id]
+      );
+    }
+
+    const receipt = await getOrderReceiptString(db, order.order_id);
+
+    // Log the action
+    await db.execute(
+      "INSERT INTO System_Log (log_id, log_category, staff_id, description, details) VALUES (hex(randomblob(8)), 'POS', $1, 'PIN Order Activated', $2)",
+      [staffId, `Order #${order.order_id} activated via PIN ${pin}. Sent to Grill.\n\nOrder Contents:\n${receipt}`]
+    );
+
+    return order;
+  },
+
+  // ==========================================
 
   async updateOrderStatus(orderId: number, status: string, staffId: number): Promise<void> {
     const db = await getDb();

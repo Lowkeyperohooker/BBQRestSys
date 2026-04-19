@@ -1,7 +1,7 @@
 import Database from "@tauri-apps/plugin-sql";
 
 async function getDb() {
-  return await Database.load("sqlite:bbq_system.db");
+  return await Database.load("postgres://postgres:nigmagalaxy@localhost:5432/bbq_system");
 }
 
 export interface RawInventoryItem {
