@@ -2,13 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuth } from '../stores/authStore';
 
 import Dashboard from '../views/Dashboard.vue';
-import Pos from '../views/Pos.vue';
+import Cashier from '../views/Cashier.vue';
 import Inventory from '../views/Inventory.vue';
 import Staff from '../views/Staff.vue';
 import Logs from '../views/Logs.vue';
 import Schedule from '../views/Schedule.vue';
 import PrepStation from '../views/PrepStation.vue';
-import Login from '../views/Login.vue'; // NEW: Import Login View
+import Login from '../authStore/Login.vue'; 
+import CustomerMenu from '../ClientKiosk/CustomerMenu.vue';
 
 const routes = [
   { 
@@ -17,13 +18,18 @@ const routes = [
     meta: { public: true } // NEW: Explicitly mark as public
   },
   { 
-    path: '/', 
+    path: '/menu', // NEW: The Public Kiosk Route
+    component: CustomerMenu, 
+    meta: { public: true } 
+  },
+  { 
+    path: '/dashboard', 
     component: Dashboard, 
     meta: { roles: ['Admin'] } 
   },
   { 
-    path: '/pos', 
-    component: Pos, 
+    path: '/cashier', 
+    component: Cashier, 
     meta: { roles: ['Staff'] } 
   },
   { 

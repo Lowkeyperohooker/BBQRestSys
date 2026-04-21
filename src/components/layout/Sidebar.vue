@@ -86,15 +86,15 @@ onUnmounted(() => {
     
     <nav :class="['flex-1 px-4 py-4 space-y-1 overflow-y-auto pb-24 md:pb-6', fontBase]">
       
-      <router-link v-if="hasAccess(['Admin'])" to="/" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
+      <router-link v-if="hasAccess(['Admin'])" to="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path></svg>
         Dashboard
       </router-link>
       
-      <router-link v-if="hasAccess(['Staff'])" to="/pos" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
+      <router-link v-if="hasAccess(['Staff'])" to="/cashier" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-gray-400 hover:bg-gray-800 hover:text-white" active-class="bg-blue-600 text-white shadow-md">
         <div class="flex items-center gap-3">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-          Point of Sale
+          Cashier
         </div>
         <span v-if="activeTabCount > 0" class="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
           {{ activeTabCount }}

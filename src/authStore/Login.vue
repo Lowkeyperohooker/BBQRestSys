@@ -19,8 +19,7 @@ async function handleLogin() {
 
   try {
     await login(passcode.value);
-    // On success, redirect to the dashboard (or POS if they are just Staff)
-    router.push('/');
+    router.push('/dashboard');
   } catch (error: any) {
     errorMsg.value = error.message || "Authentication failed.";
     passcode.value = '';
@@ -31,7 +30,7 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="h-screen w-full flex items-center justify-center bg-gray-900 absolute inset-0 z-50">
+  <div class="h-full w-full flex items-center justify-center bg-gray-900">
     <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
       
       <div class="w-16 h-16 bg-blue-600 rounded-xl mx-auto flex items-center justify-center mb-6 shadow-lg">
@@ -47,7 +46,7 @@ async function handleLogin() {
             v-model="passcode" 
             type="password" 
             required
-            placeholder="••••••••" 
+            placeholder="•••••" 
             class="w-full text-center tracking-widest text-2xl border-b-2 border-gray-300 focus:border-blue-600 px-4 py-3 outline-none transition-colors"
           />
           <p v-if="errorMsg" class="text-red-500 text-sm font-medium mt-3">{{ errorMsg }}</p>

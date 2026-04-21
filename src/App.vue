@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import Sidebar from './components/layout/Sidebar.vue';
-// import Header from './components/layout/Header.vue';
 import LoadingScreen from './components/ui/LoadingScreen.vue';
-// import { useAuthStore } from './stores/authStore';
 
 const isAppReady = ref(false);
-// const authStore = useAuthStore();
+const route = useRoute();
+
+// Dynamically check if the route is public. 
+// If it is public (Login, Menu), we hide the sidebar.
+const isPublicRoute = computed(() => route.meta.public === true);
 
 onMounted(() => {
   try {
-    // Restore the logged-in user session when the app starts
-    // authStore.loadUserFromStorage();
+    // Session initialization logic can go here later
   } catch (error) {
     console.error("Error loading user session:", error);
   } finally {
-    // The Rust backend connects instantly, so we can drop the SQLite check
-    // and artificial timeout, immediately showing the app layout.
     isAppReady.value = true;
   }
 });
@@ -27,13 +27,11 @@ onMounted(() => {
 
   <div v-show="isAppReady" class="flex h-screen bg-gray-50 font-sans overflow-hidden">
     
-    <Sidebar />
+    <Sidebar v-if="!isPublicRoute" />
 
     <main class="flex-1 flex flex-col h-screen relative overflow-hidden">
       
-      <!-- <Header /> -->
-
-      <div class="p-0 md:p-0 flex-1 overflow-auto">
+      <div :class="['flex-1 overflow-y-auto', route.path === '/login' ? 'p-0' : 'p-3 md:p-4']">
         <router-view></router-view>
       </div>
 
