@@ -35,7 +35,7 @@ async function handleSaveStaff(staffData: any) {
     } else {
       await staffService.createStaff(staffData);
     }
-    
+
     closeModal();
     await loadStaff(); // Trigger the loader again while fetching!
   } catch (error) {
@@ -46,7 +46,7 @@ async function handleSaveStaff(staffData: any) {
 
 async function handleDeleteStaff(id: number, name: string) {
   const isConfirmed = confirm(`Are you sure you want to permanently delete ${name}?`);
-  
+
   if (isConfirmed) {
     try {
       await staffService.deleteStaff(id);
@@ -77,18 +77,20 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1">
-      
-      <div class="flex justify-between items-center mb-6">
+
+      <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
         <div>
-          <h3 class="text-xl font-semibold text-gray-800">Staff Directory</h3>
-          <p class="text-sm text-gray-500">Manage employee records and system access</p>
+          <h3 class="text-xl font-bold text-gray-800">Staff Directory</h3>
+          <p class="text-sm text-gray-500 mt-1">Manage employee records and system access</p>
         </div>
         <BaseButton variant="primary" @click="openModal()">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
           Add Staff Member
         </BaseButton>
       </div>
-      
+
       <DataLoader v-if="isLoadingData" message="Loading staff records..." />
 
       <div v-else class="overflow-x-auto">
@@ -98,7 +100,7 @@ onMounted(() => {
               <th class="pb-3 font-semibold">Name</th>
               <th class="pb-3 font-semibold">Role</th>
               <th class="pb-3 font-semibold">Contact Number</th>
-              <th class="pb-3 font-semibold">Account Status</th> 
+              <th class="pb-3 font-semibold">Account Status</th>
               <th class="pb-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
@@ -106,22 +108,36 @@ onMounted(() => {
             <tr v-if="staffMembers.length === 0">
               <td colspan="5" class="py-8 text-center text-gray-500">No staff records found. Add one to begin.</td>
             </tr>
-            <tr v-for="staff in staffMembers" :key="staff.staff_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <tr v-for="staff in staffMembers" :key="staff.staff_id"
+              class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="py-4 font-medium text-gray-900">{{ staff.full_name }}</td>
               <td class="py-4 text-gray-600">{{ staff.role }}</td>
               <td class="py-4 text-gray-500">{{ staff.phone_number || 'N/A' }}</td>
               <td class="py-4">
-                <span :class="staff.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'" class="px-3 py-1 rounded-full text-xs font-bold">
+                <span :class="staff.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
+                  class="px-3 py-1 rounded-full text-xs font-bold">
                   {{ staff.status }}
                 </span>
               </td>
               <td class="py-4 text-right">
                 <div class="flex justify-end gap-2">
-                  <button @click="openModal(staff)" class="p-1.5 border border-blue-200 text-blue-600 rounded bg-blue-50 hover:bg-blue-100 transition-colors" title="Edit">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                  <button @click="openModal(staff)"
+                    class="p-1.5 border border-blue-200 text-blue-600 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                    title="Edit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                      </path>
+                    </svg>
                   </button>
-                  <button @click="handleDeleteStaff(staff.staff_id, staff.full_name)" class="p-1.5 border border-red-200 text-red-500 rounded bg-red-50 hover:bg-red-100 transition-colors" title="Delete">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  <button @click="handleDeleteStaff(staff.staff_id, staff.full_name)"
+                    class="p-1.5 border border-red-200 text-red-500 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                    title="Delete">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                      </path>
+                    </svg>
                   </button>
                 </div>
               </td>
@@ -132,12 +148,7 @@ onMounted(() => {
 
     </div>
 
-    <StaffModal 
-      :isOpen="isModalOpen" 
-      :staffData="selectedStaff" 
-      @close="closeModal" 
-      @save="handleSaveStaff" 
-    />
-    
+    <StaffModal :isOpen="isModalOpen" :staffData="selectedStaff" @close="closeModal" @save="handleSaveStaff" />
+
   </div>
 </template>

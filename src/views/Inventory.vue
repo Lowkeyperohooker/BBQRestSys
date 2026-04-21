@@ -102,10 +102,10 @@ onMounted(() => {
   <div class="h-full flex flex-col space-y-6">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
       
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 class="text-lg font-semibold text-gray-800">Live Component Tracking</h3>
-          <p class="text-sm text-gray-500">
+          <h3 class="text-xl font-bold text-gray-800">Meat Inventory</h3>
+          <p class="text-sm text-gray-500 mt-1">
             {{ viewMode === 'raw' ? 'Monitored in Kilograms (kg)' : 'Monitored in Sticks/Pieces' }}
           </p>
         </div>

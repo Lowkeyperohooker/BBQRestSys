@@ -17,7 +17,7 @@ const selectedLog = ref<SystemLog | null>(null);
 async function loadLogs() {
   isLoadingData.value = true;
   try {
-    logs.value = await logService.getRecentLogs(200); 
+    logs.value = await logService.getRecentLogs(200);
   } catch (error) {
     console.error("Failed to load system logs:", error);
   } finally {
@@ -39,7 +39,7 @@ const filteredLogs = computed(() => {
 
 function formatTime(timestampStr: string) {
   // Pass the ISO 8601 string directly from the Rust backend into the Date object
-  const date = new Date(timestampStr); 
+  const date = new Date(timestampStr);
 
   // Fallback safety check
   if (isNaN(date.getTime())) {
@@ -82,25 +82,28 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col relative">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col">
-      
-      <div class="flex justify-between items-center mb-6">
+
+      <div
+        class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 class="text-xl font-semibold text-gray-800">System Logs</h3>
-          <p class="text-sm text-gray-500">Immutable audit trail of all system transactions and administrative actions.</p>
+          <h3 class="text-xl font-bold text-gray-800">System Logs</h3>
+          <p class="text-sm text-gray-500 mt-1">Immutable audit trail of all system transactions.</p>
         </div>
-        
+
         <div class="flex items-center gap-3">
           <label class="text-sm font-medium text-gray-600">Filter by Event:</label>
-          <select 
-            v-model="filterCategory"
-            class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
-          >
+          <select v-model="filterCategory"
+            class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">
             <option v-for="category in availableCategories" :key="category" :value="category">
               {{ category }}
             </option>
           </select>
           <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-3">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+              </path>
+            </svg>
           </BaseButton>
         </div>
       </div>
@@ -124,13 +127,9 @@ onMounted(() => {
                 No system activity recorded yet.
               </td>
             </tr>
-            <tr 
-              v-for="log in filteredLogs" 
-              :key="log.log_id" 
-              @click="openLogDetails(log)"
+            <tr v-for="log in filteredLogs" :key="log.log_id" @click="openLogDetails(log)"
               class="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group"
-              title="Click to view full details"
-            >
+              title="Click to view full details">
               <td class="p-4 text-sm whitespace-nowrap">{{ formatTime(log.timestamp) }}</td>
               <td class="p-4">
                 <BaseBadge :text="log.log_category" :variant="getCategoryVariant(log.log_category)" />
@@ -145,11 +144,7 @@ onMounted(() => {
 
     </div>
 
-    <ViewLogModal 
-      :is-open="isLogModalOpen"
-      :log="selectedLog"
-      @close="closeLogDetails"
-    />
+    <ViewLogModal :is-open="isLogModalOpen" :log="selectedLog" @close="closeLogDetails" />
 
   </div>
 </template>

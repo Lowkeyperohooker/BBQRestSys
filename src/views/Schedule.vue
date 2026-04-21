@@ -21,10 +21,10 @@ async function loadTimeclockData() {
       staffService.getAllStaff(),
       scheduleService.getTodayShifts()
     ]);
-    
+
     staffMembers.value = (staff as any[]).filter(s => s.status === 'Active');
     todayShifts.value = shifts;
-    
+
   } catch (error) {
     console.error("Error loading timeclock data:", error);
   } finally {
@@ -49,7 +49,7 @@ watch(selectedStaffId, async (newId) => {
 
 function formatTimeOnly(datetimeStr: string | null) {
   if (!datetimeStr) return '--:--';
-  const date = new Date(datetimeStr.replace(' ', 'T')); 
+  const date = new Date(datetimeStr.replace(' ', 'T'));
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -59,7 +59,7 @@ async function handleClockIn() {
   try {
     await scheduleService.clockIn(Number(selectedStaffId.value));
     alert("Clocked in successfully!");
-    selectedStaffId.value = ''; 
+    selectedStaffId.value = '';
     await loadTimeclockData();
   } catch (error: any) {
     alert(error.message || "Failed to clock in.");
@@ -74,7 +74,7 @@ async function handleClockOut() {
   try {
     await scheduleService.clockOut(currentActiveShift.value.shift_id, Number(selectedStaffId.value));
     alert("Clocked out successfully! Shift recorded.");
-    selectedStaffId.value = ''; 
+    selectedStaffId.value = '';
     await loadTimeclockData();
   } catch (error: any) {
     alert(error.message || "Failed to clock out.");
@@ -90,21 +90,20 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col space-y-6">
-    
+
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 shrink-0">
-      <div class="mb-6">
+      <div
+        class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 rounded-t-xl">
         <h3 class="text-xl font-bold text-gray-800">Staff Timeclock</h3>
-        <p class="text-sm text-gray-500">Select your name to punch in or out for your shift.</p>
+        <p class="text-sm text-gray-500 mt-1">Select your name to punch in or out for your shift.</p>
       </div>
 
       <div class="flex flex-col md:flex-row items-end gap-4 max-w-3xl">
         <div class="flex-1 w-full">
           <label class="block text-sm font-semibold text-gray-700 mb-2">Employee Name</label>
-          <select 
-            v-model="selectedStaffId"
+          <select v-model="selectedStaffId"
             class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-lg"
-            :disabled="isProcessing"
-          >
+            :disabled="isProcessing">
             <option value="" disabled>-- Select Your Name --</option>
             <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.staff_id">
               {{ staff.full_name }} ({{ staff.role }})
@@ -113,25 +112,21 @@ onMounted(() => {
         </div>
 
         <div class="w-full md:w-auto flex gap-3 h-13">
-          <BaseButton 
-            v-if="!currentActiveShift"
-            variant="success"
-            @click="handleClockIn"
-            :disabled="!selectedStaffId || isProcessing"
-            class="flex-1 md:w-48 py-3"
-          >
-            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+          <BaseButton v-if="!currentActiveShift" variant="success" @click="handleClockIn"
+            :disabled="!selectedStaffId || isProcessing" class="flex-1 md:w-48 py-3">
+            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+            </svg>
             {{ isProcessing ? 'Processing...' : 'Clock IN' }}
           </BaseButton>
 
-          <BaseButton 
-            v-else
-            variant="danger"
-            @click="handleClockOut"
-            :disabled="!selectedStaffId || isProcessing"
-            class="flex-1 md:w-48 py-3"
-          >
-            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <BaseButton v-else variant="danger" @click="handleClockOut" :disabled="!selectedStaffId || isProcessing"
+            class="flex-1 md:w-48 py-3">
+            <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
             {{ isProcessing ? 'Processing...' : 'Clock OUT' }}
           </BaseButton>
         </div>
@@ -163,7 +158,8 @@ onMounted(() => {
                 No one has clocked in yet today.
               </td>
             </tr>
-            <tr v-for="shift in todayShifts" :key="shift.shift_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <tr v-for="shift in todayShifts" :key="shift.shift_id"
+              class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
               <td class="p-4 font-bold text-gray-900">{{ shift.full_name }}</td>
               <td class="p-4 text-gray-500 text-sm">{{ shift.role }}</td>
               <td class="p-4 font-medium text-green-700">{{ formatTimeOnly(shift.clock_in_time) }}</td>
@@ -172,11 +168,9 @@ onMounted(() => {
                 {{ shift.total_rendered_hours ? shift.total_rendered_hours + ' hrs' : '-' }}
               </td>
               <td class="p-4 text-right">
-                <BaseBadge 
-                  :text="shift.status === 'Active Shift' ? 'On Duty' : 'Completed'"
+                <BaseBadge :text="shift.status === 'Active Shift' ? 'On Duty' : 'Completed'"
                   :variant="shift.status === 'Active Shift' ? 'success' : 'default'"
-                  :class="{'animate-pulse': shift.status === 'Active Shift'}"
-                />
+                  :class="{ 'animate-pulse': shift.status === 'Active Shift' }" />
               </td>
             </tr>
           </tbody>

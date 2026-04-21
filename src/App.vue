@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import Sidebar from './components/layout/Sidebar.vue';
-import Header from './components/layout/Header.vue';
+// import Header from './components/layout/Header.vue';
 import LoadingScreen from './components/ui/LoadingScreen.vue';
 // import { useAuthStore } from './stores/authStore';
 
@@ -31,7 +31,7 @@ onMounted(() => {
 
     <main class="flex-1 flex flex-col h-screen relative overflow-hidden">
       
-      <Header />
+      <!-- <Header /> -->
 
       <div class="p-0 md:p-0 flex-1 overflow-auto">
         <router-view></router-view>
