@@ -8,51 +8,49 @@ import Staff from '../views/Staff.vue';
 import Logs from '../views/Logs.vue';
 import Schedule from '../views/Schedule.vue';
 import PrepStation from '../views/PrepStation.vue';
+import Login from '../views/Login.vue'; // NEW: Import Login View
 
-// Note: Super Admin automatically has access to everything, 
-// so we don't need to explicitly list 'Super Admin' in every array.
 const routes = [
+  { 
+    path: '/login', 
+    component: Login, 
+    meta: { public: true } // NEW: Explicitly mark as public
+  },
   { 
     path: '/', 
     component: Dashboard, 
-    meta: { roles: ['Admin'] } // Admin only
+    meta: { roles: ['Admin'] } 
   },
   { 
     path: '/pos', 
     component: Pos, 
-    meta: { roles: ['Staff'] } // Staff (Cashier) only
+    meta: { roles: ['Staff'] } 
   },
   { 
     path: '/inventory', 
     component: Inventory, 
-    meta: { roles: ['Admin'] } // Admin only
+    meta: { roles: ['Admin'] } 
   },
   { 
     path: '/prep', 
     component: PrepStation, 
-    meta: { roles: ['Staff'] } // Staff only
+    meta: { roles: ['Staff'] } 
   },
   { 
     path: '/schedule', 
     component: Schedule, 
-    meta: { roles: ['Admin', 'Staff'] } // Both need to clock in
+    meta: { roles: ['Admin', 'Staff'] } 
   },
   { 
     path: '/staff', 
     component: Staff, 
-    meta: { roles: ['Admin'] } // Admin only
+    meta: { roles: ['Admin'] } 
   },
   { 
     path: '/logs', 
     component: Logs, 
-    meta: { roles: ['Admin'] } // Admin only
+    meta: { roles: ['Admin'] } 
   },
-  // Future Public Customer Route
-  // {
-  //   path: '/menu',
-  //   component: CustomerMenu,
-  //   meta: { public: true } // No auth required
-  // }
 ];
 
 const router = createRouter({
@@ -60,22 +58,25 @@ const router = createRouter({
   routes,
 });
 
-// The Gatekeeper: Runs before every page change
 router.beforeEach((to, _from, next) => {
   const { isAuthenticated, hasAccess } = useAuth();
 
-  // 1. If the route is public, let them in immediately
+  // 1. If not logged in and trying to access a private page, redirect to login
+  if (!isAuthenticated.value && !to.meta.public) {
+    return next('/login');
+  }
+
+  // 2. If already logged in and trying to access the login page, redirect to dashboard
+  if (isAuthenticated.value && to.path === '/login') {
+    return next('/');
+  }
+
+  // 3. If the route is public (like /login), let them in
   if (to.meta.public) {
     return next();
   }
 
-  // 2. If they are not logged in, boot them to a login page (placeholder for now)
-  if (!isAuthenticated.value) {
-    alert("You must be logged in.");
-    return next(false); // For now, just cancel navigation
-  }
-
-  // 3. Check if their role is in the allowed list for this specific route
+  // 4. Check if their role is in the allowed list for this specific route
   const requiredRoles = to.meta.roles as Array<'Admin' | 'Staff'>;
   
   if (requiredRoles && !hasAccess(requiredRoles)) {
@@ -83,7 +84,7 @@ router.beforeEach((to, _from, next) => {
     return next(false); // Block navigation
   }
 
-  // 4. If all checks pass, let them through
+  // 5. If all checks pass, let them through
   next();
 });
 

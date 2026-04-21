@@ -1,5 +1,5 @@
-// Adjust the base URL and fetch logic to match your other services (e.g., posService.ts)
-const API_BASE_URL = 'http://localhost:8080/api'; 
+// Fixed port to 3000 to match lib.rs
+const API_BASE_URL = 'http://localhost:3000/api'; 
 
 export interface LoginResponse {
   staff_id: number;

@@ -70,7 +70,7 @@ onUnmounted(() => {
   >
     
     <div class="flex items-center gap-3 px-6 py-6 border-b border-gray-800">
-      <div class="w-10 h-10 min-w-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl shadow-md flex items-center justify-center text-white">
+      <div class="w-10 h-10 min-w-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-xl shadow-md flex items-center justify-center text-white">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"></path></svg>
       </div>
       <div class="flex flex-col">
