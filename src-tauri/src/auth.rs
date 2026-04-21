@@ -1,47 +1,46 @@
 use axum::{extract::State, Json, http::StatusCode};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{PgPool, FromRow};
 
 #[derive(Deserialize)]
 pub struct LoginReq {
-    pub passcode: String, // Can be a PIN or a Password depending on your schema
+    pub passcode: String,
 }
 
-#[derive(Serialize)]
+// Added FromRow so sqlx knows how to map the database row to this struct at runtime
+#[derive(Serialize, FromRow)]
 pub struct LoginRes {
     pub staff_id: i32,
     pub full_name: String,
     pub role: String,
 }
 
-// Security Note: In a production environment, 'passcode' should be hashed in the database 
-// using the pgcrypto extension you configured in your migrations.
 pub async fn verify_login(
     State(pool): State<PgPool>, 
     Json(payload): Json<LoginReq>
 ) -> Result<Json<LoginRes>, (StatusCode, String)> {
     
-    // Query the database for an active staff member matching the passcode
-    let user_result = sqlx::query_as!(
-        LoginRes,
+    // Switched to query_as::<_, LoginRes> (Removed the '!' macro)
+    let user_result = sqlx::query_as::<_, LoginRes>(
         r#"
         SELECT staff_id, full_name, role 
         FROM Staff 
         WHERE passcode = $1 AND status = 'Active'
-        "#,
-        payload.passcode
+        "#
     )
+    .bind(&payload.passcode) // Bind the parameter dynamically
     .fetch_optional(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     match user_result {
         Some(user) => {
-            // Optional: Log the login event in System_Log
-            let _ = sqlx::query!(
-                "INSERT INTO System_Log (log_category, staff_id, description) VALUES ('ADMIN', $1, 'User Logged In')",
-                user.staff_id
-            ).execute(&pool).await;
+            // Switched to query() (Removed the '!' macro)
+            let _ = sqlx::query(
+                "INSERT INTO System_Log (log_category, staff_id, description) VALUES ('ADMIN', $1, 'User Logged In')"
+            )
+            .bind(user.staff_id) // Bind the parameter dynamically
+            .execute(&pool).await;
 
             Ok(Json(user))
         },

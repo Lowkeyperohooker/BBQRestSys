@@ -1,5 +1,9 @@
-// Fixed port to 3000 to match lib.rs
-const API_BASE_URL = 'http://localhost:3000/api'; 
+// Detect if running in Tauri, local browser, or network device
+const hostname = window.location.hostname === 'tauri.localhost' 
+  ? '127.0.0.1' 
+  : window.location.hostname;
+
+const API_BASE_URL = `http://${hostname}:3000/api`;
 
 export interface LoginResponse {
   staff_id: number;
