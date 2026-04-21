@@ -148,9 +148,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+  <div class="h-full flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-0">
 
-    <div class="flex-1 p-6 md:p-8 overflow-y-auto flex flex-col bg-gray-50/30">
+    <div class="flex-1 p-3 md:p-8 overflow-y-auto flex flex-col bg-gray-50/30">
 
       <div
         class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-6 md:-mt-8 -mx-6 md:-mx-8 px-6 md:px-8 pt-6 md:pt-8 pb-4 mb-8 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-tl-2xl">

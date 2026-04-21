@@ -176,7 +176,7 @@ onMounted(async () => {
 <template>
   <div class="h-full flex flex-col">
     
-    <div v-if="isLoadingData" class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center">
+    <div v-if="isLoadingData" class="flex-1 bg-white rounded-xl shadow-sm border border-gray-0 flex items-center justify-center">
       <DataLoader message="Loading preparation environment..." />
     </div>
 
