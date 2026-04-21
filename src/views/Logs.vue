@@ -5,6 +5,9 @@ import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
 import ViewLogModal from '../components/ui/ViewLogModal.vue';
+import { useResponsive } from '../composables/useResponsive';
+
+const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
 
 const logs = ref<SystemLog[]>([]);
 const isLoadingData = ref(true);
@@ -38,10 +41,8 @@ const filteredLogs = computed(() => {
 });
 
 function formatTime(timestampStr: string) {
-  // Pass the ISO 8601 string directly from the Rust backend into the Date object
   const date = new Date(timestampStr);
 
-  // Fallback safety check
   if (isNaN(date.getTime())) {
     return 'Invalid Date';
   }
@@ -81,21 +82,20 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col relative">
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-0 flex-1 flex flex-col">
+    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col">
 
-      <div
-        class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
+      <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">System Logs</h3>
-          <p class="text-sm text-gray-500 mt-1">Immutable audit trail of all system transactions.</p>
+          <h3 :class="['font-bold text-gray-800', fontXl]">System Logs</h3>
+          <p :class="['text-gray-500 mt-1', fontSm]">Immutable audit trail of all system transactions.</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <label class="text-sm font-medium text-gray-600">Filter by Event:</label>
+        <div :class="['flex items-center gap-3 w-full md:w-auto', isMobile ? 'flex-col items-stretch' : '']">
+          <label :class="['font-medium text-gray-600', fontSm, isMobile ? 'hidden' : 'block']">Filter by Event:</label>
           <select v-model="filterCategory"
-            class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">
+            :class="['border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm w-full md:w-auto', fontBase]">
             <option v-for="category in availableCategories" :key="category" :value="category">
-              {{ category }}
+              {{ category === 'All' ? 'All Events' : category }}
             </option>
           </select>
           <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-3">
@@ -113,12 +113,12 @@ onMounted(() => {
       <div v-else class="flex-1 overflow-auto border border-gray-100 rounded-lg">
         <table class="w-full text-left border-collapse">
           <thead class="bg-gray-50 sticky top-0 z-10">
-            <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
+            <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
               <th class="p-4 font-semibold w-48">Timestamp</th>
-              <th class="p-4 font-semibold w-32">Category</th>
-              <th class="p-4 font-semibold w-48">User</th>
+              <th class="p-4 font-semibold w-32 hidden md:table-cell">Category</th>
+              <th class="p-4 font-semibold w-48 hidden md:table-cell">User</th>
               <th class="p-4 font-semibold">Action Description</th>
-              <th class="p-4 font-semibold text-right">Details</th>
+              <th class="p-4 font-semibold text-right hidden md:table-cell">Details</th>
             </tr>
           </thead>
           <tbody class="text-gray-700">
@@ -130,13 +130,16 @@ onMounted(() => {
             <tr v-for="log in filteredLogs" :key="log.log_id" @click="openLogDetails(log)"
               class="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group"
               title="Click to view full details">
-              <td class="p-4 text-sm whitespace-nowrap">{{ formatTime(log.timestamp) }}</td>
-              <td class="p-4">
+              <td :class="['p-4 whitespace-nowrap', fontSm]">{{ formatTime(log.timestamp) }}</td>
+              <td class="p-4 hidden md:table-cell">
                 <BaseBadge :text="log.log_category" :variant="getCategoryVariant(log.log_category)" />
               </td>
-              <td class="p-4 font-medium">{{ log.staff_name || 'System Admin' }}</td>
-              <td class="p-4 text-gray-900 group-hover:text-blue-700 transition-colors">{{ log.description }}</td>
-              <td class="p-4 text-sm text-gray-500 text-right truncate max-w-50">{{ log.details || '-' }}</td>
+              <td :class="['p-4 font-medium hidden md:table-cell', fontBase]">{{ log.staff_name || 'System Admin' }}</td>
+              <td :class="['p-4 group-hover:text-blue-700 transition-colors', fontBase]">
+                <span class="block md:hidden text-xs text-gray-400 mb-1">{{ log.log_category }} • {{ log.staff_name || 'Admin' }}</span>
+                {{ log.description }}
+              </td>
+              <td :class="['p-4 text-gray-500 text-right truncate max-w-50 hidden md:table-cell', fontSm]">{{ log.details || '-' }}</td>
             </tr>
           </tbody>
         </table>

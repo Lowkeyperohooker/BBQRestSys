@@ -7,6 +7,9 @@ import EditPriceModal from '../components/ui/EditPriceModal.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
+import { useResponsive } from '../composables/useResponsive';
+
+const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
 
 const rawInventory = ref<RawInventoryItem[]>([]);
 const preparedInventory = ref<PreparedInventoryItem[]>([]);
@@ -44,7 +47,6 @@ function closeStockModal() {
   selectedRawItem.value = null;
 }
 
-// Handle both new items and existing restocks
 async function handleSaveStock(data: { isNew: boolean; itemId?: number; kilos: number; category: string; part: string; alertThreshold?: number }) {
   try {
     if (data.isNew) {
@@ -100,35 +102,33 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col space-y-6">
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-0">
+    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100">
       
       <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">Meat Inventory</h3>
-          <p class="text-sm text-gray-500 mt-1">
+          <h3 :class="['font-bold text-gray-800', fontXl]">Meat Inventory</h3>
+          <p :class="['text-gray-500 mt-1', fontSm]">
             {{ viewMode === 'raw' ? 'Monitored in Kilograms (kg)' : 'Monitored in Sticks/Pieces' }}
           </p>
         </div>
         
-        <div class="flex items-center gap-4">
-          <div class="flex bg-gray-100 rounded-lg p-1">
+        <div :class="['flex items-center gap-4', isMobile ? 'flex-col w-full' : 'w-auto']">
+          <div class="flex bg-gray-100 rounded-lg p-1 w-full md:w-auto">
             <button 
               @click="viewMode = 'raw'"
-              :class="viewMode === 'raw' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'"
-              class="px-4 py-1.5 text-sm font-medium rounded-md transition-all"
+              :class="[viewMode === 'raw' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700', fontSm, 'flex-1 md:flex-none px-4 py-1.5 font-medium rounded-md transition-all']"
             >
               Raw Meats
             </button>
             <button 
               @click="viewMode = 'skewered'"
-              :class="viewMode === 'skewered' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'"
-              class="px-4 py-1.5 text-sm font-medium rounded-md transition-all"
+              :class="[viewMode === 'skewered' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700', fontSm, 'flex-1 md:flex-none px-4 py-1.5 font-medium rounded-md transition-all']"
             >
               Skewered
             </button>
           </div>
           
-          <BaseButton v-if="viewMode === 'raw'" variant="primary" @click="openAddStockModal(null)">
+          <BaseButton v-if="viewMode === 'raw'" variant="primary" @click="openAddStockModal(null)" :class="isMobile ? 'w-full' : ''">
             Add Stock Delivery
           </BaseButton>
         </div>
@@ -140,11 +140,11 @@ onMounted(() => {
         <div v-if="viewMode === 'raw'" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
+              <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
                 <th class="pb-3 font-semibold">Category</th>
                 <th class="pb-3 font-semibold">Specific Part</th>
                 <th class="pb-3 font-semibold">Current Stock</th>
-                <th class="pb-3 font-semibold">Alert Threshold</th>
+                <th class="pb-3 font-semibold hidden md:table-cell">Alert Threshold</th>
                 <th class="pb-3 font-semibold">Status</th>
                 <th class="pb-3 font-semibold text-right">Actions</th>
               </tr>
@@ -154,12 +154,12 @@ onMounted(() => {
                 <td colspan="6" class="py-8 text-center text-gray-500">No raw inventory found in database.</td>
               </tr>
               <tr v-for="item in rawInventory" :key="item.raw_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td class="py-4 font-semibold text-gray-900">{{ item.category }}</td>
-                <td class="py-4">{{ item.specific_part }}</td>
-                <td class="py-4 font-bold" :class="item.current_stock_kg <= item.alert_threshold_kg ? 'text-red-600' : 'text-gray-800'">
+                <td :class="['py-4 font-semibold text-gray-900', fontBase]">{{ item.category }}</td>
+                <td :class="['py-4', fontBase]">{{ item.specific_part }}</td>
+                <td :class="['py-4 font-bold', item.current_stock_kg <= item.alert_threshold_kg ? 'text-red-600' : 'text-gray-800', fontBase]">
                   {{ item.current_stock_kg }} kg
                 </td>
-                <td class="py-4 text-gray-400">{{ item.alert_threshold_kg }} kg</td>
+                <td :class="['py-4 text-gray-400 hidden md:table-cell', fontBase]">{{ item.alert_threshold_kg }} kg</td>
                 <td class="py-4">
                   <BaseBadge 
                     :text="getStatusText(item.current_stock_kg, item.alert_threshold_kg)"
@@ -167,7 +167,7 @@ onMounted(() => {
                   />
                 </td>
                 <td class="py-4 text-right">
-                  <button @click="openAddStockModal(item)" class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 transition-colors">
+                  <button @click="openAddStockModal(item)" :class="['text-blue-600 hover:text-blue-800 font-medium px-3 py-1 transition-colors', fontSm]">
                     + Add Stock
                   </button>
                 </td>
@@ -179,11 +179,11 @@ onMounted(() => {
         <div v-if="viewMode === 'skewered'" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
+              <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
                 <th class="pb-3 font-semibold">Item Name</th>
                 <th class="pb-3 font-semibold">Prepared Stock</th>
                 <th class="pb-3 font-semibold">Price (PHP)</th>
-                <th class="pb-3 font-semibold">Pricing Type</th>
+                <th class="pb-3 font-semibold hidden md:table-cell">Pricing Type</th>
                 <th class="pb-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -192,17 +192,17 @@ onMounted(() => {
                 <td colspan="5" class="py-8 text-center text-gray-500">No prepared inventory found in database.</td>
               </tr>
               <tr v-for="item in preparedInventory" :key="item.prep_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td class="py-4 font-semibold text-gray-900">{{ item.pos_display_name }}</td>
-                <td class="py-4 font-bold text-gray-800">{{ item.current_stock_pieces }} sticks</td>
-                <td class="py-4 font-bold text-gray-900">{{ item.unit_price.toFixed(2) }}</td>
-                <td class="py-4">
+                <td :class="['py-4 font-semibold text-gray-900', fontBase]">{{ item.pos_display_name }}</td>
+                <td :class="['py-4 font-bold text-gray-800', fontBase]">{{ item.current_stock_pieces }} sticks</td>
+                <td :class="['py-4 font-bold text-gray-900', fontBase]">{{ item.unit_price.toFixed(2) }}</td>
+                <td class="py-4 hidden md:table-cell">
                   <BaseBadge 
                     :text="item.is_variable_price ? 'Variable' : 'Fixed'" 
                     :variant="item.is_variable_price ? 'warning' : 'info'" 
                   />
                 </td>
                 <td class="py-4 text-right">
-                  <button @click="openEditPriceModal(item)" class="text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 transition-colors">
+                  <button @click="openEditPriceModal(item)" :class="['text-blue-600 hover:text-blue-800 font-medium px-3 py-1 transition-colors', fontSm]">
                     Edit Price
                   </button>
                 </td>
