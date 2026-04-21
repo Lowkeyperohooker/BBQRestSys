@@ -1,6 +1,7 @@
-INSERT INTO Staff (full_name, role, phone_number, status) VALUES
-('Juan Dela Cruz', 'Grill Cook', '09123456789', 'Active'),
-('Jane Smith', 'Prep Station', '555-0101', 'Active');
+INSERT INTO Staff (full_name, role, phone_number, status, passcode) VALUES
+('Juan Dela Cruz', 'Admin', '09123456789', 'Active', '1234'),
+('Jane Smith', 'Staff', '123456789', 'Active', '5678'),
+('System Developer', 'Super Admin', '000-0000', 'Active', '9999');
 
 INSERT INTO Raw_Inventory (category, specific_part, current_stock_kg, alert_threshold_kg) VALUES
 ('Chicken', 'Intestine', 14.5, 5.0),

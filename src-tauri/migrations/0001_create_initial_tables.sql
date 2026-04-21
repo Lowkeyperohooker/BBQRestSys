@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS Staff (
     full_name TEXT NOT NULL,
     role TEXT NOT NULL,
     phone_number TEXT,
+    passcode TEXT NOT NULL, -- NEW: Required for Login
     status TEXT DEFAULT 'Active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

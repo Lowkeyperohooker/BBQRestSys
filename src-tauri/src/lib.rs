@@ -5,6 +5,7 @@ pub mod pos;
 pub mod logs;
 pub mod staff;
 pub mod schedule;
+pub mod auth; // NEW: Added auth module
 
 use axum::{routing::{get, post}, Router};
 use sqlx::PgPool;
@@ -66,13 +67,18 @@ pub fn run() {
                 let log_routes = Router::new()
                     .route("/recent", get(logs::get_recent_logs));
 
+                // NEW: Auth route
+                let auth_routes = Router::new()
+                    .route("/login", post(auth::verify_login));
+
                 let api_routes = Router::new()
                     .nest("/dashboard", dashboard_routes)
                     .nest("/inventory", inventory_routes)
                     .nest("/pos", pos_routes)
                     .nest("/schedule", schedule_routes)
                     .nest("/staff", staff_routes)
-                    .nest("/logs", log_routes);
+                    .nest("/logs", log_routes)
+                    .nest("/auth", auth_routes); // NEW: Nested Auth
 
                 // CRITICAL FIX: .with_state() MUST be before .layer(cors)
                 let app_router = Router::new()
