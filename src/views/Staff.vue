@@ -4,15 +4,16 @@ import { staffService } from "../services/staffService";
 import StaffModal from "../components/ui/StaffModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
+import { useResponsive } from '../composables/useResponsive';
+
+const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
 
 const staffMembers = ref<any[]>([]);
 const isModalOpen = ref(false);
 const selectedStaff = ref<any>(null);
 
-// Loading State
 const isLoadingData = ref(true);
 
-// 1. Fetch data from SQLite
 async function loadStaff() {
   isLoadingData.value = true;
   try {
@@ -27,7 +28,6 @@ async function loadStaff() {
   }
 }
 
-// 2. Save data to SQLite (Triggered by the Modal)
 async function handleSaveStaff(staffData: any) {
   try {
     if (staffData.id) {
@@ -37,7 +37,7 @@ async function handleSaveStaff(staffData: any) {
     }
 
     closeModal();
-    await loadStaff(); // Trigger the loader again while fetching!
+    await loadStaff(); 
   } catch (error) {
     console.error("Failed to save staff:", error);
     alert("Error saving staff member.");
@@ -50,7 +50,7 @@ async function handleDeleteStaff(id: number, name: string) {
   if (isConfirmed) {
     try {
       await staffService.deleteStaff(id);
-      await loadStaff(); // Trigger the loader again
+      await loadStaff(); 
     } catch (error) {
       console.error("Failed to delete staff:", error);
       alert("Error: Cannot delete this staff member because they are linked to existing transactions or prep logs.");
@@ -58,7 +58,6 @@ async function handleDeleteStaff(id: number, name: string) {
   }
 }
 
-// 3. Modal Controls
 function openModal(staff?: any) {
   selectedStaff.value = staff || null;
   isModalOpen.value = true;
@@ -76,15 +75,15 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col">
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-0 flex-1">
+    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 flex-1">
 
-      <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
+      <div class="sticky top-0 z-40 bg-white/95 backdrop-blur -mt-4 md:-mt-6 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 md:pt-6 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 class="text-xl font-bold text-gray-800">Staff Directory</h3>
-          <p class="text-sm text-gray-500 mt-1">Manage employee records and system access</p>
+          <h3 :class="['font-bold text-gray-800', fontXl]">Staff Directory</h3>
+          <p :class="['text-gray-500 mt-1', fontSm]">Manage employee records and system access</p>
         </div>
-        <BaseButton variant="primary" @click="openModal()">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <BaseButton variant="primary" @click="openModal()" :class="['w-full md:w-auto flex justify-center', fontBase]">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
           Add Staff Member
@@ -94,14 +93,14 @@ onMounted(() => {
       <DataLoader v-if="isLoadingData" message="Loading staff records..." />
 
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="w-full text-left border-collapse min-w-150">
           <thead>
-            <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
-              <th class="pb-3 font-semibold">Name</th>
-              <th class="pb-3 font-semibold">Role</th>
-              <th class="pb-3 font-semibold">Contact Number</th>
-              <th class="pb-3 font-semibold">Account Status</th>
-              <th class="pb-3 font-semibold text-right">Actions</th>
+            <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
+              <th class="pb-3 font-semibold px-2">Name</th>
+              <th class="pb-3 font-semibold px-2">Role</th>
+              <th class="pb-3 font-semibold px-2">Contact Number</th>
+              <th class="pb-3 font-semibold px-2">Account Status</th>
+              <th class="pb-3 font-semibold text-right px-2">Actions</th>
             </tr>
           </thead>
           <tbody class="text-gray-700">
@@ -110,19 +109,19 @@ onMounted(() => {
             </tr>
             <tr v-for="staff in staffMembers" :key="staff.staff_id"
               class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-              <td class="py-4 font-medium text-gray-900">{{ staff.full_name }}</td>
-              <td class="py-4 text-gray-600">{{ staff.role }}</td>
-              <td class="py-4 text-gray-500">{{ staff.phone_number || 'N/A' }}</td>
-              <td class="py-4">
+              <td :class="['py-4 font-medium text-gray-900 px-2', fontBase]">{{ staff.full_name }}</td>
+              <td :class="['py-4 text-gray-600 px-2', fontBase]">{{ staff.role }}</td>
+              <td :class="['py-4 text-gray-500 px-2', fontBase]">{{ staff.phone_number || 'N/A' }}</td>
+              <td class="py-4 px-2">
                 <span :class="staff.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'"
                   class="px-3 py-1 rounded-full text-xs font-bold">
                   {{ staff.status }}
                 </span>
               </td>
-              <td class="py-4 text-right">
+              <td class="py-4 text-right px-2">
                 <div class="flex justify-end gap-2">
                   <button @click="openModal(staff)"
-                    class="p-1.5 border border-blue-200 text-blue-600 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                    class="p-2 border border-blue-200 text-blue-600 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                     title="Edit">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -131,7 +130,7 @@ onMounted(() => {
                     </svg>
                   </button>
                   <button @click="handleDeleteStaff(staff.staff_id, staff.full_name)"
-                    class="p-1.5 border border-red-200 text-red-500 rounded bg-red-50 hover:bg-red-100 transition-colors"
+                    class="p-2 border border-red-200 text-red-500 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
                     title="Delete">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

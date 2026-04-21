@@ -4,6 +4,9 @@ import { inventoryService, type RawInventoryItem, type PrepLog } from '../servic
 import { staffService } from '../services/staffService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
+import { useResponsive } from '../composables/useResponsive';
+
+const { fontSm, fontBase, fontLg, fontXl } = useResponsive();
 
 // Form State
 const selectedCategory = ref('');
@@ -176,137 +179,150 @@ onMounted(async () => {
 <template>
   <div class="h-full flex flex-col">
     
-    <div v-if="isLoadingData" class="flex-1 bg-white rounded-xl shadow-sm border border-gray-0 flex items-center justify-center">
+    <div v-if="isLoadingData" class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center">
       <DataLoader message="Loading preparation environment..." />
     </div>
 
-    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-8">
-        
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-1 h-fit">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Log Skewering Task</h3>
-        
-        <form @submit.prevent="handleSavePrep" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Meat Category</label>
-            <select 
-              v-model="selectedCategory" 
-              :disabled="availableCategories.length === 0"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100"
-            >
-              <option value="">Select Category</option>
-              <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-            <p v-if="availableCategories.length === 0" class="text-sm text-orange-600 mt-1">
-              No categories with available stock
-            </p>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Specific Part / Cut</label>
-            <select 
-              v-model="selectedPart" 
-              :disabled="!selectedCategory || isLoadingParts || availableParts.length === 0"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100"
-            >
-              <option value="">Select Part</option>
-              <option v-for="part in availableParts" :key="part.raw_item_id" :value="part.specific_part">
-                {{ part.specific_part }} ({{ part.current_stock_kg.toFixed(2) }} kg available)
-              </option>
-            </select>
-            <p v-if="isLoadingParts" class="text-sm text-gray-500 mt-1">Loading parts...</p>
-          </div>
-          
-          <div v-if="currentStockInfo" class="bg-blue-50 p-3 rounded-lg">
-            <p class="text-sm font-medium" :class="stockStatus.class">{{ stockStatus.text }}</p>
-            <p class="text-xs text-gray-600 mt-1">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Raw Kilos Used 
-              <span v-if="maxKilosAllowed > 0" class="text-gray-500 font-normal">
-                (Max: {{ maxKilosAllowed.toFixed(2) }} kg)
-              </span>
-            </label>
-            <input 
-              v-model.number="rawKilos" 
-              type="number" 
-              step="0.1"
-              min="0.1"
-              :max="maxKilosAllowed"
-              :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
-              required 
-              placeholder="e.g., 5.0" 
-              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Skewers Produced</label>
-            <input 
-              v-model.number="skewersProduced" 
-              type="number"
-              min="1"
-              :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
-              required 
-              placeholder="e.g., 120" 
-              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            />
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Staff Member</label>
-            <select 
-              v-model="selectedStaff" 
-              required 
-              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.full_name">
-                {{ staff.full_name }} ({{ staff.role }})
-              </option>
-            </select>
-          </div>
-          
-          <BaseButton 
-            type="submit" 
-            variant="primary"
-            :disabled="!canPrep"
-            class="w-full py-3 mt-4"
-          >
-            Save Prep Log
-          </BaseButton>
-        </form>
-      </div>
+    <div v-else class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-0 overflow-hidden">
+      <div class="h-full overflow-y-auto p-4 md:p-6 lg:p-8">
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Skewering Activity</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b-2 border-gray-200 text-gray-500 text-sm">
-                <th class="pb-3 font-semibold">Time</th>
-                <th class="pb-3 font-semibold">Staff Member</th>
-                <th class="pb-3 font-semibold">Part Used</th>
-                <th class="pb-3 font-semibold">Kilos Deducted</th>
-                <th class="pb-3 font-semibold">Skewers Added</th>
-              </tr>
-            </thead>
-            <tbody class="text-gray-700">
-              <tr v-if="recentLogs.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-500">No prep activity logged yet today.</td>
-              </tr>
-              <tr v-for="(log, index) in recentLogs" :key="index" class="border-b border-gray-100 hover:bg-gray-50">
-                <td class="py-4 text-sm">{{ log.time }}</td>
-                <td class="py-4 font-medium">{{ log.staff }}</td>
-                <td class="py-4">{{ log.part }}</td>
-                <td class="py-4 text-red-600 font-semibold">{{ log.kilos }}</td>
-                <td class="py-4 text-green-600 font-semibold">{{ log.sticks }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="sticky top-0 z-40 bg-white/95 backdrop-blur -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 pt-4 md:pt-6 lg:pt-8 pb-4 mb-8 border-b border-gray-200 rounded-t-xl">
+          <h3 :class="['font-bold text-gray-800', fontXl]">Prep Station</h3>
+          <p :class="['text-gray-500 mt-1', fontSm]">Convert bulk raw inventory into skewered POS items.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
+            
+          <div class="bg-gray-50/50 p-5 rounded-xl border border-gray-100 lg:col-span-1 h-fit">
+            <h3 :class="['font-semibold text-gray-800 mb-5', fontLg]">Log Skewering Task</h3>
+            
+            <form @submit.prevent="handleSavePrep" class="space-y-4 md:space-y-5">
+              <div>
+                <label :class="['block font-medium text-gray-700 mb-1.5', fontSm]">Meat Category</label>
+                <select 
+                  v-model="selectedCategory" 
+                  :disabled="availableCategories.length === 0"
+                  :class="['w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100', fontBase]"
+                >
+                  <option value="">Select Category</option>
+                  <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+                <p v-if="availableCategories.length === 0" :class="['text-orange-600 mt-1.5', fontSm]">
+                  No categories with available stock
+                </p>
+              </div>
+              
+              <div>
+                <label :class="['block font-medium text-gray-700 mb-1.5', fontSm]">Specific Part / Cut</label>
+                <select 
+                  v-model="selectedPart" 
+                  :disabled="!selectedCategory || isLoadingParts || availableParts.length === 0"
+                  :class="['w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100', fontBase]"
+                >
+                  <option value="">Select Part</option>
+                  <option v-for="part in availableParts" :key="part.raw_item_id" :value="part.specific_part">
+                    {{ part.specific_part }} ({{ part.current_stock_kg.toFixed(2) }} kg available)
+                  </option>
+                </select>
+                <p v-if="isLoadingParts" :class="['text-gray-500 mt-1.5', fontSm]">Loading parts...</p>
+              </div>
+              
+              <div v-if="currentStockInfo" class="bg-blue-50 border border-blue-100 p-3.5 rounded-lg">
+                <p :class="['font-semibold', stockStatus.class, fontSm]">{{ stockStatus.text }}</p>
+                <p :class="['text-gray-600 mt-1', fontSm]">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
+              </div>
+              
+              <div>
+                <label :class="['block font-medium text-gray-700 mb-1.5', fontSm]">
+                  Raw Kilos Used 
+                  <span v-if="maxKilosAllowed > 0" class="text-gray-400 font-normal ml-1">
+                    (Max: {{ maxKilosAllowed.toFixed(2) }} kg)
+                  </span>
+                </label>
+                <input 
+                  v-model.number="rawKilos" 
+                  type="number" 
+                  step="0.1"
+                  min="0.1"
+                  :max="maxKilosAllowed"
+                  :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
+                  required 
+                  placeholder="e.g., 5.0" 
+                  :class="['w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 bg-white', fontBase]"
+                />
+              </div>
+              
+              <div>
+                <label :class="['block font-medium text-gray-700 mb-1.5', fontSm]">Skewers Produced</label>
+                <input 
+                  v-model.number="skewersProduced" 
+                  type="number"
+                  min="1"
+                  :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
+                  required 
+                  placeholder="e.g., 120" 
+                  :class="['w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 bg-white', fontBase]"
+                />
+              </div>
+              
+              <div>
+                <label :class="['block font-medium text-gray-700 mb-1.5', fontSm]">Staff Member</label>
+                <select 
+                  v-model="selectedStaff" 
+                  required 
+                  :class="['w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white', fontBase]"
+                >
+                  <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.full_name">
+                    {{ staff.full_name }} ({{ staff.role }})
+                  </option>
+                </select>
+              </div>
+              
+              <BaseButton 
+                type="submit" 
+                variant="primary"
+                :disabled="!canPrep"
+                :class="['w-full py-3.5 mt-2', fontBase]"
+              >
+                Save Prep Log
+              </BaseButton>
+            </form>
+          </div>
+
+          <div class="bg-white border border-gray-100 rounded-xl lg:col-span-2 flex flex-col overflow-hidden shadow-sm">
+            <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+              <h3 :class="['font-semibold text-gray-800', fontLg]">Recent Skewering Activity</h3>
+            </div>
+            
+            <div class="overflow-x-auto flex-1">
+              <table class="w-full text-left border-collapse min-w-125">
+                <thead class="bg-gray-50">
+                  <tr :class="['border-b border-gray-200 text-gray-500', fontSm]">
+                    <th class="py-3 px-4 font-semibold">Time</th>
+                    <th class="py-3 px-4 font-semibold">Staff Member</th>
+                    <th class="py-3 px-4 font-semibold">Part Used</th>
+                    <th class="py-3 px-4 font-semibold">Kilos Deducted</th>
+                    <th class="py-3 px-4 font-semibold text-right">Skewers Added</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-700">
+                  <tr v-if="recentLogs.length === 0">
+                    <td colspan="5" class="py-12 text-center text-gray-500">No prep activity logged yet today.</td>
+                  </tr>
+                  <tr v-for="(log, index) in recentLogs" :key="index" class="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
+                    <td :class="['py-3.5 px-4 text-gray-500', fontSm]">{{ log.time }}</td>
+                    <td :class="['py-3.5 px-4 font-medium text-gray-900', fontBase]">{{ log.staff }}</td>
+                    <td :class="['py-3.5 px-4', fontBase]">{{ log.part }}</td>
+                    <td :class="['py-3.5 px-4 text-red-600 font-bold', fontBase]">{{ log.kilos }}</td>
+                    <td :class="['py-3.5 px-4 text-green-600 font-bold text-right', fontBase]">{{ log.sticks }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
-
     </div>
   </div>
 </template>
