@@ -70,7 +70,7 @@ function closePriceModal() {
   selectedPreparedItem.value = null;
 }
 
-async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: number }) {
+async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean }) {
   try {
     await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice);
     closePriceModal();
@@ -197,8 +197,8 @@ onMounted(() => {
                 <td class="py-4 font-bold text-gray-900">{{ item.unit_price.toFixed(2) }}</td>
                 <td class="py-4">
                   <BaseBadge 
-                    :text="item.is_variable_price === 1 ? 'Variable' : 'Fixed'" 
-                    :variant="item.is_variable_price === 1 ? 'warning' : 'info'" 
+                    :text="item.is_variable_price ? 'Variable' : 'Fixed'" 
+                    :variant="item.is_variable_price ? 'warning' : 'info'" 
                   />
                 </td>
                 <td class="py-4 text-right">

@@ -33,7 +33,7 @@ onMounted(() => {
       
       <Header />
 
-      <div class="p-3 md:p-4 flex-1 overflow-hidden">
+      <div class="p-0 md:p-0 flex-1 overflow-hidden">
         <router-view></router-view>
       </div>
 
