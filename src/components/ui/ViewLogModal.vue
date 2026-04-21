@@ -11,19 +11,38 @@ defineEmits<{
   close: [];
 }>();
 
-function formatTime(timestampStr: string | undefined) {
-  if (!timestampStr) return '';
-  const date = new Date(timestampStr + 'Z'); 
+function formatTime(timestampStr: string) {
+  // Pass the ISO 8601 string directly from the Rust backend into the Date object
+  const date = new Date(timestampStr); 
+
+  // Fallback safety check
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+
   return date.toLocaleString(undefined, {
-    weekday: 'long',
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   });
 }
+
+// function formatTime(timestampStr: string | undefined) {
+//   if (!timestampStr) return '';
+//   const date = new Date(timestampStr + 'Z'); 
+//   return date.toLocaleString(undefined, {
+//     weekday: 'long',
+//     year: 'numeric',
+//     month: 'long',
+//     day: 'numeric',
+//     hour: '2-digit',
+//     minute: '2-digit',
+//     second: '2-digit'
+//   });
+// }
 
 function getCategoryVariant(category: string | undefined): 'info' | 'warning' | 'success' | 'danger' | 'default' {
   if (!category) return 'default';

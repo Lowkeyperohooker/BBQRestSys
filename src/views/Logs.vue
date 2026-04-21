@@ -38,7 +38,14 @@ const filteredLogs = computed(() => {
 });
 
 function formatTime(timestampStr: string) {
-  const date = new Date(timestampStr + 'Z'); 
+  // Pass the ISO 8601 string directly from the Rust backend into the Date object
+  const date = new Date(timestampStr); 
+
+  // Fallback safety check
+  if (isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+
   return date.toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
