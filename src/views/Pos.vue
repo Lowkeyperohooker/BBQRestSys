@@ -50,7 +50,7 @@ const totalCartItems = computed(() => {
 function addToCart(item: PosItem) {
   let finalPrice = item.unit_price;
 
-  if (item.is_variable_price === 1) {
+  if (item.is_variable_price) {
     const userInput = prompt(`Enter custom price for ${item.pos_display_name} (PHP):`, item.unit_price.toString());
     
     if (userInput === null) return; 
@@ -196,7 +196,7 @@ onMounted(() => {
           @click="addToCart(item)"
           class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 transition-all hover:shadow-md group relative flex flex-col h-full"
         >
-          <span v-if="item.is_variable_price === 1" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
+          <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10">
             Variable
           </span>
 
@@ -206,7 +206,7 @@ onMounted(() => {
           <h4 class="font-bold text-gray-900 truncate mb-1" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
           <div class="flex justify-between items-end mt-auto pt-2">
             <div class="flex flex-col">
-              <span v-if="item.is_variable_price === 1" class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Starts at</span>
+              <span v-if="item.is_variable_price" class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Starts at</span>
               <span class="text-blue-600 font-extrabold text-lg leading-none">₱{{ item.unit_price.toFixed(2) }}</span>
             </div>
             <p class="text-xs text-gray-400 font-medium">{{ item.current_stock_pieces }} left</p>
