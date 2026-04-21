@@ -10,11 +10,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  save: [data: { prepItemId: number; unitPrice: number; isVariablePrice: number }];
+  save: [data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean }];
 }>();
 
 const formPrice = ref<number>(0);
-const formIsVariable = ref<number>(0);
+const formIsVariable = ref<boolean>(false);
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.item) {
@@ -28,7 +28,7 @@ function handleSubmit() {
   emit('save', {
     prepItemId: props.item.prep_item_id,
     unitPrice: Number(formPrice.value),
-    isVariablePrice: Number(formIsVariable.value)
+    isVariablePrice: formIsVariable.value
   });
 }
 </script>
