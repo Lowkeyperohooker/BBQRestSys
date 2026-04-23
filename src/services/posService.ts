@@ -20,6 +20,7 @@ export interface ActiveOrder {
   total_amount: number;
   status: string;
   timestamp: string;
+  cart_items?: CartItem[]; // NEW: Added to support viewing active cart items
 }
 
 const API_BASE = window.location.hostname === 'localhost' 

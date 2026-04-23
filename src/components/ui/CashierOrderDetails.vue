@@ -145,8 +145,19 @@ function validateTableInput(e: Event) {
           </div>
 
           <div class="flex-1 overflow-y-auto border-t border-b border-gray-100 py-2 my-2 pr-2">
-            <div class="h-full flex flex-col justify-center items-center">
-               <p class="text-gray-400 text-sm font-medium text-center">Cart items will be dynamically listed here in future updates.</p>
+            <h4 class="font-bold text-gray-800 mb-2 text-xs uppercase tracking-wide sticky top-0 bg-white z-10 py-1">Order Items</h4>
+            
+            <div v-if="selectedOrder.cart_items && selectedOrder.cart_items.length > 0" class="space-y-1.5">
+              <div v-for="(item, idx) in selectedOrder.cart_items" :key="idx" class="flex justify-between items-center bg-gray-50 py-1.5 px-2 rounded border border-gray-100">
+                <div>
+                  <p :class="['font-bold text-gray-800', fontSm]">{{ item.qty }}x {{ item.pos_display_name || 'Item' }}</p>
+                </div>
+                <span :class="['font-bold text-gray-600', fontSm]">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
+              </div>
+            </div>
+
+            <div v-else class="h-full flex flex-col justify-center items-center py-6">
+               <p class="text-gray-400 text-sm font-medium text-center">No item details found for this order.</p>
             </div>
           </div>
 

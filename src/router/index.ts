@@ -74,7 +74,7 @@ router.beforeEach((to, _from, next) => {
 
   // 2. If already logged in and trying to access the login page, redirect to dashboard
   if (isAuthenticated.value && to.path === '/login') {
-    return next('/');
+    return next('/dashboard');
   }
 
   // 3. If the route is public (like /login), let them in

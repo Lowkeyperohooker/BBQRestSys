@@ -1,6 +1,6 @@
 use axum::{extract::State, Json, http::StatusCode};
 use sqlx::PgPool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize}; // Added Serialize
 use crate::models::*;
 
 // Structs for extracting JSON payload data
@@ -28,7 +28,28 @@ pub struct UpdateStatusReq {
     pub staff_id: i32 
 }
 
-pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<ActiveOrder>> {
+// --- NEW STRUCTS FOR ACTIVE ORDERS WITH ITEMS ---
+#[derive(Serialize)]
+pub struct ActiveOrderResponse {
+    pub order_id: i32,
+    pub customer_identifier: String,
+    pub order_type: String,
+    pub total_amount: f64,
+    pub status: String,
+    pub timestamp: String,
+    pub cart_items: Vec<ActiveOrderItemResponse>, // This is what the frontend needs!
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct ActiveOrderItemResponse {
+    pub pos_display_name: String,
+    pub qty: i32,
+    pub unit_price: f64,
+}
+// ------------------------------------------------
+
+pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<ActiveOrderResponse>> {
+    // 1. Fetch the base orders
     let orders = sqlx::query_as::<_, ActiveOrder>(
         "SELECT order_id, customer_identifier, order_type, total_amount::float8, status, timestamp
          FROM Orders WHERE status != 'Completed' AND status != 'Pending PIN' ORDER BY timestamp ASC"
@@ -37,7 +58,38 @@ pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<Acti
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
-    Ok(Json(orders))
+    let mut full_orders = Vec::new();
+
+    // 2. Loop through and attach the items for each order
+    for order in orders {
+        let items = sqlx::query_as::<_, ActiveOrderItemResponse>(
+            "SELECT pi.pos_display_name, oi.quantity as qty, oi.price_at_time_of_sale::float8 as unit_price 
+             FROM Order_Item oi 
+             JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id 
+             WHERE oi.order_id = $1"
+        )
+        .bind(order.order_id)
+        .fetch_all(&pool)
+        .await
+        .unwrap_or_default(); // Safely default to empty if none found
+
+        full_orders.push(ActiveOrderResponse {
+            order_id: order.order_id,
+            customer_identifier: order.customer_identifier,
+            order_type: order.order_type,
+            total_amount: order.total_amount,
+            
+            // FIX 1: Unwrap the Option safely. If null, it defaults to an empty string.
+            status: order.status.unwrap_or_default(), 
+            
+            // FIX 2: Convert the chrono::DateTime object into a standard String.
+            timestamp: order.timestamp.to_string(), 
+            
+            cart_items: items,
+        });
+    }
+    
+    Ok(Json(full_orders))
 }
 
 pub async fn send_to_grill(State(pool): State<PgPool>, Json(payload): Json<SendToGrillReq>) -> AppResult<i32> {

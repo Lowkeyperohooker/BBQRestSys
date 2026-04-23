@@ -1,21 +1,49 @@
 [
   {
-    "queue_number": 1003,
+    "queue_number": 1004,
     "order_type": "Dine-in",
     "cart_items": [
       {
         "prep_item_id": 1,
         "raw_item_id": 1,
         "pos_display_name": "Chicken Isaw",
-        "current_stock_pieces": 141,
+        "current_stock_pieces": 127,
         "unit_price": 6.0,
         "is_variable_price": false,
-        "qty": 10
+        "qty": 4
+      },
+      {
+        "prep_item_id": 2,
+        "raw_item_id": 2,
+        "pos_display_name": "Chicken Neck",
+        "current_stock_pieces": 78,
+        "unit_price": 10.0,
+        "is_variable_price": true,
+        "qty": 4
       }
     ],
-    "subtotal": 60.0,
+    "subtotal": 64.0,
     "tax": 0.0,
-    "total": 60.0,
-    "timestamp": "2026-04-23T10:53:16.431Z"
+    "total": 64.0,
+    "timestamp": "2026-04-23T11:16:31.453Z"
+  },
+  {
+    "queue_number": 1005,
+    "order_type": "Dine-in",
+    "cart_items": [
+      {
+        "prep_item_id": 1,
+        "raw_item_id": 1,
+        "pos_display_name": "Chicken Isaw",
+        "current_stock_pieces": 127,
+        "unit_price": 6.0,
+        "is_variable_price": false,
+        "qty": 7
+      }
+    ],
+    "subtotal": 42.0,
+    "tax": 0.0,
+    "total": 42.0,
+    "timestamp": "2026-04-23T12:10:32.107Z"
   }
 ]
