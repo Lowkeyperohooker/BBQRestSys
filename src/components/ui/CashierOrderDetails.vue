@@ -18,7 +18,6 @@ const emit = defineEmits<{
   (e: 'update:searchQueueInput', val: string): void;
   (e: 'update:tableNumberInput', val: string): void;
   (e: 'search'): void;
-  (e: 'open-logs'): void;
   (e: 'clear-pending'): void;
   (e: 'reject-pending'): void;
   (e: 'accept-pending'): void;
@@ -62,9 +61,6 @@ function validateTableInput(e: Event) {
         </div>
         <BaseButton variant="primary" @click="emit('search')" :disabled="!searchQueueInput || isSearching" class="py-1.5 px-3">
           <span :class="fontSm">{{ isSearching ? '...' : 'Search' }}</span>
-        </BaseButton>
-        <BaseButton variant="secondary" @click="emit('open-logs')" class="hidden sm:block py-1.5 px-3">
-           <span :class="fontSm">Logs</span>
         </BaseButton>
       </div>
     </div>

@@ -3,8 +3,7 @@ import { ref, onMounted } from 'vue';
 import { posService, type ActiveOrder } from '../services/posService';
 import { queueService, type PendingOrder } from '../services/queueService';
 import DataLoader from '../components/ui/DataLoader.vue';
-import PosLogsModal from '../components/ui/PosLogsModal.vue';
-import CashierOrderDetails from '../components/ui/CashierOrderDetails.vue'; // NEW: Imported component
+import CashierOrderDetails from '../components/ui/CashierOrderDetails.vue';
 import { useResponsive } from '../composables/useResponsive';
 import { useAuth } from '../stores/authStore';
 
@@ -25,7 +24,6 @@ const tableNumberInput = ref('');
 
 // UI State
 const isLoadingData = ref(true);
-const isLogsModalOpen = ref(false);
 
 const staffId = currentUser.value?.id || 1;
 
@@ -165,7 +163,6 @@ onMounted(() => {
       @update:search-queue-input="searchQueueInput = $event"
       @update:table-number-input="tableNumberInput = $event"
       @search="handleSearchQueue"
-      @open-logs="isLogsModalOpen = true"
       @clear-pending="selectedPending = null"
       @reject-pending="handleRejectPending"
       @accept-pending="handleAcceptPending"
@@ -207,6 +204,5 @@ onMounted(() => {
       </div>
     </div>
 
-    <PosLogsModal :is-open="isLogsModalOpen" @close="isLogsModalOpen = false" />
   </div>
 </template>
