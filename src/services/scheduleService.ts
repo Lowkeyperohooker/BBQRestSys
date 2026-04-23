@@ -53,4 +53,9 @@ export const scheduleService = {
       throw new Error(errorText || 'Failed to clock out');
     }
   },
+  async getStaffShifts(staffId: number): Promise<Shift[]> {
+    const res = await fetch(`${API_BASE}/schedule/staff/${staffId}`);
+    if (!res.ok) throw new Error('Failed to fetch staff shift history');
+    return await res.json();
+  },
 };

@@ -1,7 +1,12 @@
-use axum::{extract::{State, Query}, Json, http::StatusCode};
-use sqlx::PgPool;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    Json,
+};
 use serde::Deserialize;
+use sqlx::PgPool;
 use crate::models::*;
+
 
 // Structs for extracting Query parameters and JSON bodies
 #[derive(Deserialize)]
@@ -111,4 +116,23 @@ pub async fn clock_out(State(pool): State<PgPool>, Json(payload): Json<ClockOutR
 
     tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(()))
+}
+
+pub async fn get_staff_shifts(
+    State(pool): State<PgPool>,
+    Path(staff_id): Path<i32>,
+) -> AppResult<Vec<Shift>> {
+    let shifts = sqlx::query_as::<_, Shift>(
+        "SELECT shift_id, staff_id, shift_date, clock_in_time, clock_out_time, total_rendered_hours::float8, status 
+         FROM Shift 
+         WHERE staff_id = $1 
+         ORDER BY clock_in_time DESC 
+         LIMIT 30"
+    )
+    .bind(staff_id)
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(axum::Json(shifts))
 }
