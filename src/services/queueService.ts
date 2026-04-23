@@ -42,18 +42,10 @@ export const queueService = {
     if (!res.ok) throw new Error('Failed to remove from queue');
   },
 
-  // NEW: Safely increment the queue number from 1000 to 9090
+  // Fetch the strict, permanent counter from the Rust server
   async getNextQueueNumber(): Promise<number> {
-    const lastQueueStr = localStorage.getItem('last_queue_number');
-    let queueNum = lastQueueStr ? parseInt(lastQueueStr) + 1 : 1000;
-
-    // Enforce the range limits
-    if (queueNum > 9090) {
-      queueNum = 1000;
-    }
-
-    // Persist the new number for the next customer
-    localStorage.setItem('last_queue_number', queueNum.toString());
-    return queueNum;
+    const res = await fetch(`${API_BASE_URL}/queue/next-number`);
+    if (!res.ok) throw new Error('Failed to get next queue number');
+    return await res.json();
   }
 };

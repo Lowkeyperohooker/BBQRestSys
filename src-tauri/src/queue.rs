@@ -2,8 +2,8 @@ use axum::{extract::Path, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-// The file will be created in your src-tauri folder
 const QUEUE_FILE: &str = "pending_kiosk_orders.json";
+const COUNTER_FILE: &str = "queue_counter.txt"; // NEW: Dedicated tracker
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PendingCartItem {
@@ -27,34 +27,58 @@ pub struct PendingOrder {
     pub timestamp: String,
 }
 
-// Helper to safely read the queue file
-async fn read_queue_file() -> Vec<PendingOrder> {
-    match fs::read_to_string(QUEUE_FILE).await {
-        Ok(contents) => serde_json::from_str(&contents).unwrap_or_else(|_| vec![]),
-        Err(_) => vec![], // If file doesn't exist yet, return an empty array
+// --- NEW: Persistent Counter Logic ---
+async fn read_counter() -> i32 {
+    match fs::read_to_string(COUNTER_FILE).await {
+        // Default to 999 so the very first order generated is 1000
+        Ok(contents) => contents.trim().parse().unwrap_or(999),
+        Err(_) => 999, 
     }
 }
 
-// Helper to securely save the queue file
+async fn write_counter(num: i32) -> Result<(), String> {
+    fs::write(COUNTER_FILE, num.to_string()).await.map_err(|e| e.to_string())
+}
+
+pub async fn get_next_number() -> Result<Json<i32>, (StatusCode, String)> {
+    let mut num = read_counter().await;
+    
+    num += 1;
+    
+    // Strict enforcement of 1000 to 9090 range
+    if num > 9090 {
+        num = 1000;
+    }
+    
+    write_counter(num).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    
+    Ok(Json(num))
+}
+
+// --- JSON Queue Logic ---
+async fn read_queue_file() -> Vec<PendingOrder> {
+    match fs::read_to_string(QUEUE_FILE).await {
+        Ok(contents) => serde_json::from_str(&contents).unwrap_or_else(|_| vec![]),
+        Err(_) => vec![],
+    }
+}
+
 async fn write_queue_file(queue: &Vec<PendingOrder>) -> Result<(), String> {
     let json = serde_json::to_string_pretty(queue).map_err(|e| e.to_string())?;
     fs::write(QUEUE_FILE, json).await.map_err(|e| e.to_string())?;
     Ok(())
 }
 
-// GET: Fetch all pending orders for the Cashier
 pub async fn get_queue() -> Result<Json<Vec<PendingOrder>>, (StatusCode, String)> {
     let queue = read_queue_file().await;
     Ok(Json(queue))
 }
 
-// POST: Kiosk sends a new order to the queue
 pub async fn add_to_queue(Json(new_order): Json<PendingOrder>) -> Result<Json<()>, (StatusCode, String)> {
     let mut queue = read_queue_file().await;
     
     queue.push(new_order);
 
-    // Enforce 200 item limit (FIFO: removes the oldest items if array exceeds 200)
     if queue.len() > 200 {
         let excess = queue.len() - 200;
         queue.drain(0..excess);
@@ -67,11 +91,9 @@ pub async fn add_to_queue(Json(new_order): Json<PendingOrder>) -> Result<Json<()
     Ok(Json(()))
 }
 
-// POST: Cashier accepts/clears an order from the queue
 pub async fn remove_from_queue(Path(queue_number): Path<i32>) -> Result<Json<()>, (StatusCode, String)> {
     let mut queue = read_queue_file().await;
     
-    // Keep all orders EXCEPT the one matching the queue number
     queue.retain(|order| order.queue_number != queue_number);
 
     write_queue_file(&queue)

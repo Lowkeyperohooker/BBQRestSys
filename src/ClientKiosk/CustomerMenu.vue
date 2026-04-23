@@ -1,27 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { posService, type PosItem, type CartItem } from '../services/posService';
-import { queueService } from '../services/queueService'; // NEW: Import the queue service
+import { queueService } from '../services/queueService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
+import CheckOrderModal from '../components/ui/CheckOrderModal.vue';
+import MenuItemModal from '../components/ui/MenuItemModal.vue';
 import { useResponsive } from '../composables/useResponsive';
 
 const { fontSm, fontBase, fontLg, fontXl, font2xl, isMobile } = useResponsive();
 
-// --- State ---
 const availableItems = ref<PosItem[]>([]);
 const cart = ref<CartItem[]>([]);
 const isLoadingData = ref(true);
 
-// Flow Control
 const hasSelectedOrderType = ref(false);
 const orderType = ref<'Dine-in' | 'Takeout' | null>(null);
 const generatedQueueNumber = ref<number | null>(null);
 
-// Modal state
+// Modal states
 const isCartModalOpen = ref(false);
+const isItemModalOpen = ref(false);
+const selectedItemForModal = ref<PosItem | null>(null);
 
-// --- Initialization ---
 async function loadMenu() {
   isLoadingData.value = true;
   try {
@@ -37,49 +38,44 @@ onMounted(() => {
   loadMenu();
 });
 
-// --- Computed Properties ---
 const subtotal = computed(() => cart.value.reduce((sum, item) => sum + (item.unit_price * item.qty), 0));
 const tax = computed(() => subtotal.value * 0.0);
 const total = computed(() => subtotal.value + tax.value);
 const totalCartItems = computed(() => cart.value.reduce((sum, item) => sum + item.qty, 0));
 
-// --- Actions ---
 function selectOrderType(type: 'Dine-in' | 'Takeout') {
   orderType.value = type;
   hasSelectedOrderType.value = true;
 }
 
-function addToCart(item: PosItem) {
-  let finalPrice = item.unit_price;
+function openItemModal(item: PosItem) {
+  selectedItemForModal.value = item;
+  isItemModalOpen.value = true;
+}
 
-  if (item.is_variable_price) {
-    const userInput = prompt(`Enter custom price for ${item.pos_display_name} (PHP):`, item.unit_price.toString());
-    if (userInput === null) return;
-
-    const parsedPrice = parseFloat(userInput);
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      alert("Invalid price entered.");
-      return;
-    }
-    finalPrice = parsedPrice;
-  }
+function handleConfirmItemConfig({ qty, customPrice }: { qty: number, customPrice: number }) {
+  if (!selectedItemForModal.value) return;
+  const item = selectedItemForModal.value;
 
   const totalQtyInCart = cart.value
     .filter(c => c.prep_item_id === item.prep_item_id)
     .reduce((sum, c) => sum + c.qty, 0);
 
-  if (totalQtyInCart >= item.current_stock_pieces) {
-    alert(`Sorry, only ${item.current_stock_pieces} left in stock.`);
+  if (totalQtyInCart + qty > item.current_stock_pieces) {
+    alert(`Sorry, you can only add ${item.current_stock_pieces - totalQtyInCart} more of this item.`);
     return;
   }
 
-  const existing = cart.value.find(c => c.prep_item_id === item.prep_item_id && c.unit_price === finalPrice);
+  const existing = cart.value.find(c => c.prep_item_id === item.prep_item_id && c.unit_price === customPrice);
 
   if (existing) {
-    existing.qty++;
+    existing.qty += qty;
   } else {
-    cart.value.push({ ...item, unit_price: finalPrice, qty: 1 });
+    cart.value.push({ ...item, unit_price: customPrice, qty: qty });
   }
+
+  isItemModalOpen.value = false;
+  selectedItemForModal.value = null;
 }
 
 function removeFromCart(index: number) {
@@ -101,10 +97,8 @@ async function handleFinalizeOrder() {
   if (cart.value.length === 0 || !orderType.value) return;
 
   try {
-    // 1. Get the next reliable queue number (1000 -> 9090) from the service
     const queueNum = await queueService.getNextQueueNumber();
 
-    // 2. Prepare the new order payload
     const pendingOrder = {
       queue_number: queueNum,
       order_type: orderType.value,
@@ -115,11 +109,10 @@ async function handleFinalizeOrder() {
       timestamp: new Date().toISOString()
     };
 
-    // 3. Send to the Rust Backend to save in the JSON file
     await queueService.addToQueue(pendingOrder);
-
-    // 4. Display the generated number to the customer
+    
     generatedQueueNumber.value = queueNum;
+    isCartModalOpen.value = false;
 
   } catch (error) {
     console.error("Failed to save pending order:", error);
@@ -151,25 +144,25 @@ async function handleFinalizeOrder() {
     </div>
 
     <div v-else-if="!generatedQueueNumber" class="flex-1 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col min-h-0 relative">
-      <div class="h-full overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-50/30 pb-32">
-
-        <div class="sticky top-0 z-40 bg-white/95 backdrop-blur -mt-4 md:-mt-6 lg:-mt-8 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 pt-4 md:pt-6 lg:pt-8 pb-4 mb-8 border-b border-gray-200 flex justify-between items-center">
-          <div>
-            <div class="flex items-center gap-3 mb-1">
-              <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">{{ orderType }}</span>
-              <button @click="resetKiosk" class="text-gray-400 hover:text-red-500 text-xs font-bold underline">Change</button>
-            </div>
-            <h2 :class="['font-extrabold text-gray-900 tracking-tight', font2xl]">Self-Service Menu</h2>
-            <p :class="['font-medium text-gray-500 mt-1', fontSm]">Tap items to add them to your order</p>
+      
+      <div class="z-40 bg-white border-b border-gray-200 px-5 py-4 md:px-6 md:py-5 shrink-0 flex justify-between items-center">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">{{ orderType }}</span>
+            <button @click="resetKiosk" class="text-gray-400 hover:text-red-500 text-xs font-bold underline">Change</button>
           </div>
+          <h2 :class="['font-extrabold text-gray-900 tracking-tight', font2xl]">Self-Service Menu</h2>
+          <p :class="['font-medium text-gray-500 mt-0.5', fontSm]">Tap items to add them to your order</p>
         </div>
+      </div>
 
+      <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-50/30 pb-32">
         <div v-if="isLoadingData" class="flex-1 flex items-center justify-center h-64">
           <DataLoader message="Loading fresh menu..." />
         </div>
 
         <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5']">
-          <div v-for="item in availableItems" :key="item.prep_item_id" @click="addToCart(item)"
+          <div v-for="item in availableItems" :key="item.prep_item_id" @click="openItemModal(item)"
             class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-40">
             
             <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10">VAR</span>
@@ -217,47 +210,22 @@ async function handleFinalizeOrder() {
       </BaseButton>
     </div>
 
-    <div v-if="isCartModalOpen" class="fixed inset-0 z-100 flex items-end justify-end p-4 md:p-8 bg-black/40 backdrop-blur-sm" @click.self="isCartModalOpen = false">
-      <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8 duration-300 origin-bottom-right">
-        
-        <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
-          <h3 :class="['font-extrabold text-gray-900', fontXl]">Review Order</h3>
-          <button @click="isCartModalOpen = false" class="text-gray-400 hover:text-gray-600 bg-gray-200/50 hover:bg-gray-200 p-2 rounded-full transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
+    <CheckOrderModal 
+      :is-open="isCartModalOpen"
+      :cart="cart"
+      :subtotal="subtotal"
+      :total="total"
+      @close="isCartModalOpen = false"
+      @remove-item="removeFromCart"
+      @finalize-order="handleFinalizeOrder"
+    />
 
-        <div class="flex-1 overflow-y-auto p-5">
-          <div class="space-y-4">
-            <div v-for="(cartItem, index) in cart" :key="index" class="flex justify-between items-center group">
-              <div class="flex-1 pr-2">
-                <p :class="['font-bold text-gray-900', fontBase]">{{ cartItem.pos_display_name }}</p>
-                <p :class="['font-medium text-gray-500 mt-0.5', fontSm]">₱{{ cartItem.unit_price.toFixed(2) }} x {{ cartItem.qty }}</p>
-              </div>
-              <div class="flex items-center gap-3">
-                <span :class="['font-black text-gray-900', fontLg]">₱{{ (cartItem.unit_price * cartItem.qty).toFixed(2) }}</span>
-                <button @click="removeFromCart(index)" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded-lg p-2 transition-all">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <MenuItemModal 
+      :is-open="isItemModalOpen"
+      :item="selectedItemForModal"
+      @close="isItemModalOpen = false; selectedItemForModal = null"
+      @confirm="handleConfirmItemConfig"
+    />
 
-        <div class="p-5 bg-gray-50 border-t border-gray-100 shrink-0">
-          <div :class="['flex justify-between mb-2 text-gray-500 font-medium', fontSm]">
-            <span>Subtotal</span><span>₱{{ subtotal.toFixed(2) }}</span>
-          </div>
-          <div :class="['flex justify-between mb-5 font-black text-gray-900', font2xl]">
-            <span>Total Due</span><span class="text-blue-600">₱{{ total.toFixed(2) }}</span>
-          </div>
-          
-          <BaseButton variant="primary" @click="handleFinalizeOrder" class="w-full py-4 shadow-lg hover:shadow-xl transition-all rounded-xl">
-            <span :class="['font-black uppercase tracking-wider', fontLg]">Finalize Order</span>
-          </BaseButton>
-        </div>
-
-      </div>
-    </div>
   </div>
 </template>

@@ -74,6 +74,7 @@ pub fn run() {
                 // NEW: Queue Routes for the JSON file
                 let queue_routes = Router::new()
                     .route("/", get(queue::get_queue))
+                    .route("/next-number", get(queue::get_next_number))
                     .route("/add", post(queue::add_to_queue))
                     .route("/remove/:queue_number", post(queue::remove_from_queue));
 

@@ -5,7 +5,9 @@ import { useAuth } from '../stores/authStore';
 import BaseButton from '../components/ui/BaseButton.vue';
 
 const router = useRouter();
-const { login } = useAuth();
+
+// Extract both login and currentUser from the store
+const { login, currentUser } = useAuth();
 
 const passcode = ref('');
 const errorMsg = ref('');
@@ -19,7 +21,13 @@ async function handleLogin() {
 
   try {
     await login(passcode.value);
-    router.push('/dashboard');
+    
+    if (currentUser.value?.role === 'Staff') {
+      router.push('/cashier');
+    } else {
+      router.push('/dashboard'); 
+    }
+    
   } catch (error: any) {
     errorMsg.value = error.message || "Authentication failed.";
     passcode.value = '';
