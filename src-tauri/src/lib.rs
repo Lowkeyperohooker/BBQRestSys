@@ -5,7 +5,8 @@ pub mod pos;
 pub mod logs;
 pub mod staff;
 pub mod schedule;
-pub mod auth; // NEW: Added auth module
+pub mod auth; 
+pub mod queue; // NEW: Added queue module
 
 use axum::{routing::{get, post}, Router};
 use sqlx::PgPool;
@@ -67,9 +68,14 @@ pub fn run() {
                 let log_routes = Router::new()
                     .route("/recent", get(logs::get_recent_logs));
 
-                // NEW: Auth route
                 let auth_routes = Router::new()
                     .route("/login", post(auth::verify_login));
+
+                // NEW: Queue Routes for the JSON file
+                let queue_routes = Router::new()
+                    .route("/", get(queue::get_queue))
+                    .route("/add", post(queue::add_to_queue))
+                    .route("/remove/:queue_number", post(queue::remove_from_queue));
 
                 let api_routes = Router::new()
                     .nest("/dashboard", dashboard_routes)
@@ -78,9 +84,9 @@ pub fn run() {
                     .nest("/schedule", schedule_routes)
                     .nest("/staff", staff_routes)
                     .nest("/logs", log_routes)
-                    .nest("/auth", auth_routes); // NEW: Nested Auth
+                    .nest("/auth", auth_routes)
+                    .nest("/queue", queue_routes); // NEW: Nested Queue
 
-                // CRITICAL FIX: .with_state() MUST be before .layer(cors)
                 let app_router = Router::new()
                     .nest("/api", api_routes)
                     .with_state(pool)
