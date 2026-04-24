@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import type { RawInventoryItem, PreparedInventoryItem } from '../services/inventoryService';
+import { ref, onMounted, computed } from 'vue';
+import type { RawInventoryItem, PreparedInventoryItem, POSCategory } from '../services/inventoryService';
 import { inventoryService } from '../services/inventoryService';
-import AddStockModal from '../components/ui/AddStockModal.vue';
+import EditInventoryModal from '../components/ui/EditInventoryModal.vue';
 import EditPriceModal from '../components/ui/EditPriceModal.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
@@ -13,13 +13,12 @@ const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
 
 const rawInventory = ref<RawInventoryItem[]>([]);
 const preparedInventory = ref<PreparedInventoryItem[]>([]);
+const posCategories = ref<POSCategory[]>([]);
 const viewMode = ref('raw'); 
 
 const isLoadingData = ref(true);
 
-const isStockModalOpen = ref(false);
-const selectedRawItem = ref<RawInventoryItem | null>(null);
-
+const isInventoryModalOpen = ref(false);
 const isPriceModalOpen = ref(false);
 const selectedPreparedItem = ref<PreparedInventoryItem | null>(null);
 
@@ -28,57 +27,29 @@ async function loadData() {
   try {
     rawInventory.value = await inventoryService.getRawInventory();
     preparedInventory.value = await inventoryService.getPreparedInventory();
+    posCategories.value = await inventoryService.getPosCategories();
   } catch (error) {
     console.error("Error loading inventory:", error);
   } finally {
-    setTimeout(() => {
-      isLoadingData.value = false;
-    }, 600);
+    setTimeout(() => { isLoadingData.value = false; }, 600);
   }
 }
 
-function openAddStockModal(item: RawInventoryItem | null = null) {
-  selectedRawItem.value = item;
-  isStockModalOpen.value = true;
-}
-
-function closeStockModal() {
-  isStockModalOpen.value = false;
-  selectedRawItem.value = null;
-}
-
-async function handleSaveStock(data: { isNew: boolean; itemId?: number; kilos: number; category: string; part: string; alertThreshold?: number }) {
-  try {
-    if (data.isNew) {
-      await inventoryService.addNewRawItem(data.category, data.part, data.kilos, data.alertThreshold || 5.0);
-    } else if (data.itemId) {
-      await inventoryService.addRawStock(data.itemId, data.kilos);
-    }
-    closeStockModal();
-    await loadData(); 
-  } catch (error) {
-    console.error("Error adding stock:", error);
-    alert("Failed to update stock.");
-  }
-}
+const currentPreparedItems = computed(() => {
+  return preparedInventory.value.filter(item => item.category === viewMode.value);
+});
 
 function openEditPriceModal(item: PreparedInventoryItem) {
   selectedPreparedItem.value = item;
   isPriceModalOpen.value = true;
 }
 
-function closePriceModal() {
-  isPriceModalOpen.value = false;
-  selectedPreparedItem.value = null;
-}
-
 async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean }) {
   try {
     await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice);
-    closePriceModal();
+    isPriceModalOpen.value = false;
     await loadData();
   } catch (error) {
-    console.error("Error updating price:", error);
     alert("Failed to update pricing.");
   }
 }
@@ -95,9 +66,7 @@ function getStatusText(current: number, threshold: number): string {
   return 'Adequate';
 }
 
-onMounted(() => {
-  loadData();
-});
+onMounted(() => loadData());
 </script>
 
 <template>
@@ -106,32 +75,25 @@ onMounted(() => {
       
       <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
         <div>
-          <h3 :class="['font-bold text-gray-800', fontXl]">Meat Inventory</h3>
+          <h3 :class="['font-bold text-gray-800', fontXl]">Inventory Management</h3>
           <p :class="['text-gray-500 mt-1', fontSm]">
             {{ viewMode === 'raw' ? 'Monitored in Kilograms (kg)' : 'Monitored in Sticks/Pieces' }}
           </p>
         </div>
         
-        <div :class="['flex items-center gap-4', isMobile ? 'flex-col w-full' : 'w-auto']">
-          <div class="flex bg-gray-100 rounded-lg p-1 w-full md:w-auto">
-            <button 
-              @click="viewMode = 'raw'"
-              :class="[viewMode === 'raw' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700', fontSm, 'flex-1 md:flex-none px-4 py-1.5 font-medium rounded-md transition-all']"
-            >
-              Raw Meats
-            </button>
-            <button 
-              @click="viewMode = 'skewered'"
-              :class="[viewMode === 'skewered' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700', fontSm, 'flex-1 md:flex-none px-4 py-1.5 font-medium rounded-md transition-all']"
-            >
-              Skewered
-            </button>
-          </div>
-          
-          <BaseButton v-if="viewMode === 'raw'" variant="primary" @click="openAddStockModal(null)" :class="isMobile ? 'w-full' : ''">
-            Add Stock Delivery
-          </BaseButton>
-        </div>
+        <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="isMobile ? 'w-full' : ''">
+          <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Edit Inventory
+        </BaseButton>
+      </div>
+
+      <div class="flex overflow-x-auto pb-2 mb-4 gap-2 border-b border-gray-100">
+        <button @click="viewMode = 'raw'" :class="[viewMode === 'raw' ? 'bg-gray-800 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200', 'px-5 py-2 font-bold rounded-lg transition-colors shrink-0', fontSm]">
+          Raw Meats
+        </button>
+        <button v-for="cat in posCategories" :key="cat.category_name" @click="viewMode = cat.category_name" :class="[viewMode === cat.category_name ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200', 'px-5 py-2 font-bold rounded-lg transition-colors shrink-0', fontSm]">
+          {{ cat.category_name }}
+        </button>
       </div>
 
       <DataLoader v-if="isLoadingData" message="Fetching latest inventory records..." />
@@ -140,93 +102,66 @@ onMounted(() => {
         <div v-if="viewMode === 'raw'" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
-                <th class="pb-3 font-semibold">Category</th>
-                <th class="pb-3 font-semibold">Specific Part</th>
-                <th class="pb-3 font-semibold">Current Stock</th>
-                <th class="pb-3 font-semibold hidden md:table-cell">Alert Threshold</th>
-                <th class="pb-3 font-semibold">Status</th>
-                <th class="pb-3 font-semibold text-right">Actions</th>
+              <tr :class="['border-b-2 border-gray-200 text-gray-500 uppercase tracking-wider', fontSm]">
+                <th class="pb-3 font-bold px-2">Category</th>
+                <th class="pb-3 font-bold px-2">Specific Part</th>
+                <th class="pb-3 font-bold px-2">Current Stock</th>
+                <th class="pb-3 font-bold px-2 hidden md:table-cell">Threshold</th>
+                <th class="pb-3 font-bold px-2">Status</th>
               </tr>
             </thead>
             <tbody class="text-gray-700">
               <tr v-if="rawInventory.length === 0">
-                <td colspan="6" class="py-8 text-center text-gray-500">No raw inventory found in database.</td>
+                <td colspan="5" class="py-8 text-center text-gray-500">No raw inventory found.</td>
               </tr>
               <tr v-for="item in rawInventory" :key="item.raw_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td :class="['py-4 font-semibold text-gray-900', fontBase]">{{ item.category }}</td>
-                <td :class="['py-4', fontBase]">{{ item.specific_part }}</td>
-                <td :class="['py-4 font-bold', item.current_stock_kg <= item.alert_threshold_kg ? 'text-red-600' : 'text-gray-800', fontBase]">
-                  {{ item.current_stock_kg }} kg
+                <td :class="['py-4 font-bold text-gray-900 px-2', fontBase]">{{ item.category }}</td>
+                <td :class="['py-4 font-medium px-2', fontBase]">{{ item.specific_part }}</td>
+                <td :class="['py-4 font-black px-2', item.current_stock_kg <= item.alert_threshold_kg ? 'text-red-600' : 'text-gray-800', fontBase]">
+                  {{ item.current_stock_kg.toFixed(2) }} kg
                 </td>
-                <td :class="['py-4 text-gray-400 hidden md:table-cell', fontBase]">{{ item.alert_threshold_kg }} kg</td>
-                <td class="py-4">
-                  <BaseBadge 
-                    :text="getStatusText(item.current_stock_kg, item.alert_threshold_kg)"
-                    :variant="getStatusBadge(item.current_stock_kg, item.alert_threshold_kg)"
-                  />
-                </td>
-                <td class="py-4 text-right">
-                  <button @click="openAddStockModal(item)" :class="['text-blue-600 hover:text-blue-800 font-medium px-3 py-1 transition-colors', fontSm]">
-                    + Add Stock
-                  </button>
+                <td :class="['py-4 text-gray-400 font-medium px-2 hidden md:table-cell', fontBase]">{{ item.alert_threshold_kg }} kg</td>
+                <td class="py-4 px-2">
+                  <BaseBadge :text="getStatusText(item.current_stock_kg, item.alert_threshold_kg)" :variant="getStatusBadge(item.current_stock_kg, item.alert_threshold_kg)" />
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div v-if="viewMode === 'skewered'" class="overflow-x-auto">
+        <div v-else class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
-                <th class="pb-3 font-semibold">Item Name</th>
-                <th class="pb-3 font-semibold">Prepared Stock</th>
-                <th class="pb-3 font-semibold">Price (PHP)</th>
-                <th class="pb-3 font-semibold hidden md:table-cell">Pricing Type</th>
-                <th class="pb-3 font-semibold text-right">Actions</th>
+              <tr :class="['border-b-2 border-gray-200 text-gray-500 uppercase tracking-wider', fontSm]">
+                <th class="pb-3 font-bold px-2">Item Name</th>
+                <th class="pb-3 font-bold px-2">Stock Count</th>
+                <th class="pb-3 font-bold px-2">Price (PHP)</th>
+                <th class="pb-3 font-bold px-2 hidden md:table-cell">Pricing Type</th>
+                <th class="pb-3 font-bold px-2 text-right">Actions</th>
               </tr>
             </thead>
             <tbody class="text-gray-700">
-              <tr v-if="preparedInventory.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-500">No prepared inventory found in database.</td>
+              <tr v-if="currentPreparedItems.length === 0">
+                <td colspan="5" class="py-8 text-center text-gray-500">No items found in this category.</td>
               </tr>
-              <tr v-for="item in preparedInventory" :key="item.prep_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td :class="['py-4 font-semibold text-gray-900', fontBase]">{{ item.pos_display_name }}</td>
-                <td :class="['py-4 font-bold text-gray-800', fontBase]">{{ item.current_stock_pieces }} sticks</td>
-                <td :class="['py-4 font-bold text-gray-900', fontBase]">{{ item.unit_price.toFixed(2) }}</td>
-                <td class="py-4 hidden md:table-cell">
-                  <BaseBadge 
-                    :text="item.is_variable_price ? 'Variable' : 'Fixed'" 
-                    :variant="item.is_variable_price ? 'warning' : 'info'" 
-                  />
+              <tr v-for="item in currentPreparedItems" :key="item.prep_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td :class="['py-4 font-bold text-gray-900 px-2', fontBase]">{{ item.pos_display_name }}</td>
+                <td :class="['py-4 font-black text-gray-800 px-2', fontBase]">{{ item.current_stock_pieces }}</td>
+                <td :class="['py-4 font-black text-blue-600 px-2', fontBase]">₱{{ item.unit_price.toFixed(2) }}</td>
+                <td class="py-4 px-2 hidden md:table-cell">
+                  <BaseBadge :text="item.is_variable_price ? 'Variable' : 'Fixed'" :variant="item.is_variable_price ? 'warning' : 'info'" />
                 </td>
-                <td class="py-4 text-right">
-                  <button @click="openEditPriceModal(item)" :class="['text-blue-600 hover:text-blue-800 font-medium px-3 py-1 transition-colors', fontSm]">
-                    Edit Price
-                  </button>
+                <td class="py-4 px-2 text-right">
+                  <button @click="openEditPriceModal(item)" :class="['text-blue-600 hover:text-blue-800 font-bold px-3 py-1 transition-colors', fontSm]">Edit Price</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div> 
-
     </div>
 
-    <AddStockModal 
-      :is-open="isStockModalOpen" 
-      :item="selectedRawItem" 
-      @close="closeStockModal" 
-      @save="handleSaveStock" 
-    />
-
-    <EditPriceModal 
-      :is-open="isPriceModalOpen"
-      :item="selectedPreparedItem"
-      @close="closePriceModal"
-      @save="handleSavePrice"
-    />
-
+    <EditInventoryModal :is-open="isInventoryModalOpen" @close="isInventoryModalOpen = false" @refresh="loadData" />
+    <EditPriceModal :is-open="isPriceModalOpen" :item="selectedPreparedItem" @close="isPriceModalOpen = false; selectedPreparedItem = null" @save="handleSavePrice" />
   </div>
 </template>

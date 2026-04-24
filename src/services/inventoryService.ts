@@ -8,11 +8,17 @@ export interface RawInventoryItem {
 
 export interface PreparedInventoryItem {
   prep_item_id: number;
-  raw_item_id: number;
+  raw_item_id: number | null;
+  category: string;
   pos_display_name: string;
   current_stock_pieces: number;
   unit_price: number;
   is_variable_price: boolean;
+}
+
+export interface POSCategory {
+  category_name: string;
+  is_removable: boolean;
 }
 
 export interface PrepLog {
@@ -41,23 +47,56 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to fetch prepared inventory');
     return await res.json();
   },
-  
-  async addRawStock(itemId: number, kilosToAdd: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/inventory/add-stock`, {
+
+  async getPosCategories(): Promise<POSCategory[]> {
+    const res = await fetch(`${API_BASE}/inventory/pos-categories`);
+    if (!res.ok) throw new Error('Failed to fetch categories');
+    return await res.json();
+  },
+
+  async addPosCategory(categoryName: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/inventory/pos-categories/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item_id: itemId, kilos_to_add: kilosToAdd, staff_id: CURRENT_ADMIN_ID })
+      body: JSON.stringify({ category_name: categoryName })
     });
-    if (!res.ok) throw new Error('Failed to add raw stock');
+    if (!res.ok) throw new Error('Failed to add category');
+  },
+
+  async removePosCategory(categoryName: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/inventory/pos-categories/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_name: categoryName })
+    });
+    if (!res.ok) throw new Error('Failed to remove category');
+  },
+
+  async editStock(itemType: 'raw' | 'prepared', itemId: number, quantityChange: number, reason: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/inventory/edit-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_type: itemType, item_id: itemId, quantity_change: quantityChange, reason, staff_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to edit stock');
   },
   
   async addNewRawItem(category: string, part: string, initialKilos: number, alertThreshold: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/inventory/add-new`, {
+    const res = await fetch(`${API_BASE}/inventory/add-raw`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category, part, initial_kilos: initialKilos, alert_threshold: alertThreshold, staff_id: CURRENT_ADMIN_ID })
     });
     if (!res.ok) throw new Error('Failed to add new raw item');
+  },
+
+  async addPreparedItem(category: string, posDisplayName: string, unitPrice: number, isVariable: boolean): Promise<void> {
+    const res = await fetch(`${API_BASE}/inventory/add-prepared`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, pos_display_name: posDisplayName, unit_price: unitPrice, is_variable: isVariable, staff_id: CURRENT_ADMIN_ID })
+    });
+    if (!res.ok) throw new Error('Failed to add prepared item');
   },
   
   async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean): Promise<void> {
@@ -69,8 +108,9 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to update pricing');
   },
   
+  // ... The rest of the functions (getAvailableCategories, getAvailableParts, logPrepTransaction, etc) remain identical.
   async getAvailableCategories(): Promise<string[]> {
-    const res = await fetch(`${API_BASE}/inventory/categories`);
+    const res = await fetch(`${API_BASE}/inventory/raw-categories`);
     if (!res.ok) throw new Error('Failed to fetch categories');
     return await res.json();
   },
@@ -79,13 +119,6 @@ export const inventoryService = {
     const res = await fetch(`${API_BASE}/inventory/parts?category=${encodeURIComponent(category)}`);
     if (!res.ok) throw new Error('Failed to fetch parts');
     return await res.json();
-  },
-  
-  async checkStockAvailability(category: string, part: string, kilosNeeded: number): Promise<{ available: boolean; currentStock: number }> {
-    const parts = await this.getAvailableParts(category);
-    const item = parts.find(p => p.specific_part === part);
-    if (!item) return { available: false, currentStock: 0 };
-    return { available: item.current_stock_kg >= kilosNeeded, currentStock: item.current_stock_kg };
   },
   
   async logPrepTransaction(category: string, part: string, kilos: number, sticks: number, staffName?: string): Promise<void> {

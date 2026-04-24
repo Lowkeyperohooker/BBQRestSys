@@ -123,10 +123,13 @@ pub async fn get_staff_shifts(
     Path(staff_id): Path<i32>,
 ) -> AppResult<Vec<Shift>> {
     let shifts = sqlx::query_as::<_, Shift>(
-        "SELECT shift_id, staff_id, shift_date, clock_in_time, clock_out_time, total_rendered_hours::float8, status 
-         FROM Shift 
-         WHERE staff_id = $1 
-         ORDER BY clock_in_time DESC 
+        "SELECT sh.shift_id, sh.staff_id, s.full_name, s.role, 
+                sh.shift_date, sh.clock_in_time, sh.clock_out_time, 
+                sh.total_rendered_hours::float8, sh.status 
+         FROM Shift sh
+         JOIN Staff s ON sh.staff_id = s.staff_id
+         WHERE sh.staff_id = $1 
+         ORDER BY sh.clock_in_time DESC 
          LIMIT 30"
     )
     .bind(staff_id)

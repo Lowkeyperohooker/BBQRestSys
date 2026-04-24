@@ -45,5 +45,24 @@
     "tax": 0.0,
     "total": 42.0,
     "timestamp": "2026-04-23T12:10:32.107Z"
+  },
+  {
+    "queue_number": 1007,
+    "order_type": "Dine-in",
+    "cart_items": [
+      {
+        "prep_item_id": 8,
+        "raw_item_id": 8,
+        "pos_display_name": "Tuna Fillet",
+        "current_stock_pieces": 90,
+        "unit_price": 100.0,
+        "is_variable_price": true,
+        "qty": 2
+      }
+    ],
+    "subtotal": 200.0,
+    "tax": 0.0,
+    "total": 200.0,
+    "timestamp": "2026-04-23T13:46:04.667Z"
   }
 ]

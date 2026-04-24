@@ -2,8 +2,9 @@ use axum::{extract::Path, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-const QUEUE_FILE: &str = "pending_kiosk_orders.json";
-const COUNTER_FILE: &str = "queue_counter.txt"; // NEW: Dedicated tracker
+// FIX: Added "../" to save these files in the root folder, outside the Tauri watcher
+const QUEUE_FILE: &str = "../pending_kiosk_orders.json";
+const COUNTER_FILE: &str = "../queue_counter.txt";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PendingCartItem {
@@ -27,7 +28,7 @@ pub struct PendingOrder {
     pub timestamp: String,
 }
 
-// --- NEW: Persistent Counter Logic ---
+// --- Persistent Counter Logic ---
 async fn read_counter() -> i32 {
     match fs::read_to_string(COUNTER_FILE).await {
         // Default to 999 so the very first order generated is 1000

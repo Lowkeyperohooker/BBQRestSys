@@ -154,21 +154,24 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col items-center justify-center p-4">
+  <div class="h-full flex flex-col items-center justify-center p-4 md:p-6">
     
-    <div v-if="isLoadingData" class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center h-64">
+    <div v-if="isLoadingData" class="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center h-64">
       <DataLoader message="Loading preparation environment..." />
     </div>
 
-    <div v-else class="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-full">
-      <div class="p-6 border-b border-gray-100 shrink-0 bg-gray-50/50">
-        <h2 :class="['font-extrabold text-gray-900 tracking-tight', fontLg]">Prep Station</h2>
-        <p :class="['font-medium text-gray-500 mt-1', fontSm]">Log skewering tasks</p>
+    <div v-else class="w-full max-w-3xl bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-full">
+      <div class="p-6 md:px-8 md:py-6 border-b border-gray-100 shrink-0 bg-gray-50/50 flex justify-between items-center">
+        <div>
+          <h2 :class="['font-extrabold text-gray-900 tracking-tight', fontLg]">Prep Station</h2>
+          <p :class="['font-medium text-gray-500 mt-1', fontSm]">Log skewering tasks</p>
+        </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6">
-        <form @submit.prevent="handleSavePrep" class="space-y-5">
-          <div>
+      <div class="flex-1 overflow-y-auto p-6 md:p-8">
+        <form @submit.prevent="handleSavePrep" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div class="col-span-1">
             <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Meat Category</label>
             <select 
               v-model="selectedCategory" 
@@ -183,7 +186,7 @@ onMounted(async () => {
             </p>
           </div>
           
-          <div>
+          <div class="col-span-1">
             <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Specific Part / Cut</label>
             <select 
               v-model="selectedPart" 
@@ -198,12 +201,17 @@ onMounted(async () => {
             <p v-if="isLoadingParts" :class="['text-gray-500 font-bold mt-2', fontSm]">Loading parts...</p>
           </div>
           
-          <div v-if="currentStockInfo" class="bg-blue-50/50 border border-blue-100 p-4 rounded-xl">
-            <p :class="['font-bold', stockStatus.class, fontSm]">{{ stockStatus.text }}</p>
-            <p :class="['text-gray-500 font-medium mt-1', fontSm]">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
+          <div v-if="currentStockInfo" class="md:col-span-2 bg-blue-50/50 border border-blue-100 p-4 rounded-xl flex items-center justify-between">
+            <div>
+              <p :class="['font-bold', stockStatus.class, fontBase]">{{ stockStatus.text }}</p>
+              <p :class="['text-gray-500 font-medium mt-1', fontSm]">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
+            </div>
+            <div class="hidden md:block text-blue-300">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
           </div>
           
-          <div>
+          <div class="col-span-1">
             <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">
               Raw Kilos Used 
               <span v-if="maxKilosAllowed > 0" class="text-gray-400 font-medium ml-1">
@@ -223,7 +231,7 @@ onMounted(async () => {
             />
           </div>
           
-          <div>
+          <div class="col-span-1">
             <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Skewers Produced</label>
             <input 
               v-model.number="skewersProduced" 
@@ -236,7 +244,7 @@ onMounted(async () => {
             />
           </div>
           
-          <div>
+          <div class="col-span-1">
             <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Staff Member</label>
             <select 
               v-model="selectedStaff" 
@@ -249,12 +257,12 @@ onMounted(async () => {
             </select>
           </div>
           
-          <div class="pt-4 pb-2">
+          <div class="col-span-1 flex items-end mt-2 md:mt-0">
             <BaseButton 
               type="submit" 
               variant="primary"
               :disabled="!canPrep"
-              :class="['w-full py-4 shadow-md hover:shadow-lg transition-all', fontBase]"
+              :class="['w-full py-3 shadow-md hover:shadow-lg transition-all h-[52px]', fontBase]"
             >
               Save Prep Log
             </BaseButton>

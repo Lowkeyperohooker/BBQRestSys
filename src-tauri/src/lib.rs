@@ -38,13 +38,17 @@ pub fn run() {
                 let inventory_routes = Router::new()
                     .route("/raw", get(inventory::get_raw_inventory))
                     .route("/prepared", get(inventory::get_prepared_inventory))
-                    .route("/add-stock", post(inventory::add_raw_stock))
-                    .route("/add-new", post(inventory::add_new_raw_item))
+                    .route("/edit-stock", post(inventory::edit_stock))
+                    .route("/add-raw", post(inventory::add_new_raw_item))
+                    .route("/add-prepared", post(inventory::add_prepared_item))
                     .route("/update-pricing", post(inventory::update_prepared_item_pricing))
-                    .route("/categories", get(inventory::get_available_categories))
+                    .route("/raw-categories", get(inventory::get_available_categories))
                     .route("/parts", get(inventory::get_available_parts))
                     .route("/log-prep", post(inventory::log_prep_transaction))
-                    .route("/recent-prep", get(inventory::get_recent_prep_logs));
+                    .route("/recent-prep", get(inventory::get_recent_prep_logs))
+                    .route("/pos-categories", get(inventory::get_pos_categories))
+                    .route("/pos-categories/add", post(inventory::add_pos_category))
+                    .route("/pos-categories/remove", post(inventory::remove_pos_category));
 
                 let pos_routes = Router::new()
                     .route("/active-orders", get(pos::get_active_orders))
@@ -56,7 +60,8 @@ pub fn run() {
                     .route("/today", get(schedule::get_today_shifts))
                     .route("/active-shift", get(schedule::get_active_shift_for_staff))
                     .route("/clock-in", post(schedule::clock_in))
-                    .route("/clock-out", post(schedule::clock_out));
+                    .route("/clock-out", post(schedule::clock_out))
+                    .route("/staff/:staff_id", get(schedule::get_staff_shifts)); // FIX: Added the missing route
 
                 let staff_routes = Router::new()
                     .route("/all", get(staff::get_all_staff_full))
