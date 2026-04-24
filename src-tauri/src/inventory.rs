@@ -1,4 +1,6 @@
-use axum::{extract::{State, Query}, Json, http::StatusCode};
+use axum::{extract::{State, Query, Path}, Json, http
+        ::{StatusCode, HeaderMap}, 
+    response::IntoResponse, body::Bytes};
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
 use crate::models::*;
@@ -6,18 +8,38 @@ use crate::models::*;
 // --- Request Payloads ---
 #[derive(Deserialize)]
 pub struct EditStockReq { pub item_type: String, pub item_id: i32, pub quantity_change: f64, pub reason: String, pub staff_id: i32 }
+
 #[derive(Deserialize)]
 pub struct AddNewRawItemReq { pub category: String, pub part: String, pub initial_kilos: f64, pub alert_threshold: f64, pub staff_id: i32 }
+
 #[derive(Deserialize)]
-pub struct AddPreparedReq { pub category: String, pub pos_display_name: String, pub unit_price: f64, pub is_variable: bool, pub staff_id: i32 }
+pub struct AddPreparedReq { 
+    pub category: String, 
+    pub pos_display_name: String, 
+    pub unit_price: f64, 
+    pub is_variable: bool, 
+    pub photo_url: Option<String>, 
+    pub staff_id: i32 
+}
+
 #[derive(Deserialize)]
-pub struct UpdatePricingReq { pub prep_item_id: i32, pub new_price: f64, pub is_variable: bool, pub staff_id: i32 }
+pub struct UpdatePricingReq { 
+    pub prep_item_id: i32, 
+    pub new_price: f64, 
+    pub is_variable: bool, 
+    pub photo_url: Option<String>,
+    pub staff_id: i32 
+}
+
 #[derive(Deserialize)]
 pub struct PosCategoryReq { pub category_name: String }
+
 #[derive(Deserialize)]
 pub struct CategoryQuery { pub category: String }
+
 #[derive(Deserialize)]
 pub struct LogPrepReq { pub category: String, pub part: String, pub kilos: f64, pub sticks: i32, pub staff_name: Option<String> }
+
 #[derive(Deserialize)]
 pub struct LimitQuery { pub limit: i64 }
 
@@ -107,16 +129,25 @@ pub async fn add_new_raw_item(State(pool): State<PgPool>, Json(payload): Json<Ad
 
 pub async fn add_prepared_item(State(pool): State<PgPool>, Json(payload): Json<AddPreparedReq>) -> AppResult<()> {
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, unit_price, is_variable_price) VALUES ($1, $2, $3::numeric, $4)")
-        .bind(payload.category).bind(payload.pos_display_name).bind(payload.unit_price).bind(payload.is_variable)
+    
+    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, unit_price, is_variable_price, photo_url) VALUES ($1, $2, $3::numeric, $4, $5)")
+        .bind(payload.category)
+        .bind(payload.pos_display_name)
+        .bind(payload.unit_price)
+        .bind(payload.is_variable)
+        .bind(payload.photo_url)
         .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        
     tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(()))
 }
 
 pub async fn update_prepared_item_pricing(State(pool): State<PgPool>, Json(payload): Json<UpdatePricingReq>) -> AppResult<()> {
-    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, is_variable_price = $2 WHERE prep_item_id = $3")
-        .bind(payload.new_price).bind(payload.is_variable).bind(payload.prep_item_id)
+    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, is_variable_price = $2, photo_url = $3 WHERE prep_item_id = $4")
+        .bind(payload.new_price)
+        .bind(payload.is_variable)
+        .bind(payload.photo_url)
+        .bind(payload.prep_item_id)
         .execute(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(()))
 }
@@ -175,4 +206,38 @@ pub async fn get_recent_prep_logs(State(pool): State<PgPool>, Query(q): Query<Li
          ORDER BY p.timestamp DESC LIMIT $1"
     ).bind(q.limit).fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(logs))
+}
+
+pub async fn upload_photo(headers: HeaderMap, body: Bytes) -> AppResult<String> {
+    // Get the file extension from our custom header, default to png
+    let ext = headers.get("x-file-ext").and_then(|v| v.to_str().ok()).unwrap_or("png");
+    
+    // Create the uploads folder in the root directory if it doesn't exist yet
+    let _ = tokio::fs::create_dir_all("../uploads").await;
+    
+    // Generate a unique filename using the current timestamp so files don't overwrite each other
+    let unique_name = format!("{}.{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0), ext);
+    let path = format!("../uploads/{}", unique_name);
+    
+    // Save the file
+    tokio::fs::write(&path, &body).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    // Return the web-accessible URL
+    Ok(Json(format!("/uploads/{}", unique_name)))
+}
+
+pub async fn serve_upload(Path(file_name): Path<String>) -> impl IntoResponse {
+    let path = format!("../uploads/{}", file_name);
+    
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => {
+            // Check extension to send the correct image type to the browser
+            let content_type = if file_name.ends_with(".png") { "image/png" }
+            else if file_name.ends_with(".jpg") || file_name.ends_with(".jpeg") { "image/jpeg" }
+            else { "application/octet-stream" };
+            
+            ([(axum::http::header::CONTENT_TYPE, content_type)], bytes).into_response()
+        }
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
 }

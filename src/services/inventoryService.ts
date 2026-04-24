@@ -14,6 +14,7 @@ export interface PreparedInventoryItem {
   current_stock_pieces: number;
   unit_price: number;
   is_variable_price: boolean;
+  photo_url?: string | null;
 }
 
 export interface POSCategory {
@@ -90,25 +91,37 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to add new raw item');
   },
 
-  async addPreparedItem(category: string, posDisplayName: string, unitPrice: number, isVariable: boolean): Promise<void> {
+  async addPreparedItem(category: string, posDisplayName: string, unitPrice: number, isVariable: boolean, photoUrl?: string | null): Promise<void> {
     const res = await fetch(`${API_BASE}/inventory/add-prepared`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, pos_display_name: posDisplayName, unit_price: unitPrice, is_variable: isVariable, staff_id: CURRENT_ADMIN_ID })
+      body: JSON.stringify({ 
+        category, 
+        pos_display_name: posDisplayName, 
+        unit_price: unitPrice, 
+        is_variable: isVariable, 
+        photo_url: photoUrl || null,
+        staff_id: CURRENT_ADMIN_ID 
+      })
     });
     if (!res.ok) throw new Error('Failed to add prepared item');
   },
   
-  async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean): Promise<void> {
+  async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean, photoUrl: string | null): Promise<void> {
     const res = await fetch(`${API_BASE}/inventory/update-pricing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prep_item_id: prepItemId, new_price: newPrice, is_variable: isVariable, staff_id: CURRENT_ADMIN_ID })
+      body: JSON.stringify({ 
+        prep_item_id: prepItemId, 
+        new_price: newPrice, 
+        is_variable: isVariable, 
+        photo_url: photoUrl,
+        staff_id: CURRENT_ADMIN_ID 
+      })
     });
     if (!res.ok) throw new Error('Failed to update pricing');
   },
   
-  // ... The rest of the functions (getAvailableCategories, getAvailableParts, logPrepTransaction, etc) remain identical.
   async getAvailableCategories(): Promise<string[]> {
     const res = await fetch(`${API_BASE}/inventory/raw-categories`);
     if (!res.ok) throw new Error('Failed to fetch categories');
@@ -139,6 +152,20 @@ export const inventoryService = {
   async getRecentPrepLogs(limit: number = 10): Promise<PrepLog[]> {
     const res = await fetch(`${API_BASE}/inventory/recent-prep?limit=${limit}`);
     if (!res.ok) throw new Error('Failed to fetch recent prep logs');
+    return await res.json();
+  },
+  async uploadPhoto(file: File): Promise<string> {
+    const ext = file.name.split('.').pop() || 'png';
+    const res = await fetch(`${API_BASE}/inventory/upload-photo`, {
+      method: 'POST',
+      headers: {
+        'x-file-ext': ext,
+        'Content-Type': 'application/octet-stream'
+      },
+      body: file
+    });
+    
+    if (!res.ok) throw new Error('Failed to upload photo');
     return await res.json();
   },
 };

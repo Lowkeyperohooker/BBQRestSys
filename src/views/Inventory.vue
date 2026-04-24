@@ -44,13 +44,14 @@ function openEditPriceModal(item: PreparedInventoryItem) {
   isPriceModalOpen.value = true;
 }
 
-async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean }) {
+// Updated to accept the photoUrl from the modal
+async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null }) {
   try {
-    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice);
+    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice, data.photoUrl);
     isPriceModalOpen.value = false;
     await loadData();
   } catch (error) {
-    alert("Failed to update pricing.");
+    alert("Failed to update item details.");
   }
 }
 
@@ -64,6 +65,13 @@ function getStatusText(current: number, threshold: number): string {
   if (current <= threshold * 0.5) return 'Critically Low';
   if (current <= threshold) return 'Low Stock';
   return 'Adequate';
+}
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+  }
 }
 
 onMounted(() => loadData());
@@ -145,14 +153,26 @@ onMounted(() => loadData());
                 <td colspan="5" class="py-8 text-center text-gray-500">No items found in this category.</td>
               </tr>
               <tr v-for="item in currentPreparedItems" :key="item.prep_item_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td :class="['py-4 font-bold text-gray-900 px-2', fontBase]">{{ item.pos_display_name }}</td>
-                <td :class="['py-4 font-black text-gray-800 px-2', fontBase]">{{ item.current_stock_pieces }}</td>
-                <td :class="['py-4 font-black text-blue-600 px-2', fontBase]">₱{{ item.unit_price.toFixed(2) }}</td>
-                <td class="py-4 px-2 hidden md:table-cell">
+                
+                <td :class="['py-3 px-2', fontBase]">
+                  <div class="flex items-center gap-3">
+                    <div v-if="item.photo_url" class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-200">
+                      <img :src="`http://localhost:3000${item.photo_url}`" class="w-full h-full object-cover" @error="handleImageError" />
+                    </div>
+                    <div v-else class="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-200 text-gray-300">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <span class="font-bold text-gray-900">{{ item.pos_display_name }}</span>
+                  </div>
+                </td>
+
+                <td :class="['py-3 font-black text-gray-800 px-2', fontBase]">{{ item.current_stock_pieces }}</td>
+                <td :class="['py-3 font-black text-blue-600 px-2', fontBase]">₱{{ item.unit_price.toFixed(2) }}</td>
+                <td class="py-3 px-2 hidden md:table-cell">
                   <BaseBadge :text="item.is_variable_price ? 'Variable' : 'Fixed'" :variant="item.is_variable_price ? 'warning' : 'info'" />
                 </td>
-                <td class="py-4 px-2 text-right">
-                  <button @click="openEditPriceModal(item)" :class="['text-blue-600 hover:text-blue-800 font-bold px-3 py-1 transition-colors', fontSm]">Edit Price</button>
+                <td class="py-3 px-2 text-right">
+                  <button @click="openEditPriceModal(item)" :class="['text-blue-600 hover:text-blue-800 font-bold px-3 py-1 transition-colors', fontSm]">Edit Details</button>
                 </td>
               </tr>
             </tbody>

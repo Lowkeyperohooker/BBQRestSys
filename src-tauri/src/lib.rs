@@ -48,7 +48,8 @@ pub fn run() {
                     .route("/recent-prep", get(inventory::get_recent_prep_logs))
                     .route("/pos-categories", get(inventory::get_pos_categories))
                     .route("/pos-categories/add", post(inventory::add_pos_category))
-                    .route("/pos-categories/remove", post(inventory::remove_pos_category));
+                    .route("/pos-categories/remove", post(inventory::remove_pos_category))
+                    .route("/upload-photo", post(inventory::upload_photo));
 
                 let pos_routes = Router::new()
                     .route("/active-orders", get(pos::get_active_orders))
@@ -95,6 +96,7 @@ pub fn run() {
 
                 let app_router = Router::new()
                     .nest("/api", api_routes)
+                    .route("/uploads/:file_name", get(inventory::serve_upload))
                     .with_state(pool)
                     .layer(cors);
 

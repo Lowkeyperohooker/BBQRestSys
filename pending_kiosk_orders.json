@@ -1,0 +1,59 @@
+[
+  {
+    "queue_number": 1000,
+    "order_type": "Dine-in",
+    "cart_items": [
+      {
+        "prep_item_id": 2,
+        "raw_item_id": 4,
+        "pos_display_name": "Chicken Isaw",
+        "current_stock_pieces": 200,
+        "unit_price": 15.0,
+        "is_variable_price": false,
+        "qty": 5
+      }
+    ],
+    "subtotal": 75.0,
+    "tax": 0.0,
+    "total": 75.0,
+    "timestamp": "2026-04-24T09:07:02.201Z"
+  },
+  {
+    "queue_number": 1001,
+    "order_type": "Dine-in",
+    "cart_items": [
+      {
+        "prep_item_id": 1,
+        "raw_item_id": 1,
+        "pos_display_name": "Pork BBQ",
+        "current_stock_pieces": 150,
+        "unit_price": 35.0,
+        "is_variable_price": false,
+        "qty": 8
+      }
+    ],
+    "subtotal": 280.0,
+    "tax": 0.0,
+    "total": 280.0,
+    "timestamp": "2026-04-24T09:07:16.030Z"
+  },
+  {
+    "queue_number": 1002,
+    "order_type": "Dine-in",
+    "cart_items": [
+      {
+        "prep_item_id": 5,
+        "raw_item_id": 3,
+        "pos_display_name": "Tenga (Pork Ears)",
+        "current_stock_pieces": 45,
+        "unit_price": 20.0,
+        "is_variable_price": false,
+        "qty": 11
+      }
+    ],
+    "subtotal": 220.0,
+    "tax": 0.0,
+    "total": 220.0,
+    "timestamp": "2026-04-24T09:07:27.456Z"
+  }
+]
