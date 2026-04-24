@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS prepared_inventory (
     current_stock_pieces INTEGER DEFAULT 0,
     unit_price DECIMAL(10,2) NOT NULL,
     is_variable_price BOOLEAN DEFAULT FALSE,
-    photo_url TEXT, -- NEW: Local path to item photo (e.g., '/images/coke.png')
+    photo_url TEXT,
     FOREIGN KEY (raw_item_id) REFERENCES raw_inventory(raw_item_id)
 );
 
@@ -88,4 +88,26 @@ CREATE TABLE IF NOT EXISTS system_log (
 CREATE TABLE IF NOT EXISTS pos_category (
     category_name TEXT PRIMARY KEY,
     is_removable BOOLEAN DEFAULT TRUE
+);
+
+-- NEW: Database Sequence to auto-generate Kiosk numbers 1000 -> 9090
+CREATE SEQUENCE IF NOT EXISTS kiosk_queue_seq START 1000 MAXVALUE 9090 CYCLE;
+
+-- NEW: Tables for the pending Kiosk Queue
+CREATE TABLE IF NOT EXISTS kiosk_queue (
+    queue_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    queue_number INTEGER NOT NULL,
+    order_type TEXT NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    tax DECIMAL(10,2) NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS kiosk_queue_item (
+    queue_item_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    queue_id INTEGER NOT NULL REFERENCES kiosk_queue(queue_id) ON DELETE CASCADE,
+    prep_item_id INTEGER NOT NULL REFERENCES prepared_inventory(prep_item_id),
+    quantity INTEGER NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL
 );

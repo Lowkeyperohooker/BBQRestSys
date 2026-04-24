@@ -60,7 +60,7 @@ function handleConfirm() {
         <div>
           <span v-if="item.is_variable_price" class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-2 inline-block">Variable Price</span>
           <h3 :class="['font-black text-gray-900 leading-tight', fontXl]">{{ item.pos_display_name }}</h3>
-          <p :class="['text-gray-500 font-medium mt-1', fontSm]">Stock: {{ item.current_stock_pieces }}</p>
+          <p :class="['text-gray-500 font-medium mt-1', fontSm]">Stock: {{ (item.current_stock_pieces > 0)?"Available":"Out of stock"  }}</p>
         </div>
         <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 bg-gray-200/50 hover:bg-gray-200 p-2 rounded-full transition-colors ml-4">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
