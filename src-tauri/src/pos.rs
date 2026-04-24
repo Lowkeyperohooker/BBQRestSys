@@ -1,6 +1,6 @@
 use axum::{extract::State, Json, http::StatusCode};
 use sqlx::PgPool;
-use serde::{Deserialize, Serialize}; // Added Serialize
+use serde::{Deserialize, Serialize}; 
 use crate::models::*;
 
 // Structs for extracting JSON payload data
@@ -49,10 +49,10 @@ pub struct ActiveOrderItemResponse {
 // ------------------------------------------------
 
 pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<ActiveOrderResponse>> {
-    // 1. Fetch the base orders
+    // 1. Fetch the base orders (Updated to use snake_case table name)
     let orders = sqlx::query_as::<_, ActiveOrder>(
         "SELECT order_id, customer_identifier, order_type, total_amount::float8, status, timestamp
-         FROM Orders WHERE status != 'Completed' AND status != 'Pending PIN' ORDER BY timestamp ASC"
+         FROM orders WHERE status != 'Completed' AND status != 'Pending PIN' ORDER BY timestamp ASC"
     )
     .fetch_all(&pool)
     .await
@@ -64,8 +64,8 @@ pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<Acti
     for order in orders {
         let items = sqlx::query_as::<_, ActiveOrderItemResponse>(
             "SELECT pi.pos_display_name, oi.quantity as qty, oi.price_at_time_of_sale::float8 as unit_price 
-             FROM Order_Item oi 
-             JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id 
+             FROM order_item oi 
+             JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id 
              WHERE oi.order_id = $1"
         )
         .bind(order.order_id)
@@ -79,10 +79,10 @@ pub async fn get_active_orders(State(pool): State<PgPool>) -> AppResult<Vec<Acti
             order_type: order.order_type,
             total_amount: order.total_amount,
             
-            // FIX 1: Unwrap the Option safely. If null, it defaults to an empty string.
+            // Unwrap the Option safely. If null, it defaults to an empty string.
             status: order.status.unwrap_or_default(), 
             
-            // FIX 2: Convert the chrono::DateTime object into a standard String.
+            // Convert the chrono::DateTime object into a standard String.
             timestamp: order.timestamp.to_string(), 
             
             cart_items: items,
@@ -96,7 +96,7 @@ pub async fn send_to_grill(State(pool): State<PgPool>, Json(payload): Json<SendT
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let row: (i32,) = sqlx::query_as(
-        "INSERT INTO Orders (staff_id, customer_identifier, order_type, subtotal, tax_amount, total_amount, status)
+        "INSERT INTO orders (staff_id, customer_identifier, order_type, subtotal, tax_amount, total_amount, status)
          VALUES ($1, $2, $3, $4::numeric, $5::numeric, $6::numeric, 'Cooking') RETURNING order_id"
     )
     .bind(payload.staff_id).bind(&payload.customer_identifier).bind(&payload.order_type)
@@ -107,11 +107,11 @@ pub async fn send_to_grill(State(pool): State<PgPool>, Json(payload): Json<SendT
     let mut itemized = String::new();
 
     for item in &payload.cart_items {
-        sqlx::query("INSERT INTO Order_Item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES ($1, $2, $3, $4::numeric)")
+        sqlx::query("INSERT INTO order_item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES ($1, $2, $3, $4::numeric)")
             .bind(order_id).bind(item.prep_item_id).bind(item.qty).bind(item.unit_price)
             .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        sqlx::query("UPDATE Prepared_Inventory SET current_stock_pieces = current_stock_pieces - $1 WHERE prep_item_id = $2")
+        sqlx::query("UPDATE prepared_inventory SET current_stock_pieces = current_stock_pieces - $1 WHERE prep_item_id = $2")
             .bind(item.qty).bind(item.prep_item_id)
             .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -119,7 +119,7 @@ pub async fn send_to_grill(State(pool): State<PgPool>, Json(payload): Json<SendT
     }
 
     let details = format!("Order Type: {}\nCustomer/Table: {}\n\nItems Ordered:\n{}\nTotal Amount: PHP {:.2}", payload.order_type, payload.customer_identifier, itemized, payload.total);
-    sqlx::query("INSERT INTO System_Log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Order Sent to Grill', $2)")
+    sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Order Sent to Grill', $2)")
         .bind(payload.staff_id).bind(details).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -130,13 +130,13 @@ pub async fn settle_payment(State(pool): State<PgPool>, Json(payload): Json<Orde
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let items = sqlx::query_as::<_, OrderReceiptItem>(
-        "SELECT pi.pos_display_name, oi.quantity, oi.price_at_time_of_sale::float8 FROM Order_Item oi JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id WHERE oi.order_id = $1"
+        "SELECT pi.pos_display_name, oi.quantity, oi.price_at_time_of_sale::float8 FROM order_item oi JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id WHERE oi.order_id = $1"
     ).bind(payload.order_id).fetch_all(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let receipt = items.iter().map(|i| format!("- {}x {} (PHP {:.2})", i.quantity, i.pos_display_name, i.price_at_time_of_sale * i.quantity as f64)).collect::<Vec<_>>().join("\n");
 
-    sqlx::query("UPDATE Orders SET status = 'Completed' WHERE order_id = $1").bind(payload.order_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    sqlx::query("INSERT INTO System_Log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Payment Settled', $2)")
+    sqlx::query("UPDATE orders SET status = 'Completed' WHERE order_id = $1").bind(payload.order_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Payment Settled', $2)")
         .bind(payload.staff_id).bind(format!("Order #{} has been paid in full.\n\nOrder Contents:\n{}", payload.order_id, receipt))
         .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -148,13 +148,13 @@ pub async fn update_order_status_with_log(State(pool): State<PgPool>, Json(paylo
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let items = sqlx::query_as::<_, OrderReceiptItem>(
-        "SELECT pi.pos_display_name, oi.quantity, oi.price_at_time_of_sale::float8 FROM Order_Item oi JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id WHERE oi.order_id = $1"
+        "SELECT pi.pos_display_name, oi.quantity, oi.price_at_time_of_sale::float8 FROM order_item oi JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id WHERE oi.order_id = $1"
     ).bind(payload.order_id).fetch_all(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let receipt = items.iter().map(|i| format!("- {}x {} (PHP {:.2})", i.quantity, i.pos_display_name, i.price_at_time_of_sale * i.quantity as f64)).collect::<Vec<_>>().join("\n");
 
-    sqlx::query("UPDATE Orders SET status = $1 WHERE order_id = $2").bind(&payload.status).bind(payload.order_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    sqlx::query("INSERT INTO System_Log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Order Status Updated', $2)")
+    sqlx::query("UPDATE orders SET status = $1 WHERE order_id = $2").bind(&payload.status).bind(payload.order_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('POS', $1, 'Order Status Updated', $2)")
         .bind(payload.staff_id).bind(format!("Order #{} marked as {}\n\nOrder Contents:\n{}", payload.order_id, payload.status, receipt))
         .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 

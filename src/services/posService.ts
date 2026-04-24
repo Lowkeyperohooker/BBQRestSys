@@ -7,6 +7,7 @@ export interface PosItem {
   current_stock_pieces: number;
   unit_price: number;
   is_variable_price: boolean;
+  photo_url?: string | null;
 }
 
 export interface CartItem extends PosItem {

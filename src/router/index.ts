@@ -45,7 +45,7 @@ const routes = [
   { 
     path: '/schedule', 
     component: Schedule, 
-    meta: { roles: ['Admin', 'Staff'] } 
+    meta: { roles: ['Admin'] } 
   },
   { 
     path: '/staff', 

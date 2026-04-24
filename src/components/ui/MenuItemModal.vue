@@ -19,7 +19,6 @@ const emit = defineEmits<{
 const qty = ref(1);
 const customPrice = ref(0);
 
-// Reset modal state every time it opens with a new item
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.item) {
     qty.value = 1;

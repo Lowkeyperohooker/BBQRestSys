@@ -8,7 +8,7 @@ import CheckOrderModal from '../components/ui/CheckOrderModal.vue';
 import MenuItemModal from '../components/ui/MenuItemModal.vue';
 import { useResponsive } from '../composables/useResponsive';
 
-const { fontSm, fontBase, fontLg, fontXl, font2xl, isMobile } = useResponsive();
+const { fontSm, fontLg, fontXl, font2xl, isMobile } = useResponsive();
 
 const availableItems = ref<PosItem[]>([]);
 const cart = ref<CartItem[]>([]);
@@ -119,6 +119,13 @@ async function handleFinalizeOrder() {
     alert("Failed to process your order. Please call a staff member.");
   }
 }
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.style.display = 'none';
+  }
+}
 </script>
 
 <template>
@@ -163,22 +170,29 @@ async function handleFinalizeOrder() {
 
         <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5']">
           <div v-for="item in availableItems" :key="item.prep_item_id" @click="openItemModal(item)"
-            class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-40">
+            class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-55">
             
-            <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10">VAR</span>
+            <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">VAR</span>
 
-            <div class="h-16 md:h-24 bg-blue-50/50 rounded-xl mb-3 md:mb-4 flex items-center justify-center text-blue-500 group-hover:bg-blue-100 transition-colors duration-300">
-              <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <div class="h-28 md:h-36 bg-gray-100 rounded-xl mb-3 md:mb-4 flex items-center justify-center text-gray-300 overflow-hidden border border-gray-100 relative group-hover:opacity-90 transition-opacity">
+              <img 
+                v-if="item.photo_url" 
+                :src="`http://localhost:3000${item.photo_url}`" 
+                class="w-full h-full object-cover" 
+                @error="handleImageError" 
+              />
+              <svg v-else class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
             
-            <h4 :class="['font-bold text-gray-900 mb-1', fontLg]" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
+            <h4 :class="['font-bold text-gray-900 mb-1 leading-tight', fontLg]" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
             
-            <div class="flex justify-between items-end mt-auto pt-2">
+            <div class="flex justify-between items-end mt-auto pt-3">
               <div class="flex flex-col">
                 <span v-if="item.is_variable_price" class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Starts at</span>
                 <span :class="['text-blue-600 font-black leading-none', fontXl]">₱{{ item.unit_price.toFixed(2) }}</span>
               </div>
-              <p v-if="item.current_stock_pieces < 10" class="text-xs text-red-500 font-bold">Only {{ item.current_stock_pieces }} left!</p>
+              <p v-if="item.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-red-500 font-black">Sold Out</p>
+              <p v-else-if="item.current_stock_pieces < 10" class="text-[10px] md:text-xs text-orange-500 font-bold">Only {{ item.current_stock_pieces }} left</p>
               <p v-else class="text-[10px] md:text-xs text-gray-400 font-medium">Available</p>
             </div>
           </div>
