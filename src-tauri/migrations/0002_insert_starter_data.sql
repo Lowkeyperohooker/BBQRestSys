@@ -1,66 +1,66 @@
-INSERT INTO Staff (full_name, role, phone_number, status, passcode) VALUES
-('Juan Dela Cruz', 'Admin', '09123456789', 'Active', '1234'),
-('Jane Smith', 'Staff', '123456789', 'Active', '5678'),
-('System Developer', 'Super Admin', '000-0000', 'Active', '9999');
+TRUNCATE TABLE 
+    system_log, 
+    order_item, 
+    orders, 
+    prep_log, 
+    prepared_inventory, 
+    raw_inventory, 
+    shift, 
+    staff, 
+    pos_category 
+RESTART IDENTITY CASCADE;
 
-INSERT INTO Raw_Inventory (category, specific_part, current_stock_kg, alert_threshold_kg) VALUES
-('Chicken', 'Intestine', 14.5, 5.0),
-('Chicken', 'Neck', 18.0, 8.0),
-('Chicken', 'Leg Quarter', 42.5, 15.0),
-('Chicken', 'Liver', 2.1, 5.0),
-('Pork', 'Intestine', 22.0, 10.0),
-('Pork', 'Liver', 4.5, 8.0),
-('Seafood', 'Milk Fish Fillet', 15.0, 5.0),
-('Seafood', 'Tuna Fillet', 18.5, 5.0);
+INSERT INTO pos_category (category_name, is_removable) VALUES
+('Skewered', FALSE), ('Beverages', TRUE), ('Desserts', TRUE), ('Extras', TRUE);
 
-INSERT INTO Prepared_Inventory (raw_item_id, pos_display_name, current_stock_pieces, unit_price, is_variable_price) VALUES
-(1, 'Chicken Isaw', 145, 6.00, FALSE),
-(2, 'Chicken Neck', 80, 5.00, TRUE),
-(3, 'Chicken Leg Quarter', 120, 80.00, TRUE),
-(4, 'Chicken Liver', 12, 15.00, FALSE),
-(5, 'Pork Isaw', 205, 15.00, FALSE),
-(6, 'Pork Liver', 35, 20.00, FALSE),
-(7, 'Bangus Fillet', 85, 100.00, TRUE),
-(8, 'Tuna Fillet', 90, 100.00, TRUE);
+INSERT INTO staff (full_name, role, phone_number, passcode, status) VALUES
+('System Admin', 'Super Admin', '09171234567', '0000', 'Active'),
+('John Doe', 'Admin', '09181234567', '1234', 'Active'),
+('Jane Smith', 'Staff', '09191234567', '5678', 'Active'),
+('Mark Inactive', 'Staff', '09201234567', '9999', 'Inactive');
 
-INSERT INTO Orders (staff_id, customer_identifier, order_type, timestamp, subtotal, tax_amount, total_amount, status) VALUES
-(1, 'Table 1',      'Dine-in', NOW(),                       850.00,  68.00,  918.00,  'Completed'),
-(2, 'Takeout - Ana','Takeout', NOW() - INTERVAL '1 day',   1200.00, 96.00,  1296.00, 'Completed'),
-(1, 'Table 4',      'Dine-in', NOW() - INTERVAL '2 days',  1850.00, 148.00, 1998.00, 'Completed');
+INSERT INTO raw_inventory (category, specific_part, current_stock_kg, alert_threshold_kg) VALUES
+('Pork', 'Pork Belly', 25.5, 5.0), ('Pork', 'Intestines', 10.0, 3.0), ('Pork', 'Ears', 8.5, 2.0),
+('Chicken', 'Intestines', 15.0, 4.0), ('Chicken', 'Breast', 20.0, 5.0), ('Chicken', 'Feet', 5.0, 2.0);
 
-INSERT INTO Order_Item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES
-(1, 1, 10, 15.00), (1, 3, 5,  140.00),
-(2, 5, 20, 15.00), (2, 7, 6,  150.00),
-(3, 1, 30, 15.00), (3, 8, 7,  200.00);
+-- Note: photo_url will default to NULL since we omit it here
+INSERT INTO prepared_inventory (raw_item_id, category, pos_display_name, current_stock_pieces, unit_price, is_variable_price) VALUES
+((SELECT raw_item_id FROM raw_inventory WHERE category = 'Pork' AND specific_part = 'Pork Belly' LIMIT 1), 'Skewered', 'Pork BBQ', 150, 35.00, FALSE),
+((SELECT raw_item_id FROM raw_inventory WHERE category = 'Chicken' AND specific_part = 'Intestines' LIMIT 1), 'Skewered', 'Chicken Isaw', 200, 15.00, FALSE),
+((SELECT raw_item_id FROM raw_inventory WHERE category = 'Pork' AND specific_part = 'Intestines' LIMIT 1), 'Skewered', 'Pork Isaw', 180, 15.00, FALSE),
+((SELECT raw_item_id FROM raw_inventory WHERE category = 'Chicken' AND specific_part = 'Feet' LIMIT 1), 'Skewered', 'Adidas (Chicken Feet)', 60, 20.00, FALSE),
+((SELECT raw_item_id FROM raw_inventory WHERE category = 'Pork' AND specific_part = 'Ears' LIMIT 1), 'Skewered', 'Tenga (Pork Ears)', 45, 20.00, FALSE),
+(NULL, 'Beverages', 'Coke (8oz)', 100, 20.00, FALSE),
+(NULL, 'Beverages', 'San Miguel Pale Pilsen', 48, 60.00, FALSE),
+(NULL, 'Desserts', 'Leche Flan', 20, 50.00, FALSE),
+(NULL, 'Extras', 'Extra Rice', 500, 20.00, FALSE);
 
-INSERT INTO Prep_Log (staff_id, raw_item_id, timestamp, kilos_deducted, skewers_added) VALUES
-(2, 1, NOW() - INTERVAL '1 day',  25.5, 255),
-(2, 3, NOW() - INTERVAL '2 days', 40.0, 120);
+INSERT INTO shift (staff_id, shift_date, clock_in_time, clock_out_time, total_rendered_hours, status) VALUES
+(2, CURRENT_DATE - INTERVAL '1 day', NOW() - INTERVAL '1 day 8 hours', NOW() - INTERVAL '1 day', 8.0, 'Completed'),
+(3, CURRENT_DATE - INTERVAL '1 day', NOW() - INTERVAL '1 day 8.5 hours', NOW() - INTERVAL '1 day 0.5 hours', 8.0, 'Completed'),
+(2, CURRENT_DATE, NOW() - INTERVAL '4 hours', NULL, NULL, 'Active Shift'),
+(3, CURRENT_DATE, NOW() - INTERVAL '2 hours', NULL, NULL, 'Active Shift');
 
-INSERT INTO System_Log (log_category, staff_id, timestamp, description, details) VALUES
-('POS', 1, NOW(), 'Order Sent to Grill',
-'Order Type: Dine-in
-Customer/Table: Table 1
+INSERT INTO prep_log (staff_id, raw_item_id, timestamp, kilos_deducted, skewers_added) VALUES
+(3, (SELECT raw_item_id FROM raw_inventory WHERE specific_part = 'Pork Belly' LIMIT 1), NOW() - INTERVAL '3 hours', 5.0, 100),
+(3, (SELECT raw_item_id FROM raw_inventory WHERE specific_part = 'Intestines' AND category = 'Chicken' LIMIT 1), NOW() - INTERVAL '2 hours', 2.0, 80);
 
-Items Ordered:
-- 10x Chicken Isaw (₱150.00)
-- 5x Chicken Leg Quarter (₱700.00)
+INSERT INTO orders (staff_id, customer_identifier, order_type, timestamp, subtotal, tax_amount, total_amount, status) VALUES
+(2, 'Queue #1001 - Table 4', 'Dine-in', NOW() - INTERVAL '1 hour', 160.00, 0.00, 160.00, 'Completed'),
+(2, 'Queue #1002 - Table 12', 'Dine-in', NOW() - INTERVAL '10 minutes', 190.00, 0.00, 190.00, 'Cooking');
 
-Total Amount: ₱918.00'),
+INSERT INTO order_item (order_id, prep_item_id, quantity, price_at_time_of_sale) VALUES
+(1, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Pork BBQ' LIMIT 1), 2, 35.00),
+(1, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Extra Rice' LIMIT 1), 2, 20.00),
+(1, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Coke (8oz)' LIMIT 1), 1, 20.00),
+(1, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Leche Flan' LIMIT 1), 1, 50.00),
+(2, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Chicken Isaw' LIMIT 1), 6, 15.00),
+(2, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'Extra Rice' LIMIT 1), 2, 20.00),
+(2, (SELECT prep_item_id FROM prepared_inventory WHERE pos_display_name = 'San Miguel Pale Pilsen' LIMIT 1), 1, 60.00);
 
-('PREP', 2, NOW() - INTERVAL '1 day', 'Skewers Prepared',
-'Meat Category: Chicken
-Specific Part / Cut: Intestine
-Raw Meat Consumed: 25.50 kg
-Yield Produced: 255 pieces/sticks
-Staff Member: Jane Smith'),
-
-('POS', 2, NOW() - INTERVAL '1 day', 'Order Sent to Grill',
-'Order Type: Takeout
-Customer/Table: Takeout - Ana
-
-Items Ordered:
-- 20x Pork Isaw (₱300.00)
-- 6x Bangus Fillet (₱900.00)
-
-Total Amount: ₱1296.00');
+INSERT INTO system_log (log_category, staff_id, timestamp, description, details) VALUES
+('AUTH', 1, NOW() - INTERVAL '10 hours', 'System Boot', 'Database migrations verified and server started.'),
+('INVENTORY', 2, NOW() - INTERVAL '5 hours', 'Stock Delivery Added', 'Item Restocked: Pork - Pork Belly\nAmount Added: 10.00 kg'),
+('TIME', 2, NOW() - INTERVAL '4 hours', 'Clocked In', NULL),
+('TIME', 3, NOW() - INTERVAL '2 hours', 'Clocked In', NULL),
+('POS', 2, NOW() - INTERVAL '1 hour', 'Payment Settled', 'Order #1 has been paid in full.');

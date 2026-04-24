@@ -54,7 +54,7 @@ function handleConfirm() {
 </script>
 
 <template>
-  <div v-if="isOpen && item" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="$emit('close')">
+  <div v-if="isOpen && item" class="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="$emit('close')">
     <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
       
       <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-start">

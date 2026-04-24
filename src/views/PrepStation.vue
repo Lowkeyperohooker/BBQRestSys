@@ -262,7 +262,7 @@ onMounted(async () => {
               type="submit" 
               variant="primary"
               :disabled="!canPrep"
-              :class="['w-full py-3 shadow-md hover:shadow-lg transition-all h-[52px]', fontBase]"
+              :class="['w-full py-3 shadow-md hover:shadow-lg transition-all h-13', fontBase]"
             >
               Save Prep Log
             </BaseButton>

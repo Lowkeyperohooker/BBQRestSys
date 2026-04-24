@@ -3,8 +3,6 @@ use axum::{Json, http::StatusCode};
 use sqlx::PgPool;
 
 pub struct DbState(pub PgPool);
-
-// The single, centralized Axum return type
 pub type AppResult<T> = Result<Json<T>, (StatusCode, String)>;
 
 #[derive(Serialize, Deserialize, Debug, sqlx::FromRow)]
@@ -19,11 +17,13 @@ pub struct RawInventory {
 #[derive(Serialize, Deserialize, Debug, sqlx::FromRow)]
 pub struct PreparedInventoryItem {
     pub prep_item_id: i32,
-    pub raw_item_id: i32,
+    pub raw_item_id: Option<i32>,
+    pub category: String,
     pub pos_display_name: String,
     pub current_stock_pieces: i32,
     pub unit_price: f64,
     pub is_variable_price: bool,
+    pub photo_url: Option<String>, // Added to inventory item
 }
 
 #[derive(Serialize, Deserialize, Debug, sqlx::FromRow)]

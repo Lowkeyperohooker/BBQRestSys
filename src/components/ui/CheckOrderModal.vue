@@ -20,7 +20,7 @@ defineEmits<{
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-end justify-end p-4 md:p-8 bg-black/40 backdrop-blur-sm" @click.self="$emit('close')">
+  <div v-if="isOpen" class="fixed inset-0 z-100 flex items-end justify-end p-4 md:p-8 bg-black/40 backdrop-blur-sm" @click.self="$emit('close')">
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom-8 duration-300 origin-bottom-right">
       
       <div class="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
