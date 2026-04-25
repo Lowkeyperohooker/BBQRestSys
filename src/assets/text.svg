@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <g transform="translate(10, 15)">
+    <path d="M20 50C8.954 50 0 41.046 0 30C0 15 20 0 20 0S40 15 40 30C40 41.046 31.046 50 20 50Z" fill="#ff6d00"/>
+    <path d="M20 50C13.925 50 9 45.075 9 39C9 30 20 19 20 19S31 30 31 39C31 45.075 26.075 50 20 50Z" fill="#ffddb0"/>
+  </g>
+  
+  <text x="65" y="42" font-family="'Plus Jakarta Sans', sans-serif" font-size="34" font-weight="900" fill="#e6e1df" letter-spacing="1">BBQ</text>
+  <text x="67" y="62" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="800" fill="#ff6d00" letter-spacing="2.5" text-transform="uppercase">NA MURAG LAMI</text>
+</svg>

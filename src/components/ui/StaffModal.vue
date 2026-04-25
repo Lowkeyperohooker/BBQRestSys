@@ -43,24 +43,24 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center backdrop-blur-sm" @click.self="$emit('close')">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+  <div v-if="isOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-md p-4" @click.self="$emit('close')">
+    <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl shadow-2xl w-full max-w-md p-6">
       
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-bold text-gray-800">{{ formId ? 'Edit Staff Member' : 'Add New Staff' }}</h3>
-        <button type="button" @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors">
-           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <h3 class="text-xl font-black text-on-surface tracking-tight">{{ formId ? 'Edit Staff Member' : 'Add New Staff' }}</h3>
+        <button type="button" @click="$emit('close')" class="text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-surface-container-high p-2 rounded-full transition-colors active:scale-90">
+           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
       
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form @submit.prevent="handleSubmit" class="space-y-5">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-          <input v-model="formName" type="text" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+          <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Full Name</label>
+          <input v-model="formName" type="text" required class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Primary Role</label>
-          <select v-model="formRole" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Primary Role</label>
+          <select v-model="formRole" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors">
             <option value="Cashier">Cashier</option>
             <option value="Prep Station">Prep Station</option>
             <option value="Grill Cook">Grill Cook</option>
@@ -68,12 +68,12 @@ function handleSubmit() {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-          <input v-model="formPhone" type="tel" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+          <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Phone Number</label>
+          <input v-model="formPhone" type="tel" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select v-model="formStatus" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">Status</label>
+          <select v-model="formStatus" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>

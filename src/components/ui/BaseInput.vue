@@ -16,8 +16,8 @@ defineEmits(['update:modelValue']);
 
 <template>
   <div>
-    <label v-if="label" class="block text-sm font-medium text-gray-700 mb-1">
-      {{ label }} <span v-if="required" class="text-red-500">*</span>
+    <label v-if="label" class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-2">
+      {{ label }} <span v-if="required" class="text-error">*</span>
     </label>
     
     <input 
@@ -30,7 +30,7 @@ defineEmits(['update:modelValue']);
       :min="min"
       :max="max"
       :step="step"
-      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-shadow"
+      class="w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-lg px-4 py-3 focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container disabled:opacity-50 disabled:cursor-not-allowed transition-all"
     />
   </div>
 </template>

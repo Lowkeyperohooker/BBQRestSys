@@ -7,8 +7,6 @@ import LoadingScreen from './components/ui/LoadingScreen.vue';
 const isAppReady = ref(false);
 const route = useRoute();
 
-// Dynamically check if the route is public. 
-// If it is public (Login, Menu), we hide the sidebar.
 const isPublicRoute = computed(() => route.meta.public === true);
 
 onMounted(() => {
@@ -25,13 +23,13 @@ onMounted(() => {
 <template>
   <LoadingScreen :is-loading="!isAppReady" />
 
-  <div v-show="isAppReady" class="flex h-screen bg-gray-50 font-sans overflow-hidden">
+  <div v-show="isAppReady" class="flex h-screen bg-surface text-on-surface font-sans overflow-hidden antialiased">
     
     <Sidebar v-if="!isPublicRoute" />
 
     <main class="flex-1 flex flex-col h-screen relative overflow-hidden">
       
-      <div :class="['flex-1 overflow-y-auto', route.path === '/login' ? 'p-0' : 'p-3 md:p-4']">
+      <div :class="['flex-1 overflow-y-auto', route.path === '/login' ? 'p-0' : 'p-3 md:p-8']">
         <router-view></router-view>
       </div>
 

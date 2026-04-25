@@ -13,7 +13,6 @@ const logs = ref<SystemLog[]>([]);
 const isLoadingData = ref(true);
 const filterCategory = ref('All');
 
-// Modal State
 const isLogModalOpen = ref(false);
 const selectedLog = ref<SystemLog | null>(null);
 
@@ -82,23 +81,23 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col relative">
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col">
+    <div class="bg-surface-container-low p-3 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col overflow-hidden">
 
-      <div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
+      <div class="sticky top-0 z-40 bg-surface-container/80 backdrop-blur-xl -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-2xl">
         <div>
-          <h3 :class="['font-bold text-gray-800', fontXl]">System Logs</h3>
-          <p :class="['text-gray-500 mt-1', fontSm]">Immutable audit trail of all system transactions.</p>
+          <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">System Logs</h3>
+          <p :class="['text-on-surface-variant mt-1 font-bold tracking-widest uppercase text-[10px]', fontSm]">Immutable audit trail of all system transactions.</p>
         </div>
 
         <div :class="['flex items-center gap-3 w-full md:w-auto', isMobile ? 'flex-col items-stretch' : '']">
-          <label :class="['font-medium text-gray-600', fontSm, isMobile ? 'hidden' : 'block']">Filter by Event:</label>
+          <label :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px]', fontSm, isMobile ? 'hidden' : 'block']">Filter by Event:</label>
           <select v-model="filterCategory"
-            :class="['border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm w-full md:w-auto', fontBase]">
+            :class="['bg-surface-container border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg px-4 py-2 font-bold uppercase tracking-wider text-xs w-full md:w-auto transition-colors']">
             <option v-for="category in availableCategories" :key="category" :value="category">
               {{ category === 'All' ? 'All Events' : category }}
             </option>
           </select>
-          <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-3">
+          <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-4 py-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
@@ -110,36 +109,36 @@ onMounted(() => {
 
       <DataLoader v-if="isLoadingData" message="Retrieving secure audit trails..." />
 
-      <div v-else class="flex-1 overflow-auto border border-gray-100 rounded-lg">
+      <div v-else class="flex-1 overflow-auto border border-outline-variant/15 rounded-xl bg-surface-container-low">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-gray-50 sticky top-0 z-10">
-            <tr :class="['border-b-2 border-gray-200 text-gray-500', fontSm]">
-              <th class="p-4 font-semibold w-48">Timestamp</th>
-              <th class="p-4 font-semibold w-32 hidden md:table-cell">Category</th>
-              <th class="p-4 font-semibold w-48 hidden md:table-cell">User</th>
-              <th class="p-4 font-semibold">Action Description</th>
-              <th class="p-4 font-semibold text-right hidden md:table-cell">Details</th>
+          <thead class="bg-surface-container sticky top-0 z-10">
+            <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest font-bold', fontSm]">
+              <th class="p-4 w-48">Timestamp</th>
+              <th class="p-4 w-32 hidden md:table-cell">Category</th>
+              <th class="p-4 w-48 hidden md:table-cell">User</th>
+              <th class="p-4">Action Description</th>
+              <th class="p-4 text-right hidden md:table-cell">Details</th>
             </tr>
           </thead>
-          <tbody class="text-gray-700">
+          <tbody class="text-on-surface">
             <tr v-if="filteredLogs.length === 0">
-              <td colspan="5" class="py-12 text-center text-gray-500">
+              <td colspan="5" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">
                 No system activity recorded yet.
               </td>
             </tr>
             <tr v-for="log in filteredLogs" :key="log.log_id" @click="openLogDetails(log)"
-              class="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer group"
+              class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors cursor-pointer group"
               title="Click to view full details">
-              <td :class="['p-4 whitespace-nowrap', fontSm]">{{ formatTime(log.timestamp) }}</td>
+              <td :class="['p-4 whitespace-nowrap font-bold text-on-surface', fontSm]">{{ formatTime(log.timestamp) }}</td>
               <td class="p-4 hidden md:table-cell">
                 <BaseBadge :text="log.log_category" :variant="getCategoryVariant(log.log_category)" />
               </td>
-              <td :class="['p-4 font-medium hidden md:table-cell', fontBase]">{{ log.staff_name || 'System Admin' }}</td>
-              <td :class="['p-4 group-hover:text-blue-700 transition-colors', fontBase]">
-                <span class="block md:hidden text-xs text-gray-400 mb-1">{{ log.log_category }} • {{ log.staff_name || 'Admin' }}</span>
+              <td :class="['p-4 font-black hidden md:table-cell text-on-surface', fontBase]">{{ log.staff_name || 'System Admin' }}</td>
+              <td :class="['p-4 font-medium group-hover:text-primary-container transition-colors', fontBase]">
+                <span class="block md:hidden text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mb-1">{{ log.log_category }} • {{ log.staff_name || 'Admin' }}</span>
                 {{ log.description }}
               </td>
-              <td :class="['p-4 text-gray-500 text-right truncate max-w-50 hidden md:table-cell', fontSm]">{{ log.details || '-' }}</td>
+              <td :class="['p-4 text-on-surface-variant font-mono text-right truncate max-w-50 hidden md:table-cell', fontSm]">{{ log.details || '-' }}</td>
             </tr>
           </tbody>
         </table>

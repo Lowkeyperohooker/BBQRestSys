@@ -30,7 +30,6 @@ async function loadTimeclockData() {
     let activeStaffList = (staff as any[]).filter(s => s.status === 'Active');
     let todaysShiftsList = shifts;
 
-    // Added .value to correctly unwrap the Ref
     if (authStore.currentUser.value?.role !== 'Super Admin') {
       activeStaffList = activeStaffList.filter(s => s.role !== 'Super Admin');
       todaysShiftsList = todaysShiftsList.filter(s => s.role !== 'Super Admin');
@@ -104,19 +103,19 @@ onMounted(() => {
 <template>
   <div class="h-full flex flex-col space-y-6">
 
-    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 shrink-0">
+    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 shrink-0">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         
         <div>
-          <h3 :class="['font-bold text-gray-800', fontXl]">Staff Timeclock</h3>
-          <p :class="['text-gray-500 mt-1', fontSm]">Select your name to punch in or out for your shift.</p>
+          <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">Staff Timeclock</h3>
+          <p :class="['text-on-surface-variant mt-1 font-bold uppercase tracking-widest text-[10px]', fontSm]">Select your name to punch in or out for your shift.</p>
         </div>
 
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
           
           <div class="flex-1 sm:w-64 lg:w-72">
             <select v-model="selectedStaffId"
-              :class="['w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors', fontBase]"
               :disabled="isProcessing">
               <option value="" disabled>-- Select Your Name --</option>
               <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.staff_id">
@@ -147,38 +146,38 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col min-h-0">
+    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0">
       <div class="mb-4 shrink-0">
-        <h3 :class="['font-bold text-gray-800', fontLg]">Today's Timesheet</h3>
+        <h3 :class="['font-black text-on-surface tracking-tight uppercase', fontLg]">Today's Timesheet</h3>
       </div>
 
       <DataLoader v-if="isLoadingData" message="Loading timesheets..." />
 
-      <div v-else class="flex-1 overflow-auto border border-gray-100 rounded-lg">
+      <div v-else class="flex-1 overflow-auto border border-outline-variant/15 rounded-xl bg-surface">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
-            <tr :class="['border-b border-gray-200 text-gray-500 uppercase tracking-wider', fontSm]">
-              <th class="p-3 md:p-4 font-bold">Employee</th>
-              <th class="p-3 md:p-4 font-bold hidden md:table-cell">Role</th>
-              <th class="p-3 md:p-4 font-bold">Time In</th>
-              <th class="p-3 md:p-4 font-bold">Time Out</th>
-              <th class="p-3 md:p-4 font-bold hidden sm:table-cell">Hours</th>
-              <th class="p-3 md:p-4 font-bold text-right">Status</th>
+          <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
+            <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest font-bold', fontSm]">
+              <th class="p-3 md:p-4">Employee</th>
+              <th class="p-3 md:p-4 hidden md:table-cell">Role</th>
+              <th class="p-3 md:p-4">Time In</th>
+              <th class="p-3 md:p-4">Time Out</th>
+              <th class="p-3 md:p-4 hidden sm:table-cell">Hours</th>
+              <th class="p-3 md:p-4 text-right">Status</th>
             </tr>
           </thead>
-          <tbody class="text-gray-700">
+          <tbody class="text-on-surface">
             <tr v-if="todayShifts.length === 0">
-              <td colspan="6" class="py-12 text-center text-gray-500">
-                <svg class="w-8 h-8 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <td colspan="6" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">
+                <svg class="w-8 h-8 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 No one has clocked in yet today.
               </td>
             </tr>
-            <tr v-for="shift in todayShifts" :key="shift.shift_id" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-              <td :class="['p-3 md:p-4 font-bold text-gray-900', fontBase]">{{ shift.full_name }}</td>
-              <td :class="['p-3 md:p-4 text-gray-500 hidden md:table-cell', fontSm]">{{ shift.role }}</td>
-              <td :class="['p-3 md:p-4 font-bold text-green-600', fontBase]">{{ formatTimeOnly(shift.clock_in_time) }}</td>
-              <td :class="['p-3 md:p-4 font-bold text-red-600', fontBase]">{{ formatTimeOnly(shift.clock_out_time) }}</td>
-              <td :class="['p-3 md:p-4 font-bold text-gray-900 hidden sm:table-cell', fontBase]">
+            <tr v-for="shift in todayShifts" :key="shift.shift_id" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+              <td :class="['p-3 md:p-4 font-black text-on-surface', fontBase]">{{ shift.full_name }}</td>
+              <td :class="['p-3 md:p-4 text-on-surface-variant font-medium hidden md:table-cell', fontSm]">{{ shift.role }}</td>
+              <td :class="['p-3 md:p-4 font-bold text-tertiary', fontBase]">{{ formatTimeOnly(shift.clock_in_time) }}</td>
+              <td :class="['p-3 md:p-4 font-bold text-error', fontBase]">{{ formatTimeOnly(shift.clock_out_time) }}</td>
+              <td :class="['p-3 md:p-4 font-black text-primary-container hidden sm:table-cell', fontBase]">
                 {{ shift.total_rendered_hours ? shift.total_rendered_hours + ' h' : '-' }}
               </td>
               <td class="p-3 md:p-4 text-right">

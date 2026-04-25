@@ -8,20 +8,17 @@ import { useResponsive } from '../composables/useResponsive';
 
 const { fontSm, fontBase, fontLg } = useResponsive();
 
-// Form State
 const selectedCategory = ref('');
 const selectedPart = ref('');
 const rawKilos = ref<number | null>(null);
 const skewersProduced = ref<number | null>(null);
 const selectedStaff = ref('');
 
-// Data from Database
 const staffMembers = ref<any[]>([]);
 const availableCategories = ref<string[]>([]);
 const availableParts = ref<RawInventoryItem[]>([]);
 const currentStockInfo = ref<RawInventoryItem | null>(null);
 
-// Loading states
 const isLoadingData = ref(true);
 const isLoadingParts = ref(false);
 
@@ -39,11 +36,11 @@ const canPrep = computed(() => {
 });
 
 const stockStatus = computed(() => {
-  if (!currentStockInfo.value) return { text: 'No stock info', class: 'text-gray-500' };
+  if (!currentStockInfo.value) return { text: 'No stock info', class: 'text-on-surface-variant' };
   const stock = currentStockInfo.value.current_stock_kg;
-  if (stock === 0) return { text: 'Out of stock', class: 'text-red-600' };
-  if (stock < 1) return { text: 'Critically low', class: 'text-orange-600' };
-  return { text: `${stock.toFixed(2)} kg available`, class: 'text-green-600' };
+  if (stock === 0) return { text: 'Out of stock', class: 'text-error' };
+  if (stock < 1) return { text: 'Critically low', class: 'text-tertiary-container' };
+  return { text: `${stock.toFixed(2)} kg available`, class: 'text-primary' };
 });
 
 async function loadStaff() {
@@ -156,65 +153,65 @@ onMounted(async () => {
 <template>
   <div class="h-full flex flex-col items-center justify-center p-4 md:p-6">
     
-    <div v-if="isLoadingData" class="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center h-64">
+    <div v-if="isLoadingData" class="w-full max-w-3xl bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15 flex items-center justify-center h-64">
       <DataLoader message="Loading preparation environment..." />
     </div>
 
-    <div v-else class="w-full max-w-3xl bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-full">
-      <div class="p-6 md:px-8 md:py-6 border-b border-gray-100 shrink-0 bg-gray-50/50 flex justify-between items-center">
+    <div v-else class="w-full max-w-3xl bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-full">
+      <div class="p-6 md:px-8 md:py-6 border-b border-outline-variant/10 shrink-0 bg-surface-container-highest/30 flex justify-between items-center">
         <div>
-          <h2 :class="['font-extrabold text-gray-900 tracking-tight', fontLg]">Prep Station</h2>
-          <p :class="['font-medium text-gray-500 mt-1', fontSm]">Log skewering tasks</p>
+          <h2 :class="['font-black text-on-surface tracking-tight', fontLg]">Prep Station</h2>
+          <p :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px] mt-1', fontSm]">Log skewering tasks</p>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 md:p-8">
+      <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-surface">
         <form @submit.prevent="handleSavePrep" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           <div class="col-span-1">
-            <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Meat Category</label>
+            <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">Meat Category</label>
             <select 
               v-model="selectedCategory" 
               :disabled="availableCategories.length === 0"
-              :class="['w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-blue-500 bg-white disabled:bg-gray-50 transition-colors', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors', fontBase]"
             >
               <option value="">Select Category</option>
               <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
-            <p v-if="availableCategories.length === 0" :class="['text-orange-600 mt-2 font-bold', fontSm]">
+            <p v-if="availableCategories.length === 0" :class="['text-error mt-2 font-bold uppercase tracking-widest text-[10px]', fontSm]">
               No categories with available stock
             </p>
           </div>
           
           <div class="col-span-1">
-            <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Specific Part / Cut</label>
+            <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">Specific Part / Cut</label>
             <select 
               v-model="selectedPart" 
               :disabled="!selectedCategory || isLoadingParts || availableParts.length === 0"
-              :class="['w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-blue-500 bg-white disabled:bg-gray-50 transition-colors', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors', fontBase]"
             >
               <option value="">Select Part</option>
               <option v-for="part in availableParts" :key="part.raw_item_id" :value="part.specific_part">
                 {{ part.specific_part }} ({{ part.current_stock_kg.toFixed(2) }} kg available)
               </option>
             </select>
-            <p v-if="isLoadingParts" :class="['text-gray-500 font-bold mt-2', fontSm]">Loading parts...</p>
+            <p v-if="isLoadingParts" :class="['text-on-surface-variant font-bold uppercase tracking-widest mt-2 text-[10px]', fontSm]">Loading parts...</p>
           </div>
           
-          <div v-if="currentStockInfo" class="md:col-span-2 bg-blue-50/50 border border-blue-100 p-4 rounded-xl flex items-center justify-between">
+          <div v-if="currentStockInfo" class="md:col-span-2 bg-surface-container border border-outline-variant/20 p-4 rounded-xl flex items-center justify-between shadow-inner">
             <div>
-              <p :class="['font-bold', stockStatus.class, fontBase]">{{ stockStatus.text }}</p>
-              <p :class="['text-gray-500 font-medium mt-1', fontSm]">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
+              <p :class="['font-black text-lg', stockStatus.class, fontBase]">{{ stockStatus.text }}</p>
+              <p :class="['text-on-surface-variant font-bold uppercase tracking-widest mt-1 text-[10px]', fontSm]">Alert threshold: {{ currentStockInfo.alert_threshold_kg }} kg</p>
             </div>
-            <div class="hidden md:block text-blue-300">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="hidden md:block text-on-surface-variant opacity-30">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
           </div>
           
           <div class="col-span-1">
-            <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">
+            <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">
               Raw Kilos Used 
-              <span v-if="maxKilosAllowed > 0" class="text-gray-400 font-medium ml-1">
+              <span v-if="maxKilosAllowed > 0" class="text-on-surface-variant/50 font-black ml-1">
                 (Max: {{ maxKilosAllowed.toFixed(2) }} kg)
               </span>
             </label>
@@ -227,12 +224,12 @@ onMounted(async () => {
               :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
               required 
               placeholder="e.g., 5.0" 
-              :class="['w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-blue-500 disabled:bg-gray-50 bg-white transition-colors', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-xl px-4 py-3 font-bold focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors', fontBase]"
             />
           </div>
           
           <div class="col-span-1">
-            <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Skewers Produced</label>
+            <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">Skewers Produced</label>
             <input 
               v-model.number="skewersProduced" 
               type="number"
@@ -240,16 +237,16 @@ onMounted(async () => {
               :disabled="!currentStockInfo || currentStockInfo.current_stock_kg === 0"
               required 
               placeholder="e.g., 120" 
-              :class="['w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-blue-500 disabled:bg-gray-50 bg-white transition-colors', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-xl px-4 py-3 font-bold focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors', fontBase]"
             />
           </div>
           
           <div class="col-span-1">
-            <label :class="['block font-bold text-gray-700 mb-1.5', fontSm]">Staff Member</label>
+            <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">Staff Member</label>
             <select 
               v-model="selectedStaff" 
               required 
-              :class="['w-full border-2 border-gray-200 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-blue-500 bg-white transition-colors', fontBase]"
+              :class="['w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors', fontBase]"
             >
               <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.full_name">
                 {{ staff.full_name }} ({{ staff.role }})
@@ -262,9 +259,9 @@ onMounted(async () => {
               type="submit" 
               variant="primary"
               :disabled="!canPrep"
-              :class="['w-full py-3 shadow-md hover:shadow-lg transition-all h-13', fontBase]"
+              :class="['w-full py-4 text-lg h-14', fontBase]"
             >
-              Save Prep Log
+              <span class="font-black uppercase tracking-widest text-sm">Save Prep Log</span>
             </BaseButton>
           </div>
         </form>

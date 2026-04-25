@@ -7,13 +7,13 @@ defineProps<{
 
 <template>
   <span 
-    class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap border"
     :class="{
-      'bg-green-100 text-green-800': variant === 'success',
-      'bg-red-100 text-red-800': variant === 'danger',
-      'bg-orange-100 text-orange-800': variant === 'warning',
-      'bg-blue-100 text-blue-800': variant === 'info',
-      'bg-gray-100 text-gray-600': variant === 'default' || !variant
+      'bg-tertiary/10 text-tertiary border-tertiary/20': variant === 'success',
+      'bg-error/10 text-error border-error/20': variant === 'danger',
+      'bg-tertiary-container/10 text-tertiary-container border-tertiary-container/20': variant === 'warning',
+      'bg-secondary/10 text-secondary border-secondary/20': variant === 'info',
+      'bg-surface-container-highest/50 text-on-surface-variant border-outline-variant/30': variant === 'default' || !variant
     }"
   >
     {{ text }}

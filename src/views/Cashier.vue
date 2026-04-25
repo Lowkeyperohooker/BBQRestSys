@@ -27,7 +27,7 @@ async function loadData() {
   isLoadingData.value = true;
   try {
     activeOrders.value = await posService.getActiveOrders();
-    availableItems.value = await posService.getAvailablePosItems(); // Needed for edit dropdown
+    availableItems.value = await posService.getAvailablePosItems(); 
     
     if (selectedOrder.value) {
       selectedOrder.value = activeOrders.value.find(o => o.order_id === selectedOrder.value?.order_id) || null;
@@ -149,7 +149,7 @@ async function handleSaveActiveEdit(updatedOrder: ActiveOrder) {
       updatedOrder.order_id, 
       staffId, 
       updatedOrder.cart_items as any, 
-      updatedOrder.total_amount, // Replaced the subtotal check with total_amount
+      updatedOrder.total_amount, 
       0, 
       updatedOrder.total_amount
     );
@@ -192,32 +192,32 @@ onMounted(() => {
       @save-pending-edit="handleSavePendingEdit"
     />
 
-    <div :class="['bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col shrink-0', isMobile || isTablet ? 'h-96' : 'w-80 lg:w-96']">
-      <div class="p-4 md:p-5 border-b border-gray-100 bg-gray-50/80 rounded-t-2xl flex justify-between items-center">
-        <h3 :class="['font-extrabold text-gray-900', fontBase]">Active Tabs</h3>
-        <span v-if="activeOrders.length > 0" class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">{{ activeOrders.length }}</span>
+    <div :class="['bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm flex flex-col shrink-0', isMobile || isTablet ? 'h-96' : 'w-80 lg:w-96']">
+      <div class="p-4 md:p-5 border-b border-outline-variant/20 bg-surface-container-highest/20 rounded-t-2xl flex justify-between items-center">
+        <h3 :class="['font-black text-on-surface tracking-wide uppercase', fontBase]">Active Tabs</h3>
+        <span v-if="activeOrders.length > 0" class="bg-error text-on-error text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm">{{ activeOrders.length }}</span>
       </div>
 
-      <div class="flex-1 p-3 md:p-4 overflow-y-auto">
+      <div class="flex-1 p-3 md:p-4 overflow-y-auto bg-surface">
         <DataLoader v-if="isLoadingData" message="Loading..." />
         
-        <div v-else-if="activeOrders.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 pt-10">
+        <div v-else-if="activeOrders.length === 0" class="h-full flex flex-col items-center justify-center text-on-surface-variant pt-10">
           <svg class="w-8 h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-          <p :class="['font-medium', fontSm]">No tabs open</p>
+          <p :class="['font-medium uppercase tracking-widest', fontSm]">No tabs open</p>
         </div>
 
-        <div v-else class="space-y-2.5">
+        <div v-else class="space-y-3">
           <div v-for="order in activeOrders" :key="order.order_id" @click="selectOrder(order)"
-            :class="['p-3.5 rounded-xl cursor-pointer transition-all border-2', selectedOrder?.order_id === order.order_id ? 'border-gray-800 bg-gray-50 shadow-md' : 'border-gray-100 bg-white hover:border-gray-300']">
-            <div class="flex justify-between items-start mb-1.5">
-              <h4 :class="['font-bold text-gray-900 line-clamp-1', fontSm]">{{ order.customer_identifier }}</h4>
-              <span :class="[order.status === 'Cooking' ? 'text-orange-500' : 'text-green-500', 'font-bold text-xs']">
+            :class="['p-4 rounded-xl cursor-pointer transition-all border', selectedOrder?.order_id === order.order_id ? 'border-primary-container bg-primary-container/5 shadow-[0_0_12px_rgba(255,109,0,0.1)]' : 'border-outline-variant/15 bg-surface-container hover:border-outline-variant/30']">
+            <div class="flex justify-between items-start mb-2">
+              <h4 :class="['font-black text-on-surface line-clamp-1', fontSm]">{{ order.customer_identifier }}</h4>
+              <span :class="[order.status === 'Cooking' ? 'text-tertiary-container bg-tertiary-container/10 border-tertiary-container/20' : 'text-tertiary bg-tertiary/10 border-tertiary/20', 'font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border']">
                 {{ order.status === 'Cooking' ? 'Grilling' : 'Ready' }}
               </span>
             </div>
             <div class="flex justify-between items-end">
-              <span class="text-gray-500 font-medium text-xs">#{{ order.order_id }} • {{ order.order_type }}</span>
-              <span :class="['font-extrabold text-gray-900', fontBase]">₱{{ order.total_amount.toFixed(2) }}</span>
+              <span class="text-on-surface-variant font-bold text-xs uppercase tracking-widest">#{{ order.order_id }} • {{ order.order_type }}</span>
+              <span :class="['font-black text-primary', fontBase]">₱{{ order.total_amount.toFixed(2) }}</span>
             </div>
           </div>
         </div>
