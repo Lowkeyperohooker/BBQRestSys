@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="37.07" height="36" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 198"><path fill="#41B883" d="M204.8 0H256L128 220.8L0 0h97.92L128 51.2L157.44 0h47.36Z"></path><path fill="#41B883" d="m0 0l128 220.8L256 0h-51.2L128 132.48L50.56 0H0Z"></path><path fill="#35495E" d="M50.56 0L128 133.12L204.8 0h-47.36L128 51.2L97.92 0H50.56Z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <path d="M60 15 C60 15 95 45 95 70 C95 89.33 79.33 105 60 105 C40.67 105 25 89.33 25 70 C25 45 60 15 60 15 Z" fill="#ff6d00" fill-opacity="0.1"/>
+  <path d="M60 35 C60 35 80 55 80 75 C80 86.04 71.04 95 60 95 C48.96 95 40 86.04 40 75 C40 55 60 35 60 35 Z" fill="#ff6d00" fill-opacity="0.2"/>
+
+  <g transform="rotate(-45 60 60)">
+    <line x1="15" y1="60" x2="105" y2="60" stroke="#a98a7c" stroke-width="4" stroke-linecap="round" />
+    <polygon points="105,58 112,60 105,62" fill="#a98a7c" />
+
+    <rect x="28" y="52" width="16" height="16" rx="4" fill="#ffddb0" stroke="#141312" stroke-width="2" />
+    <path d="M 33 52 L 35 68 M 39 52 L 39 68" stroke="#a98a7c" stroke-width="1.5" stroke-opacity="0.5" />
+
+    <rect x="46" y="48" width="22" height="24" rx="6" fill="#ff6d00" stroke="#141312" stroke-width="2" />
+    <path d="M 52 48 L 55 72 M 60 48 L 62 72" stroke="#582100" stroke-width="2.5" />
+
+    <rect x="70" y="50" width="24" height="20" rx="5" fill="#ff6d00" stroke="#141312" stroke-width="2" />
+    <path d="M 77 50 L 79 70 M 85 50 L 85 70" stroke="#582100" stroke-width="2.5" />
+  </g>
+</svg>
