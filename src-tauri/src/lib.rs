@@ -33,7 +33,8 @@ pub fn run() {
                     .route("/sales", get(dashboard::get_today_sales))
                     .route("/staff-count", get(dashboard::get_active_staff_count))
                     .route("/low-stock", get(dashboard::get_low_stock_alerts))
-                    .route("/top-items", get(dashboard::get_top_selling_items));
+                    .route("/top-items", get(dashboard::get_top_selling_items))
+                    .route("/metrics", get(dashboard::get_period_metrics));
 
                 let inventory_routes = Router::new()
                     .route("/raw", get(inventory::get_raw_inventory))

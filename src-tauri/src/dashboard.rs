@@ -1,25 +1,46 @@
-use axum::{extract::State, Json, http::StatusCode};
+use axum::{extract::{State, Query}, Json, http::StatusCode};
 use sqlx::PgPool;
+use serde::{Deserialize, Serialize};
 use crate::models::*;
+
+#[derive(Deserialize)]
+pub struct PeriodQuery {
+    pub period: String,
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct OrderPoint {
+    pub timestamp: String,
+    pub amount: f64,
+}
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct MeatDist {
+    pub category: String,
+    pub quantity: i64,
+}
+
+#[derive(Serialize)]
+pub struct PeriodMetrics {
+    pub current_sales: f64,
+    pub previous_sales: f64,
+    pub skewers_sold: i64,
+    pub orders: Vec<OrderPoint>,
+    pub meat_distribution: Vec<MeatDist>,
+}
 
 pub async fn get_today_sales(State(pool): State<PgPool>) -> AppResult<f64> {
     let row: (Option<f64>,) = sqlx::query_as(
-        "SELECT SUM(total_amount::float8) FROM Orders WHERE DATE(timestamp AT TIME ZONE 'Asia/Manila') = CURRENT_DATE AT TIME ZONE 'Asia/Manila'"
+        "SELECT SUM(total_amount::float8) FROM orders WHERE DATE(timestamp AT TIME ZONE 'Asia/Manila') = CURRENT_DATE AT TIME ZONE 'Asia/Manila'"
     )
-    .fetch_one(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .fetch_one(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     Ok(Json(row.0.unwrap_or(0.0)))
 }
 
 pub async fn get_active_staff_count(State(pool): State<PgPool>) -> AppResult<i64> {
-    let row: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM Staff WHERE status = 'Active'"
-    )
-    .fetch_one(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM staff WHERE status = 'Active'")
+    .fetch_one(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     Ok(Json(row.0))
 }
@@ -27,11 +48,9 @@ pub async fn get_active_staff_count(State(pool): State<PgPool>) -> AppResult<i64
 pub async fn get_low_stock_alerts(State(pool): State<PgPool>) -> AppResult<Vec<LowStockAlert>> {
     let alerts = sqlx::query_as::<_, LowStockAlert>(
         "SELECT category, specific_part, current_stock_kg::float8, alert_threshold_kg::float8
-         FROM Raw_Inventory WHERE current_stock_kg <= alert_threshold_kg"
+         FROM raw_inventory WHERE current_stock_kg <= alert_threshold_kg"
     )
-    .fetch_all(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     Ok(Json(alerts))
 }
@@ -39,15 +58,62 @@ pub async fn get_low_stock_alerts(State(pool): State<PgPool>) -> AppResult<Vec<L
 pub async fn get_top_selling_items(State(pool): State<PgPool>) -> AppResult<Vec<TopSellingItem>> {
     let items = sqlx::query_as::<_, TopSellingItem>(
         "SELECT pi.pos_display_name, SUM(oi.quantity) as total_sold
-         FROM Order_Item oi
-         JOIN Prepared_Inventory pi ON oi.prep_item_id = pi.prep_item_id
+         FROM order_item oi
+         JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id
          GROUP BY pi.pos_display_name
          ORDER BY total_sold DESC
          LIMIT 5"
     )
-    .fetch_all(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     Ok(Json(items))
+}
+
+pub async fn get_period_metrics(State(pool): State<PgPool>, Query(q): Query<PeriodQuery>) -> AppResult<PeriodMetrics> {
+    let (current_days, previous_days) = match q.period.as_str() {
+        "daily" => (1, 2),
+        "weekly" => (7, 14),
+        "monthly" => (30, 60),
+        "yearly" => (365, 730),
+        _ => (7, 14),
+    };
+
+    // Current Period Sales
+    let current_sales: (Option<f64>,) = sqlx::query_as(
+        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')"
+    ).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0.0),));
+
+    // Previous Period Sales
+    let previous_sales: (Option<f64>,) = sqlx::query_as(
+        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day') AND timestamp < CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')"
+    ).bind(previous_days).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0.0),));
+
+    // Total Skewers Sold
+    let skewers: (Option<i64>,) = sqlx::query_as(
+        "SELECT SUM(oi.quantity) FROM order_item oi JOIN orders o ON oi.order_id = o.order_id WHERE o.status = 'Completed' AND o.timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')"
+    ).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0),));
+
+    // Order Timeline Points
+    let orders = sqlx::query_as::<_, OrderPoint>(
+        "SELECT timestamp::text, total_amount::float8 as amount FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day') ORDER BY timestamp ASC"
+    ).bind(current_days).fetch_all(&pool).await.unwrap_or_default();
+
+    // Meat Distribution
+    let meat_dist = sqlx::query_as::<_, MeatDist>(
+        "SELECT COALESCE(ri.category, 'Other') as category, SUM(oi.quantity) as quantity 
+         FROM order_item oi 
+         JOIN orders o ON oi.order_id = o.order_id 
+         JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id 
+         LEFT JOIN raw_inventory ri ON pi.raw_item_id = ri.raw_item_id 
+         WHERE o.status = 'Completed' AND o.timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')
+         GROUP BY ri.category"
+    ).bind(current_days).fetch_all(&pool).await.unwrap_or_default();
+
+    Ok(Json(PeriodMetrics {
+        current_sales: current_sales.0.unwrap_or(0.0),
+        previous_sales: previous_sales.0.unwrap_or(0.0),
+        skewers_sold: skewers.0.unwrap_or(0),
+        orders,
+        meat_distribution: meat_dist,
+    }))
 }

@@ -167,7 +167,7 @@ function handleImageError(event: Event) {
       <div class="w-24 h-24 bg-blue-600 rounded-3xl shadow-xl flex items-center justify-center text-white mb-8">
         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
       </div>
-      <h1 :class="['font-black text-gray-900 mb-2', font2xl]">Welcome to BBQRestSys</h1>
+      <h1 :class="['font-black text-gray-900 mb-2', font2xl]">Welcome to BBQ na murag lami</h1>
       <p :class="['text-gray-500 font-medium mb-12', fontLg]">How would you like your order today?</p>
       
       <div class="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
