@@ -81,21 +81,21 @@ function updateTrendCalculation() {
   
   if (previous === 0) {
     trendHtml.value = "<span class='text-green-500 font-bold'>100% Increase</span> vs previous period";
-    return;
-  }
-
-  const diff = current - previous;
-  const percent = (Math.abs(diff) / previous) * 100;
-  
-  if (diff >= 0) {
-    trendHtml.value = `<span class='text-green-500 font-bold'>Up ${percent.toFixed(1)}%</span> vs previous period`;
   } else {
-    trendHtml.value = `<span class='text-red-500 font-bold'>Down ${percent.toFixed(1)}%</span> vs previous period`;
+    const diff = current - previous;
+    const percent = (Math.abs(diff) / previous) * 100;
+    
+    if (diff >= 0) {
+      trendHtml.value = `<span class='text-green-500 font-bold'>Up ${percent.toFixed(1)}%</span> vs previous period`;
+    } else {
+      trendHtml.value = `<span class='text-red-500 font-bold'>Down ${percent.toFixed(1)}%</span> vs previous period`;
+    }
   }
 
-  chartLabelText.value = selectedPeriod.value === 'daily' ? 'Past 24 Hours' 
-                       : selectedPeriod.value === 'weekly' ? 'Past 7 Days' 
-                       : selectedPeriod.value === 'monthly' ? 'Past 30 Days' : 'Past Year';
+  // Updated to reflect calendar-aligned dates
+  chartLabelText.value = selectedPeriod.value === 'daily' ? 'Today' 
+                       : selectedPeriod.value === 'weekly' ? 'This Week' 
+                       : selectedPeriod.value === 'monthly' ? 'This Month' : 'This Year';
 }
 
 function processChartData() {

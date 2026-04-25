@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
+import { useAuth } from "../stores/authStore";
 import StaffModal from "../components/ui/StaffModal.vue";
 import StaffTimesheetModal from "../components/ui/StaffTimesheetModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import { useResponsive } from '../composables/useResponsive';
 
-const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
+const { fontSm, fontBase, fontXl } = useResponsive();
+const authStore = useAuth();
 
 const staffMembers = ref<any[]>([]);
 const isModalOpen = ref(false);
@@ -20,7 +22,14 @@ async function loadStaff() {
   isLoadingData.value = true;
   try {
     const result = await staffService.getAllStaff();
-    staffMembers.value = result as any[];
+    let staffList = result as any[];
+
+    // Added .value to correctly unwrap the Ref
+    if (authStore.currentUser.value?.role !== 'Super Admin') {
+      staffList = staffList.filter(s => s.role !== 'Super Admin');
+    }
+
+    staffMembers.value = staffList;
   } catch (error) {
     console.error("Failed to load staff:", error);
   } finally {

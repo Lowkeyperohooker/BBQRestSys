@@ -2,12 +2,14 @@
 import { ref, onMounted, watch } from 'vue';
 import { staffService } from '../services/staffService';
 import { scheduleService, type Shift } from '../services/scheduleService';
+import { useAuth } from '../stores/authStore';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
 import { useResponsive } from '../composables/useResponsive';
 
-const { fontSm, fontBase, fontLg, fontXl, isMobile } = useResponsive();
+const { fontSm, fontBase, fontLg, fontXl } = useResponsive();
+const authStore = useAuth();
 
 const isLoadingData = ref(true);
 const isProcessing = ref(false);
@@ -25,8 +27,17 @@ async function loadTimeclockData() {
       scheduleService.getTodayShifts()
     ]);
 
-    staffMembers.value = (staff as any[]).filter(s => s.status === 'Active');
-    todayShifts.value = shifts;
+    let activeStaffList = (staff as any[]).filter(s => s.status === 'Active');
+    let todaysShiftsList = shifts;
+
+    // Added .value to correctly unwrap the Ref
+    if (authStore.currentUser.value?.role !== 'Super Admin') {
+      activeStaffList = activeStaffList.filter(s => s.role !== 'Super Admin');
+      todaysShiftsList = todaysShiftsList.filter(s => s.role !== 'Super Admin');
+    }
+
+    staffMembers.value = activeStaffList;
+    todayShifts.value = todaysShiftsList;
 
   } catch (error) {
     console.error("Error loading timeclock data:", error);

@@ -31,7 +31,7 @@ pub struct PeriodMetrics {
 
 pub async fn get_today_sales(State(pool): State<PgPool>) -> AppResult<f64> {
     let row: (Option<f64>,) = sqlx::query_as(
-        "SELECT SUM(total_amount::float8) FROM orders WHERE DATE(timestamp AT TIME ZONE 'Asia/Manila') = CURRENT_DATE AT TIME ZONE 'Asia/Manila'"
+        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND DATE(timestamp AT TIME ZONE 'Asia/Manila') = DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')"
     )
     .fetch_one(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
@@ -70,44 +70,50 @@ pub async fn get_top_selling_items(State(pool): State<PgPool>) -> AppResult<Vec<
 }
 
 pub async fn get_period_metrics(State(pool): State<PgPool>, Query(q): Query<PeriodQuery>) -> AppResult<PeriodMetrics> {
-    let (current_days, previous_days) = match q.period.as_str() {
-        "daily" => (1, 2),
-        "weekly" => (7, 14),
-        "monthly" => (30, 60),
-        "yearly" => (365, 730),
-        _ => (7, 14),
+    // Determine the Postgres DATE_TRUNC parameter based on the selected period
+    let trunc_unit = match q.period.as_str() {
+        "daily" => "day",
+        "weekly" => "week",
+        "monthly" => "month",
+        "yearly" => "year",
+        _ => "day",
     };
 
     // Current Period Sales
-    let current_sales: (Option<f64>,) = sqlx::query_as(
-        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')"
-    ).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0.0),));
+    let current_sales_query = format!(
+        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')", trunc_unit
+    );
+    let current_sales: (Option<f64>,) = sqlx::query_as(&current_sales_query).fetch_one(&pool).await.unwrap_or((Some(0.0),));
 
-    // Previous Period Sales
-    let previous_sales: (Option<f64>,) = sqlx::query_as(
-        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day') AND timestamp < CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')"
-    ).bind(previous_days).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0.0),));
+    // Previous Period Sales (For trend calculation)
+    let previous_sales_query = format!(
+        "SELECT SUM(total_amount::float8) FROM orders WHERE status = 'Completed' AND timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila') - INTERVAL '1 {}' AND timestamp AT TIME ZONE 'Asia/Manila' < DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')", trunc_unit, trunc_unit, trunc_unit
+    );
+    let previous_sales: (Option<f64>,) = sqlx::query_as(&previous_sales_query).fetch_one(&pool).await.unwrap_or((Some(0.0),));
 
-    // Total Skewers Sold
-    let skewers: (Option<i64>,) = sqlx::query_as(
-        "SELECT SUM(oi.quantity) FROM order_item oi JOIN orders o ON oi.order_id = o.order_id WHERE o.status = 'Completed' AND o.timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')"
-    ).bind(current_days).fetch_one(&pool).await.unwrap_or((Some(0),));
+    // Total Skewers/Units Sold
+    let skewers_query = format!(
+        "SELECT SUM(oi.quantity) FROM order_item oi JOIN orders o ON oi.order_id = o.order_id WHERE o.status = 'Completed' AND o.timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')", trunc_unit
+    );
+    let skewers: (Option<i64>,) = sqlx::query_as(&skewers_query).fetch_one(&pool).await.unwrap_or((Some(0),));
 
-    // Order Timeline Points
-    let orders = sqlx::query_as::<_, OrderPoint>(
-        "SELECT timestamp::text, total_amount::float8 as amount FROM orders WHERE status = 'Completed' AND timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day') ORDER BY timestamp ASC"
-    ).bind(current_days).fetch_all(&pool).await.unwrap_or_default();
+    // Order Timeline Points for the Line Chart
+    let orders_query = format!(
+        "SELECT timestamp::text, total_amount::float8 as amount FROM orders WHERE status = 'Completed' AND timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila') ORDER BY timestamp ASC", trunc_unit
+    );
+    let orders = sqlx::query_as::<_, OrderPoint>(&orders_query).fetch_all(&pool).await.unwrap_or_default();
 
-    // Meat Distribution
-    let meat_dist = sqlx::query_as::<_, MeatDist>(
+    // Meat Distribution for the Doughnut Chart
+    let meat_query = format!(
         "SELECT COALESCE(ri.category, 'Other') as category, SUM(oi.quantity) as quantity 
          FROM order_item oi 
          JOIN orders o ON oi.order_id = o.order_id 
          JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id 
          LEFT JOIN raw_inventory ri ON pi.raw_item_id = ri.raw_item_id 
-         WHERE o.status = 'Completed' AND o.timestamp >= CURRENT_TIMESTAMP - ($1 * INTERVAL '1 day')
-         GROUP BY ri.category"
-    ).bind(current_days).fetch_all(&pool).await.unwrap_or_default();
+         WHERE o.status = 'Completed' AND o.timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')
+         GROUP BY ri.category", trunc_unit
+    );
+    let meat_dist = sqlx::query_as::<_, MeatDist>(&meat_query).fetch_all(&pool).await.unwrap_or_default();
 
     Ok(Json(PeriodMetrics {
         current_sales: current_sales.0.unwrap_or(0.0),
