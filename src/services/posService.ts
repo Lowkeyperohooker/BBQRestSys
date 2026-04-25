@@ -3,6 +3,7 @@ import { inventoryService } from './inventoryService';
 export interface PosItem {
   prep_item_id: number;
   raw_item_id: number | null;
+  category: string;
   pos_display_name: string;
   current_stock_pieces: number;
   unit_price: number;

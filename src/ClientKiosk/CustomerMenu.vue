@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { posService, type PosItem, type CartItem } from '../services/posService';
 import { queueService } from '../services/queueService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import CheckOrderModal from '../components/ui/CheckOrderModal.vue';
 import MenuItemModal from '../components/ui/MenuItemModal.vue';
+import MenuSidebar from '../components/layout/MenuSidebar.vue';
 import { useResponsive } from '../composables/useResponsive';
 
 const { fontSm, fontLg, fontXl, font2xl, isMobile } = useResponsive();
@@ -17,6 +18,8 @@ const isLoadingData = ref(true);
 const hasSelectedOrderType = ref(false);
 const orderType = ref<'Dine-in' | 'Takeout' | null>(null);
 const generatedQueueNumber = ref<number | null>(null);
+
+const selectedCategory = ref<string>('Skewered');
 
 // Modal states
 const isCartModalOpen = ref(false);
@@ -38,6 +41,30 @@ onMounted(() => {
   loadMenu();
 });
 
+const categories = computed(() => {
+  const uniqueCats = Array.from(new Set(availableItems.value.map(item => item.category)));
+  
+  // Filter out 'Skewered' and sort the remaining categories alphabetically
+  const otherCats = uniqueCats.filter(cat => cat !== 'Skewered').sort();
+  
+  // If 'Skewered' exists, put it at the very front. Otherwise, just return the sorted list.
+  if (uniqueCats.includes('Skewered')) {
+    return ['Skewered', ...otherCats];
+  }
+  
+  return otherCats;
+});
+
+watch(categories, (newCats) => {
+  if (newCats.length > 0 && !selectedCategory.value) {
+    selectedCategory.value = newCats.includes('Skewered') ? 'Skewered' : newCats[0];
+  }
+});
+
+const filteredItems = computed(() => {
+  return availableItems.value.filter(item => item.category === selectedCategory.value);
+});
+
 const subtotal = computed(() => cart.value.reduce((sum, item) => sum + (item.unit_price * item.qty), 0));
 const tax = computed(() => subtotal.value * 0.0);
 const total = computed(() => subtotal.value + tax.value);
@@ -51,6 +78,10 @@ function selectOrderType(type: 'Dine-in' | 'Takeout') {
 function openItemModal(item: PosItem) {
   selectedItemForModal.value = item;
   isItemModalOpen.value = true;
+}
+
+function setCategory(cat: string) {
+  selectedCategory.value = cat;
 }
 
 function handleConfirmItemConfig({ qty, customPrice }: { qty: number, customPrice: number }) {
@@ -90,6 +121,7 @@ function resetKiosk() {
   hasSelectedOrderType.value = false;
   orderType.value = null;
   generatedQueueNumber.value = null;
+  selectedCategory.value = categories.value.includes('Skewered') ? 'Skewered' : 'All';
   isCartModalOpen.value = false;
 }
 
@@ -129,7 +161,7 @@ function handleImageError(event: Event) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col relative max-w-400 mx-auto">
+  <div class="h-full flex flex-col relative max-w-7xl mx-auto">
 
     <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
       <div class="w-24 h-24 bg-blue-600 rounded-3xl shadow-xl flex items-center justify-center text-white mb-8">
@@ -163,37 +195,53 @@ function handleImageError(event: Event) {
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-50/30 pb-32">
-        <div v-if="isLoadingData" class="flex-1 flex items-center justify-center h-64">
-          <DataLoader message="Loading fresh menu..." />
-        </div>
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-50/30">
+        
+        <MenuSidebar 
+          :categories="categories" 
+          :selected-category="selectedCategory" 
+          @select="setCategory" 
+        />
 
-        <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5']">
-          <div v-for="item in availableItems" :key="item.prep_item_id" @click="openItemModal(item)"
-            class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-55">
-            
-            <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">VAR</span>
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-32">
+          <div v-if="isLoadingData" class="flex-1 flex items-center justify-center h-64">
+            <DataLoader message="Loading fresh menu..." />
+          </div>
 
-            <div class="h-28 md:h-36 bg-gray-100 rounded-xl mb-3 md:mb-4 flex items-center justify-center text-gray-300 overflow-hidden border border-gray-100 relative group-hover:opacity-90 transition-opacity">
-              <img 
-                v-if="item.photo_url" 
-                :src="`http://localhost:3000${item.photo_url}`" 
-                class="w-full h-full object-cover" 
-                @error="handleImageError" 
-              />
-              <svg v-else class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <div v-else>
+            <div v-if="filteredItems.length === 0" class="flex flex-col items-center justify-center h-64 text-gray-400">
+              <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+              <p class="text-lg font-medium">No items available in this category.</p>
             </div>
-            
-            <h4 :class="['font-bold text-gray-900 mb-1 leading-tight', fontLg]" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
-            
-            <div class="flex justify-between items-end mt-auto pt-3">
-              <div class="flex flex-col">
-                <span v-if="item.is_variable_price" class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Starts at</span>
-                <span :class="['text-blue-600 font-black leading-none', fontXl]">₱{{ item.unit_price.toFixed(2) }}</span>
+
+            <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4']">
+              <div v-for="item in filteredItems" :key="item.prep_item_id" @click="openItemModal(item)"
+                class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-55">
+                
+                <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-orange-50 text-orange-600 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">VAR</span>
+
+                <div class="h-28 md:h-36 bg-gray-100 rounded-xl mb-3 md:mb-4 flex items-center justify-center text-gray-300 overflow-hidden border border-gray-100 relative group-hover:opacity-90 transition-opacity">
+                  <img 
+                    v-if="item.photo_url" 
+                    :src="`http://localhost:3000${item.photo_url}`" 
+                    class="w-full h-full object-cover" 
+                    @error="handleImageError" 
+                  />
+                  <svg v-else class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                
+                <h4 :class="['font-bold text-gray-900 mb-1 leading-tight', fontLg]" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
+                
+                <div class="flex justify-between items-end mt-auto pt-3">
+                  <div class="flex flex-col">
+                    <span v-if="item.is_variable_price" class="text-[9px] text-gray-400 font-medium uppercase tracking-wider mb-0.5">Starts at</span>
+                    <span :class="['text-blue-600 font-black leading-none', fontXl]">₱{{ item.unit_price.toFixed(2) }}</span>
+                  </div>
+                  <p v-if="item.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-red-500 font-black">Sold Out</p>
+                  <p v-else-if="item.current_stock_pieces < 10" class="text-[10px] md:text-xs text-orange-500 font-bold">Only {{ item.current_stock_pieces }} left</p>
+                  <p v-else class="text-[10px] md:text-xs text-gray-400 font-medium">Available</p>
+                </div>
               </div>
-              <p v-if="item.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-red-500 font-black">Sold Out</p>
-              <p v-else-if="item.current_stock_pieces < 10" class="text-[10px] md:text-xs text-orange-500 font-bold">Only {{ item.current_stock_pieces }} left</p>
-              <p v-else class="text-[10px] md:text-xs text-gray-400 font-medium">Available</p>
             </div>
           </div>
         </div>
