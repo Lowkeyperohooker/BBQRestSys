@@ -41,7 +41,7 @@ async function handleLogin() {
     <div class="bg-surface-container-low border border-outline-variant/15 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
       
       <div class="w-16 h-16 bg-primary-container/20 border border-primary-container/30 rounded-xl mx-auto flex items-center justify-center mb-6 shadow-lg shadow-primary-container/10">
-        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        <img src="../assets/vue.svg" class="w-16 h-16" alt="lock icon">
       </div>
 
       <h2 class="text-2xl font-black text-on-surface tracking-tight mb-2">BBQ na murag lami</h2>
