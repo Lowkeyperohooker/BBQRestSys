@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
 import StaffModal from "../components/ui/StaffModal.vue";
-import StaffTimesheetModal from "../components/ui/StaffTimesheetModal.vue"; // NEW
+import StaffTimesheetModal from "../components/ui/StaffTimesheetModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import { useResponsive } from '../composables/useResponsive';
@@ -11,7 +11,7 @@ const { fontSm, fontBase, fontXl, isMobile } = useResponsive();
 
 const staffMembers = ref<any[]>([]);
 const isModalOpen = ref(false);
-const isTimesheetModalOpen = ref(false); // NEW
+const isTimesheetModalOpen = ref(false);
 const selectedStaff = ref<any>(null);
 
 const isLoadingData = ref(true);
@@ -126,7 +126,7 @@ onMounted(() => {
                   </span>
                 </td>
                 <td class="py-4 text-right px-2">
-                  <div class="flex justify-end gap-2">
+                  <div v-if="staff.role !== 'Super Admin'" class="flex justify-end gap-2">
                     <button @click="openTimesheetModal(staff)" class="p-2 border border-purple-200 text-purple-600 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors" title="View Rendered Hours">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </button>
@@ -138,6 +138,11 @@ onMounted(() => {
                     <button @click="handleDeleteStaff(staff.staff_id, staff.full_name)" class="p-2 border border-red-200 text-red-500 rounded-lg bg-red-50 hover:bg-red-100 transition-colors" title="Delete">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
+                  </div>
+                  <div v-else class="flex justify-end">
+                    <span class="bg-gray-100 text-gray-400 text-[10px] font-bold px-2 py-1 rounded border border-gray-200 uppercase tracking-widest cursor-not-allowed">
+                      System Protected
+                    </span>
                   </div>
                 </td>
               </tr>

@@ -1,4 +1,3 @@
-// Detect if running in Tauri, local browser, or network device
 const hostname = window.location.hostname === 'tauri.localhost' 
   ? '127.0.0.1' 
   : window.location.hostname;

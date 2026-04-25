@@ -75,7 +75,7 @@ onUnmounted(() => {
       </div>
       <div class="flex flex-col">
         <span :class="['font-black tracking-tight leading-none text-white', fontXl]">BBQ<span class="text-blue-500">SYS</span></span>
-        <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">Management</span>
+        <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1">NaMuragLami</span>
       </div>
     </div>
 
