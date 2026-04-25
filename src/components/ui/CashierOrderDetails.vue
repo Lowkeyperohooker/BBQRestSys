@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import { ref, watch, computed } from 'vue';
 import BaseButton from './BaseButton.vue';
 import { useResponsive } from '../../composables/useResponsive';
-import type { ActiveOrder } from '../../services/posService';
+import type { ActiveOrder, PosItem, CartItem } from '../../services/posService';
 import type { PendingOrder } from '../../services/queueService';
 
-const { fontSm, fontBase, fontLg, fontXl } = useResponsive();
+const { fontSm, fontBase, fontLg } = useResponsive();
 
-defineProps<{
+const props = defineProps<{
   selectedOrder: ActiveOrder | null;
   selectedPending: PendingOrder | null;
+  availableItems: PosItem[];
   searchQueueInput: string;
   isSearching: boolean;
   tableNumberInput: string;
@@ -23,9 +25,18 @@ const emit = defineEmits<{
   (e: 'accept-pending'): void;
   (e: 'update-status', status: string): void;
   (e: 'settle-payment'): void;
+  (e: 'save-pending-edit', updatedData: PendingOrder): void;
 }>();
 
-// Force the input to strictly be digits between 1 and 100
+// Edit State (Restricted to Pending Orders Only)
+const isEditing = ref(false);
+const editCart = ref<CartItem[]>([]);
+const newItemSelection = ref<number | ''>('');
+const newItemQty = ref<number>(1);
+
+watch(() => props.selectedOrder, () => { isEditing.value = false; });
+watch(() => props.selectedPending, () => { isEditing.value = false; });
+
 function validateTableInput(e: Event) {
   const target = e.target as HTMLInputElement;
   let val = target.value.replace(/\D/g, '');
@@ -33,8 +44,57 @@ function validateTableInput(e: Event) {
     let num = parseInt(val, 10);
     if (num > 100) val = '100';
   }
-  target.value = val; // Force UI update
+  target.value = val;
   emit('update:tableNumberInput', val);
+}
+
+function startEdit() {
+  if (props.selectedPending) {
+    editCart.value = JSON.parse(JSON.stringify(props.selectedPending.cart_items || []));
+    isEditing.value = true;
+  }
+}
+
+function addEditItem() {
+  if (!newItemSelection.value || newItemQty.value <= 0) return;
+  const item = props.availableItems.find(i => i.prep_item_id === newItemSelection.value);
+  if (item) {
+    const existing = editCart.value.find(i => i.prep_item_id === item.prep_item_id);
+    if (existing) {
+      existing.qty += newItemQty.value;
+    } else {
+      editCart.value.push({ ...item, qty: newItemQty.value } as CartItem);
+    }
+  }
+  newItemSelection.value = '';
+  newItemQty.value = 1;
+}
+
+function incrementEditQty(idx: number) {
+  editCart.value[idx].qty++;
+}
+
+function decrementEditQty(idx: number) {
+  if (editCart.value[idx].qty > 1) {
+    editCart.value[idx].qty--;
+  } else {
+    // If quantity reaches 0, remove the item from the cart
+    editCart.value.splice(idx, 1);
+  }
+}
+
+const editTotal = computed(() => editCart.value.reduce((acc, item) => acc + (item.unit_price * item.qty), 0));
+
+function saveEdit() {
+  if (props.selectedPending) {
+    emit('save-pending-edit', { 
+      ...props.selectedPending, 
+      cart_items: editCart.value, 
+      total: editTotal.value, 
+      subtotal: editTotal.value 
+    });
+  }
+  isEditing.value = false;
 }
 </script>
 
@@ -73,7 +133,6 @@ function validateTableInput(e: Event) {
       </div>
 
       <div v-else-if="selectedPending" class="h-full max-w-2xl w-full mx-auto flex flex-col gap-3 animate-in fade-in duration-300">
-        
         <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative flex flex-col flex-1 min-h-0">
           <div class="bg-blue-400 absolute top-0 left-0 w-full h-1 animate-pulse"></div>
           
@@ -83,26 +142,50 @@ function validateTableInput(e: Event) {
               <h3 :class="['font-black text-gray-900 mt-0.5', fontLg]">Queue #{{ selectedPending.queue_number }}</h3>
               <p :class="['font-medium text-gray-500', fontSm]">{{ selectedPending.order_type }}</p>
             </div>
-            <button @click="emit('clear-pending')" class="text-gray-400 hover:bg-gray-100 p-1 rounded-full transition-colors">
+            <button v-if="!isEditing" @click="emit('clear-pending')" class="text-gray-400 hover:bg-gray-100 p-1 rounded-full transition-colors">
                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
 
           <div class="flex-1 overflow-y-auto border-t border-b border-gray-100 py-2 my-2 pr-2">
-            <h4 class="font-bold text-gray-800 mb-2 text-xs uppercase tracking-wide sticky top-0 bg-white z-10 py-1">Customer Cart</h4>
-            <div class="space-y-1.5">
+            <div class="flex justify-between items-center mb-2 sticky top-0 bg-white z-10 py-1">
+              <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wide">Customer Cart</h4>
+              <button v-if="!isEditing" @click="startEdit" class="text-blue-600 text-xs font-bold underline">Edit Order</button>
+            </div>
+            
+            <div v-if="!isEditing" class="space-y-1.5">
               <div v-for="(item, idx) in selectedPending.cart_items" :key="idx" class="flex justify-between items-center bg-gray-50 py-1.5 px-2 rounded border border-gray-100">
-                <div>
-                  <p :class="['font-bold text-gray-800', fontSm]">{{ item.qty }}x {{ item.pos_display_name }}</p>
-                </div>
+                <p :class="['font-bold text-gray-800', fontSm]">{{ item.qty }}x {{ item.pos_display_name }}</p>
                 <span :class="['font-bold text-gray-600', fontSm]">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
+              </div>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div v-for="(item, idx) in editCart" :key="idx" class="flex justify-between items-center bg-white p-2 border border-gray-200 rounded">
+                <span class="font-bold text-sm text-gray-800">{{ item.pos_display_name }}</span>
+                <div class="flex items-center gap-4">
+                  <span class="font-bold text-gray-600 text-sm">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
+                  <div class="flex items-center border border-gray-300 rounded shadow-sm">
+                    <button type="button" @click="decrementEditQty(idx)" class="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-black transition-colors">-</button>
+                    <span class="px-2 text-sm font-bold w-8 text-center border-l border-r border-gray-300">{{ item.qty }}</span>
+                    <button type="button" @click="incrementEditQty(idx)" class="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-black transition-colors">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-2 mt-2 bg-gray-50 p-2 rounded border border-gray-200 items-center">
+                <select v-model="newItemSelection" class="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm font-bold bg-white focus:outline-none focus:border-blue-500">
+                  <option value="" disabled>Select Item</option>
+                  <option v-for="ai in availableItems" :key="ai.prep_item_id" :value="ai.prep_item_id">{{ ai.pos_display_name }} (₱{{ ai.unit_price }})</option>
+                </select>
+                <input v-model.number="newItemQty" type="number" min="1" class="w-16 border border-gray-300 rounded px-2 py-1.5 text-sm font-bold text-center focus:outline-none focus:border-blue-500">
+                <BaseButton variant="primary" @click="addEditItem" type="button" class="px-4 py-1.5 text-sm">Add</BaseButton>
               </div>
             </div>
           </div>
 
           <div class="pt-2 flex justify-between items-center shrink-0">
             <span :class="['font-bold text-gray-800', fontSm]">Total Value</span>
-            <span :class="['font-black text-gray-900', fontLg]">₱{{ selectedPending.total.toFixed(2) }}</span>
+            <span :class="['font-black text-gray-900', fontLg]">₱{{ isEditing ? editTotal.toFixed(2) : selectedPending.total.toFixed(2) }}</span>
           </div>
         </div>
 
@@ -119,17 +202,22 @@ function validateTableInput(e: Event) {
         </div>
 
         <div class="flex flex-col sm:flex-row gap-2 shrink-0">
-          <BaseButton variant="danger" @click="emit('reject-pending')" class="flex-none py-2 px-4 shadow-sm bg-white border border-red-200 text-red-600! hover:bg-red-50 hover:border-red-300">
-            <span :class="fontSm">Reject</span>
-          </BaseButton>
-          <BaseButton variant="primary" @click="emit('accept-pending')" :disabled="!tableNumberInput" class="flex-1 py-2 shadow-sm hover:shadow-md transition-all">
-            <span :class="fontBase">Accept & Send</span>
-          </BaseButton>
+          <template v-if="isEditing">
+            <BaseButton variant="secondary" @click="isEditing = false" class="flex-1 py-2">Cancel Edit</BaseButton>
+            <BaseButton variant="success" @click="saveEdit" class="flex-1 py-2 shadow-sm">Save Changes</BaseButton>
+          </template>
+          <template v-else>
+            <BaseButton variant="danger" @click="emit('reject-pending')" class="flex-none py-2 px-4 shadow-sm bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300">
+              <span :class="fontSm">Reject</span>
+            </BaseButton>
+            <BaseButton variant="primary" @click="emit('accept-pending')" :disabled="!tableNumberInput" class="flex-1 py-2 shadow-sm hover:shadow-md transition-all">
+              <span :class="fontBase">Accept & Send</span>
+            </BaseButton>
+          </template>
         </div>
       </div>
 
       <div v-else-if="selectedOrder" class="h-full max-w-2xl w-full mx-auto flex flex-col gap-3 animate-in fade-in duration-300">
-        
         <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative flex flex-col flex-1 min-h-0">
           <div :class="selectedOrder.status === 'Cooking' ? 'bg-orange-400' : 'bg-green-400'" class="absolute top-0 left-0 w-full h-1"></div>
           
@@ -145,19 +233,19 @@ function validateTableInput(e: Event) {
           </div>
 
           <div class="flex-1 overflow-y-auto border-t border-b border-gray-100 py-2 my-2 pr-2">
-            <h4 class="font-bold text-gray-800 mb-2 text-xs uppercase tracking-wide sticky top-0 bg-white z-10 py-1">Order Items</h4>
+            <div class="flex justify-between items-center mb-2 sticky top-0 bg-white z-10 py-1">
+              <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wide">Order Items</h4>
+            </div>
             
             <div v-if="selectedOrder.cart_items && selectedOrder.cart_items.length > 0" class="space-y-1.5">
               <div v-for="(item, idx) in selectedOrder.cart_items" :key="idx" class="flex justify-between items-center bg-gray-50 py-1.5 px-2 rounded border border-gray-100">
-                <div>
-                  <p :class="['font-bold text-gray-800', fontSm]">{{ item.qty }}x {{ item.pos_display_name || 'Item' }}</p>
-                </div>
+                <p :class="['font-bold text-gray-800', fontSm]">{{ item.qty }}x {{ item.pos_display_name || 'Item' }}</p>
                 <span :class="['font-bold text-gray-600', fontSm]">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
               </div>
             </div>
 
             <div v-else class="h-full flex flex-col justify-center items-center py-6">
-               <p class="text-gray-400 text-sm font-medium text-center">No item details found for this order.</p>
+               <p class="text-gray-400 text-sm font-medium text-center">No item details found.</p>
             </div>
           </div>
 
@@ -176,6 +264,7 @@ function validateTableInput(e: Event) {
           </BaseButton>
         </div>
       </div>
+
     </div>
   </div>
 </template>

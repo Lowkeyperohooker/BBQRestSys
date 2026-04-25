@@ -92,4 +92,27 @@ export const posService = {
     });
     if (!res.ok) throw new Error('Failed to settle payment');
   },
+
+  async editActiveOrder(orderId: number, staffId: number, cartItems: CartItem[], subtotal: number, tax: number, total: number): Promise<void> {
+    const formattedCart = cartItems.map(i => ({
+      prep_item_id: i.prep_item_id,
+      qty: i.qty,
+      unit_price: i.unit_price,
+      pos_display_name: i.pos_display_name,
+    }));
+
+    const res = await fetch(`${API_BASE}/pos/edit-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: orderId,
+        staff_id: staffId,
+        cart_items: formattedCart,
+        subtotal,
+        tax,
+        total
+      })
+    });
+    if (!res.ok) throw new Error('Failed to edit active order');
+  },
 };

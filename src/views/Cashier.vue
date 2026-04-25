@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { posService, type ActiveOrder } from '../services/posService';
+import { posService, type ActiveOrder, type PosItem } from '../services/posService';
 import { queueService, type PendingOrder } from '../services/queueService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import CashierOrderDetails from '../components/ui/CashierOrderDetails.vue';
@@ -10,19 +10,15 @@ import { useAuth } from '../stores/authStore';
 const { fontSm, fontBase, isMobile, isTablet } = useResponsive();
 const { currentUser } = useAuth();
 
-// Database Orders
 const activeOrders = ref<ActiveOrder[]>([]);
 const selectedOrder = ref<ActiveOrder | null>(null);
+const availableItems = ref<PosItem[]>([]);
 
-// JSON Kiosk Queue
 const selectedPending = ref<PendingOrder | null>(null);
 const searchQueueInput = ref('');
 const isSearching = ref(false);
 
-// Table Number Input
 const tableNumberInput = ref('');
-
-// UI State
 const isLoadingData = ref(true);
 
 const staffId = currentUser.value?.id || 1;
@@ -31,6 +27,7 @@ async function loadData() {
   isLoadingData.value = true;
   try {
     activeOrders.value = await posService.getActiveOrders();
+    availableItems.value = await posService.getAvailablePosItems(); // Needed for edit dropdown
     
     if (selectedOrder.value) {
       selectedOrder.value = activeOrders.value.find(o => o.order_id === selectedOrder.value?.order_id) || null;
@@ -146,6 +143,28 @@ async function handleRejectPending() {
   }
 }
 
+async function handleSaveActiveEdit(updatedOrder: ActiveOrder) {
+  try {
+    await posService.editActiveOrder(
+      updatedOrder.order_id, 
+      staffId, 
+      updatedOrder.cart_items as any, 
+      updatedOrder.total_amount, // Replaced the subtotal check with total_amount
+      0, 
+      updatedOrder.total_amount
+    );
+    await loadData();
+    alert("Order successfully updated.");
+  } catch (error) {
+    console.error("Failed to edit order:", error);
+    alert("An error occurred saving the edit.");
+  }
+}
+
+function handleSavePendingEdit(updatedPending: PendingOrder) {
+  selectedPending.value = updatedPending;
+}
+
 onMounted(() => {
   loadData();
 });
@@ -157,6 +176,7 @@ onMounted(() => {
     <CashierOrderDetails 
       :selected-order="selectedOrder"
       :selected-pending="selectedPending"
+      :available-items="availableItems"
       :search-queue-input="searchQueueInput"
       :is-searching="isSearching"
       :table-number-input="tableNumberInput"
@@ -168,10 +188,11 @@ onMounted(() => {
       @accept-pending="handleAcceptPending"
       @update-status="handleUpdateStatus"
       @settle-payment="handleSettlePayment"
+      @save-active-edit="handleSaveActiveEdit"
+      @save-pending-edit="handleSavePendingEdit"
     />
 
     <div :class="['bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col shrink-0', isMobile || isTablet ? 'h-96' : 'w-80 lg:w-96']">
-      
       <div class="p-4 md:p-5 border-b border-gray-100 bg-gray-50/80 rounded-t-2xl flex justify-between items-center">
         <h3 :class="['font-extrabold text-gray-900', fontBase]">Active Tabs</h3>
         <span v-if="activeOrders.length > 0" class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">{{ activeOrders.length }}</span>
@@ -203,6 +224,5 @@ onMounted(() => {
 
       </div>
     </div>
-
   </div>
 </template>

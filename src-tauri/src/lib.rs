@@ -55,7 +55,8 @@ pub fn run() {
                     .route("/active-orders", get(pos::get_active_orders))
                     .route("/send-to-grill", post(pos::send_to_grill))
                     .route("/settle", post(pos::settle_payment))
-                    .route("/update-status", post(pos::update_order_status_with_log));
+                    .route("/update-status", post(pos::update_order_status_with_log))
+                    .route("/edit-order", post(pos::edit_active_order));
 
                 let schedule_routes = Router::new()
                     .route("/today", get(schedule::get_today_shifts))
