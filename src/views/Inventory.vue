@@ -2,8 +2,8 @@
 import { ref, onMounted, computed } from 'vue';
 import type { RawInventoryItem, PreparedInventoryItem, POSCategory } from '../services/inventoryService';
 import { inventoryService } from '../services/inventoryService';
-import EditInventoryModal from '../components/ui/EditInventoryModal.vue';
-import EditPriceModal from '../components/ui/EditPriceModal.vue';
+import EditInventoryModal from '../components/modal/EditInventoryModal.vue';
+import EditPriceModal from '../components/modal/EditPriceModal.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';

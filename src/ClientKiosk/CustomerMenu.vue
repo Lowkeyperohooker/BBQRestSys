@@ -4,8 +4,8 @@ import { posService, type PosItem, type CartItem } from '../services/posService'
 import { queueService } from '../services/queueService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
-import CheckOrderModal from '../components/ui/CheckOrderModal.vue';
-import MenuItemModal from '../components/ui/MenuItemModal.vue';
+import CheckOrderModal from '../components/modal/CheckOrderModal.vue';
+import MenuItemModal from '../components/modal/MenuItemModal.vue';
 import MenuSidebar from '../components/layout/MenuSidebar.vue';
 import { useResponsive } from '../composables/useResponsive';
 

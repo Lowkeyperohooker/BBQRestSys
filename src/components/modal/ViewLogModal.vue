@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SystemLog } from '../../services/logService';
-import BaseBadge from './BaseBadge.vue';
+import BaseBadge from '../ui/BaseBadge.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -88,7 +88,7 @@ function getCategoryVariant(category: string | undefined): 'info' | 'warning' | 
         <div class="border-t border-outline-variant/15 pt-5">
           <p class="text-xs text-on-surface-variant font-bold uppercase tracking-widest mb-3">Extended Details / Data</p>
           <div class="bg-surface-container p-4 rounded-xl border border-outline-variant/20 shadow-inner">
-             <p class="text-sm text-on-surface font-mono whitespace-pre-wrap break-words leading-relaxed">
+             <p class="text-sm text-on-surface font-mono whitespace-pre-wrap wrap-break-word leading-relaxed">
               {{ log.details || 'No extended details recorded for this event.' }}
             </p>
           </div>

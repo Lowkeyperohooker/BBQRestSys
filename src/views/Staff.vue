@@ -2,8 +2,8 @@
 import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
 import { useAuth } from "../stores/authStore";
-import StaffModal from "../components/ui/StaffModal.vue";
-import StaffTimesheetModal from "../components/ui/StaffTimesheetModal.vue";
+import StaffModal from "../components/modal/StaffModal.vue";
+import StaffTimesheetModal from "../components/modal/StaffTimesheetModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import { useResponsive } from '../composables/useResponsive';

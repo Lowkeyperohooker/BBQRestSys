@@ -8,7 +8,7 @@ defineProps<{
   <transition name="fade">
     <div 
       v-if="isLoading" 
-      class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-surface text-on-surface"
+      class="fixed inset-0 z-100 flex flex-col items-center justify-center bg-surface text-on-surface"
     >
       <svg class="w-16 h-16 animate-spin text-primary-container mb-6" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

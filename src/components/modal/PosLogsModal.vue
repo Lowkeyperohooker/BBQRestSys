@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { logService, type SystemLog } from '../../services/logService';
-import DataLoader from './DataLoader.vue';
-import BaseButton from './BaseButton.vue';
+import DataLoader from '../ui/DataLoader.vue';
+import BaseButton from '../ui/BaseButton.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -56,7 +56,7 @@ function formatTime(timestampStr: string) {
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 bg-surface min-h-[300px] flex flex-col">
+      <div class="flex-1 overflow-y-auto p-6 bg-surface min-h-75 flex flex-col">
         
         <div v-if="isLoading" class="flex-1 flex items-center justify-center">
           <DataLoader message="Loading recent transactions..." />

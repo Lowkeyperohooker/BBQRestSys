@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { scheduleService, type Shift } from '../../services/scheduleService';
-import DataLoader from './DataLoader.vue';
+import DataLoader from '../ui/DataLoader.vue';
 import { useResponsive } from '../../composables/useResponsive';
 
 const { fontSm, fontBase, fontLg, fontXl } = useResponsive();

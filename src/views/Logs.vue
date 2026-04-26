@@ -4,7 +4,7 @@ import { logService, type SystemLog } from '../services/logService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
-import ViewLogModal from '../components/ui/ViewLogModal.vue';
+import ViewLogModal from '../components/modal/ViewLogModal.vue';
 import { useResponsive } from '../composables/useResponsive';
 
 const { fontSm, fontBase, fontXl, isMobile } = useResponsive();

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import BaseButton from './BaseButton.vue';
+import BaseButton from '../ui/BaseButton.vue';
 import { useResponsive } from '../../composables/useResponsive';
 import type { PosItem } from '../../services/posService';
 
@@ -53,7 +53,7 @@ function handleConfirm() {
 </script>
 
 <template>
-  <div v-if="isOpen && item" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" @click.self="$emit('close')">
+  <div v-if="isOpen && item" class="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" @click.self="$emit('close')">
     <div class="bg-surface-container-low border border-outline-variant/20 w-full max-w-sm rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
       
       <div class="p-5 border-b border-outline-variant/10 bg-surface-container-highest/30 flex justify-between items-start">

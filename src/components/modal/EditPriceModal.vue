@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { inventoryService, type PreparedInventoryItem } from '../../services/inventoryService';
-import BaseButton from './BaseButton.vue';
+import BaseButton from '../ui/BaseButton.vue';
 
 const props = defineProps<{
   isOpen: boolean;
