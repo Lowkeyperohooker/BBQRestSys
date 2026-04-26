@@ -157,7 +157,7 @@ function initCharts() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      layout: { padding: { left: -5, bottom: -5 } },
+      layout: { padding: { left: 0, bottom: 0 } },
       scales: { 
         y: { 
           beginAtZero: true,
@@ -226,7 +226,7 @@ onMounted(() => {
 
     <div v-else class="flex-1 overflow-y-auto space-y-4 pb-6">
 
-      <div class="sticky top-0 z-40 bg-surface-container/90 backdrop-blur-md -mt-4 -mx-4 pr-4 pl-3 pt-4 pb-3 mb-4 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+      <div class="sticky top-0 z-40 bg-surface-container/90 backdrop-blur-md -mt-4 pt-4 pb-3 mb-8 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h3 :class="['font-black text-on-surface tracking-tight pl-3', fontXl]">Business Overview</h3>
         <div class="flex bg-surface-container-low rounded-lg shadow-sm border border-outline-variant/30 p-1 w-full md:w-auto">
           <button @click="selectedPeriod = 'daily'" :class="[selectedPeriod === 'daily' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Daily</button>
@@ -271,6 +271,7 @@ onMounted(() => {
         </div>
 
         <div class="col-span-12 lg:col-span-8 relative bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">
+        <!-- <div class="col-span-12 lg:col-span-8 w-[calc(100%-4px)] relative bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">  -->
           <div v-if="isUpdatingChart" class="absolute inset-0 z-10 bg-surface/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
             <p class="font-black text-primary uppercase tracking-widest animate-pulse text-xs">Updating...</p>
           </div>
@@ -291,6 +292,7 @@ onMounted(() => {
         </div>
 
         <div class="col-span-12 lg:col-span-4 bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">
+        <!-- <div class="col-span-12 lg:col-span-4 w-[calc(100%-4px)] bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">   -->
           <div class="flex justify-between items-start mb-4">
             <h3 :class="['font-black text-on-surface tracking-tight leading-none', fontLg]">Volume</h3>
             <div class="text-right">
@@ -318,7 +320,7 @@ onMounted(() => {
 
         <div class="col-span-12 bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15">
           <h3 :class="['font-black text-on-surface tracking-tight mb-3 leading-none', fontLg]">Top Items</h3>
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             <div v-if="topItems.length === 0" class="col-span-full text-center text-on-surface-variant text-xs py-2">No items sold yet.</div>
             <div v-for="(item, index) in topItems.slice(0, 5)" :key="index" class="bg-surface-container border border-outline-variant/10 rounded-lg p-2.5 flex items-center justify-between">
               <div class="overflow-hidden pr-2">
