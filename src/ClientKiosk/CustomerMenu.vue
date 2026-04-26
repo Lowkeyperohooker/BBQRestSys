@@ -161,10 +161,10 @@ function handleImageError(event: Event) {
   <div class="h-full flex flex-col relative max-w-7xl mx-auto">
 
     <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-6 bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15">
-      <div class="w-24 h-24 bg-primary-container/20 border border-primary-container/30 rounded-3xl shadow-[0_0_24px_rgba(255,109,0,0.2)] flex items-center justify-center text-primary mb-8">
-        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+      <h1 :class="['font-black text-on-surface tracking-tight mb-2', font2xl]">WELCOME TO</h1>
+      <div class="w-30 h-30 text-primary mb-8">
+        <img src="../assets/bbq-icon.png" class="w-30 h-30" alt="lock icon">
       </div>
-      <h1 :class="['font-black text-on-surface tracking-tight mb-2', font2xl]">Welcome to EMBER & ASH</h1>
       <p :class="['text-on-surface-variant font-medium mb-12', fontLg]">How would you like your order today?</p>
       
       <div class="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">

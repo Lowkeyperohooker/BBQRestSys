@@ -40,11 +40,10 @@ async function handleLogin() {
   <div class="h-full w-full flex items-center justify-center bg-surface">
     <div class="bg-surface-container-low border border-outline-variant/15 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
       
-      <div class="w-16 h-16 bg-primary-container/20 border border-primary-container/30 rounded-xl mx-auto flex items-center justify-center mb-6 shadow-lg shadow-primary-container/10">
-        <img src="../assets/vue.svg" class="w-16 h-16" alt="lock icon">
+      <div class="w-30 h-30 mx-auto flex items-center justify-center mb-6 ">
+        <img src="../assets/bbq-icon.png" class="w-30 h-30" alt="bbq icon">
       </div>
 
-      <h2 class="text-2xl font-black text-on-surface tracking-tight mb-2">BBQ na murag lami</h2>
       <p class="text-on-surface-variant font-medium text-sm mb-8 tracking-wide">Enter your access code to continue</p>
 
       <form @submit.prevent="handleLogin" class="space-y-6">
