@@ -30,6 +30,7 @@ async function loadTimeclockData() {
     let activeStaffList = (staff as any[]).filter(s => s.status === 'Active');
     let todaysShiftsList = shifts;
 
+    // Added .value to correctly unwrap the Ref
     if (authStore.currentUser.value?.role !== 'Super Admin') {
       activeStaffList = activeStaffList.filter(s => s.role !== 'Super Admin');
       todaysShiftsList = todaysShiftsList.filter(s => s.role !== 'Super Admin');

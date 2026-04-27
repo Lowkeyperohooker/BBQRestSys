@@ -29,7 +29,7 @@ onMounted(() => {
 
     <main class="flex-1 flex flex-col h-screen relative overflow-hidden">
       
-      <div :class="['flex-1 overflow-y-auto', route.path === '/login' ? 'p-0' : 'p-3 md:p-8']">
+      <div :class="['flex-1 overflow-y-auto', route.path === '/login' ? 'p-0' : 'p-0 md:p-0']">
         <router-view></router-view>
       </div>
 

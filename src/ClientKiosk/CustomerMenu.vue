@@ -160,22 +160,25 @@ function handleImageError(event: Event) {
 <template>
   <div class="h-full flex flex-col relative max-w-7xl mx-auto">
 
-    <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-6 bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15">
+    <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15">
       <h1 :class="['font-black text-on-surface tracking-tight mb-2', font2xl]">WELCOME TO</h1>
-      <div class="w-30 h-30 text-primary mb-8">
-        <img src="../assets/bbq-icon.png" class="w-30 h-30" alt="lock icon">
+      <div class="w-24 h-24 md:w-28 md:h-28 text-primary mb-6">
+        <img src="../assets/bbq-icon.png" class="w-full h-full object-contain" alt="lock icon">
       </div>
-      <p :class="['text-on-surface-variant font-medium mb-12', fontLg]">How would you like your order today?</p>
+      <p :class="['text-on-surface-variant font-medium mb-8', fontLg]">How would you like your order today?</p>
       
-      <div class="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
-        <button @click="selectOrderType('Dine-in')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-8 flex flex-col items-center gap-4 transition-all shadow-sm group">
-          <svg class="w-16 h-16 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M6.75 21A3.75 3.75 0 013 17.25V14.16M21 14.16v3.09a3.75 3.75 0 01-3.75 3.75M6.75 21H17.25"></path></svg>
-          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontXl]">Dine-In</span>
+      <div class="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-md md:max-w-lg">
+        
+        <button @click="selectOrderType('Dine-in')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-5 md:p-6 flex flex-col items-center gap-3 transition-all shadow-sm group">
+          <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M6.75 21A3.75 3.75 0 013 17.25V14.16M21 14.16v3.09a3.75 3.75 0 01-3.75 3.75M6.75 21H17.25"></path></svg>
+          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Dine-In</span>
         </button>
-        <button @click="selectOrderType('Takeout')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-8 flex flex-col items-center gap-4 transition-all shadow-sm group">
-          <svg class="w-16 h-16 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontXl]">Takeout</span>
+        
+        <button @click="selectOrderType('Takeout')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-5 md:p-6 flex flex-col items-center gap-3 transition-all shadow-sm group">
+          <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Takeout</span>
         </button>
+
       </div>
     </div>
 

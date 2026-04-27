@@ -151,22 +151,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col items-center justify-center p-4 md:p-6">
+  <div class="w-full max-w-[1600px] mx-auto h-full flex flex-col">
     
-    <div v-if="isLoadingData" class="w-full max-w-3xl bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15 flex items-center justify-center h-64">
+    <div v-if="isLoadingData" class="w-full h-full bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15 flex items-center justify-center">
       <DataLoader message="Loading preparation environment..." />
     </div>
 
-    <div v-else class="w-full max-w-3xl bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-full">
-      <div class="p-6 md:px-8 md:py-6 border-b border-outline-variant/10 shrink-0 bg-surface-container-highest/30 flex justify-between items-center">
+    <div v-else class="w-full h-full bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+      <div class="p-4 md:px-6 md:py-4 border-b border-outline-variant/10 shrink-0 bg-surface-container-highest/30 flex justify-between items-center">
         <div>
           <h2 :class="['font-black text-on-surface tracking-tight', fontLg]">Prep Station</h2>
           <p :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px] mt-1', fontSm]">Log skewering tasks</p>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-surface">
-        <form @submit.prevent="handleSavePrep" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-surface">
+        <form @submit.prevent="handleSavePrep" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           
           <div class="col-span-1">
             <label :class="['block font-bold text-on-surface-variant uppercase tracking-widest mb-2', fontSm]">Meat Category</label>
@@ -259,7 +259,7 @@ onMounted(async () => {
               type="submit" 
               variant="primary"
               :disabled="!canPrep"
-              :class="['w-full py-4 text-lg h-14', fontBase]"
+              :class="['w-full py-4 text-lg h-[50px] md:h-[54px]', fontBase]"
             >
               <span class="font-black uppercase tracking-widest text-sm">Save Prep Log</span>
             </BaseButton>
