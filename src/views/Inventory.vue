@@ -44,9 +44,10 @@ function openEditPriceModal(item: PreparedInventoryItem) {
   isPriceModalOpen.value = true;
 }
 
-async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null }) {
+// NEW: Accepts variant inputs
+async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null; variantGroup: string | null; variantName: string | null }) {
   try {
-    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice, data.photoUrl);
+    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice, data.photoUrl, data.variantGroup, data.variantName);
     isPriceModalOpen.value = false;
     await loadData();
   } catch (error) {
@@ -161,7 +162,11 @@ onMounted(() => loadData());
                     <div v-else class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/10 text-on-surface-variant opacity-50">
                       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <span class="font-black text-on-surface">{{ item.pos_display_name }}</span>
+                    
+                    <div class="flex flex-col">
+                      <span class="font-black text-on-surface">{{ item.pos_display_name }}</span>
+                      <span v-if="item.variant_group" class="text-[10px] text-on-surface-variant font-bold mt-0.5 uppercase tracking-widest">{{ item.variant_group }} - {{ item.variant_name }}</span>
+                    </div>
                   </div>
                 </td>
 

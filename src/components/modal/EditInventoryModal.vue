@@ -23,6 +23,8 @@ const newRawAlert = ref(5.0);
 
 const newPrepCategory = ref('');
 const newPrepName = ref('');
+const newPrepVariantGroup = ref('');
+const newPrepVariantName = ref('');
 const newPrepPrice = ref<number | "">("");
 const newPrepVariable = ref(false);
 
@@ -76,6 +78,8 @@ watch(() => props.isOpen, (newVal) => {
     adjustAmount.value = "";
     adjustItemId.value = "";
     newPrepPrice.value = "";
+    newPrepVariantGroup.value = "";
+    newPrepVariantName.value = "";
     removeFile();
     loadData();
   }
@@ -110,11 +114,14 @@ async function handleAddNewItem() {
         newPrepName.value, 
         Number(newPrepPrice.value), 
         newPrepVariable.value,
-        finalPhotoUrl
+        finalPhotoUrl,
+        newPrepVariantGroup.value.trim() || null,
+        newPrepVariantName.value.trim() || null
       );
     }
     alert("Item added successfully.");
     newRawCategory.value = ''; newRawPart.value = ''; newPrepName.value = ''; newPrepPrice.value = ''; 
+    newPrepVariantGroup.value = ''; newPrepVariantName.value = '';
     removeFile();
     loadData();
     emit('refresh');
@@ -227,9 +234,21 @@ async function handleRemoveCategory(name: string) {
                 <option v-for="cat in posCategories" :key="cat.category_name" :value="cat.category_name">{{ cat.category_name }}</option>
               </select>
             </div>
+            
             <div>
               <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Display Name</label>
               <input v-model="newPrepName" type="text" required placeholder="e.g. Bottled Coke" class="w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors" />
+            </div>
+
+            <div class="flex gap-3">
+              <div class="flex-1">
+                <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Variant Group (Opt)</label>
+                <input v-model="newPrepVariantGroup" type="text" placeholder="e.g. Soda" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-3 py-2.5 font-medium focus:border-primary-container outline-none transition-colors">
+              </div>
+              <div class="flex-1">
+                <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Variant Name (Opt)</label>
+                <input v-model="newPrepVariantName" type="text" placeholder="e.g. Coke" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-3 py-2.5 font-medium focus:border-primary-container outline-none transition-colors">
+              </div>
             </div>
 
             <div>

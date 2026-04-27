@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS prepared_inventory (
     raw_item_id INTEGER,
     category TEXT NOT NULL DEFAULT 'Skewered', 
     pos_display_name TEXT NOT NULL,
+    variant_group TEXT DEFAULT NULL,
+    variant_name TEXT DEFAULT NULL,
     current_stock_pieces INTEGER DEFAULT 0,
     unit_price DECIMAL(10,2) NOT NULL,
     is_variable_price BOOLEAN DEFAULT FALSE,

@@ -10,11 +10,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  save: [data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null }];
+  save: [data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null; variantGroup: string | null; variantName: string | null }];
 }>();
 
 const formPrice = ref<number | "">("");
 const formIsVariable = ref<boolean>(false);
+const formVariantGroup = ref<string>("");
+const formVariantName = ref<string>("");
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -26,6 +28,8 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal && props.item) {
     formPrice.value = props.item.unit_price;
     formIsVariable.value = props.item.is_variable_price;
+    formVariantGroup.value = props.item.variant_group || "";
+    formVariantName.value = props.item.variant_name || "";
     
     selectedFile.value = null;
     const existingPhoto = props.item.photo_url || null;
@@ -79,14 +83,16 @@ async function handleSubmit() {
     prepItemId: props.item.prep_item_id,
     unitPrice: Number(formPrice.value),
     isVariablePrice: formIsVariable.value,
-    photoUrl: finalPhotoUrl
+    photoUrl: finalPhotoUrl,
+    variantGroup: formVariantGroup.value.trim() || null,
+    variantName: formVariantName.value.trim() || null
   });
 }
 </script>
 
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-md p-4" @click.self="$emit('close')">
-    <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl shadow-2xl w-full max-w-sm p-6 overflow-y-auto max-h-[90vh]">
       
       <div class="flex justify-between items-center mb-6">
         <div>
@@ -126,6 +132,17 @@ async function handleSubmit() {
               <svg class="mx-auto h-6 w-6 text-on-surface-variant" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
               <p class="mt-1 text-xs text-on-surface-variant font-medium">Drag & drop or click</p>
             </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Variant Group (Opt)</label>
+            <input v-model="formVariantGroup" type="text" placeholder="e.g. Soda" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-3 py-2.5 font-medium focus:border-primary-container outline-none transition-colors">
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Variant Name (Opt)</label>
+            <input v-model="formVariantName" type="text" placeholder="e.g. Coke" class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-3 py-2.5 font-medium focus:border-primary-container outline-none transition-colors">
           </div>
         </div>
 

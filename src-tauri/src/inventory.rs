@@ -1,6 +1,4 @@
-use axum::{extract::{State, Query, Path}, Json, http
-        ::{StatusCode, HeaderMap}, 
-    response::IntoResponse, body::Bytes};
+use axum::{extract::{State, Query, Path}, Json, http::{StatusCode, HeaderMap}, response::IntoResponse, body::Bytes};
 use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
 use crate::models::*;
@@ -16,6 +14,8 @@ pub struct AddNewRawItemReq { pub category: String, pub part: String, pub initia
 pub struct AddPreparedReq { 
     pub category: String, 
     pub pos_display_name: String, 
+    pub variant_group: Option<String>, // NEW
+    pub variant_name: Option<String>,  // NEW
     pub unit_price: f64, 
     pub is_variable: bool, 
     pub photo_url: Option<String>, 
@@ -27,6 +27,8 @@ pub struct UpdatePricingReq {
     pub prep_item_id: i32, 
     pub new_price: f64, 
     pub is_variable: bool, 
+    pub variant_group: Option<String>, // NEW
+    pub variant_name: Option<String>,  // NEW
     pub photo_url: Option<String>,
     pub staff_id: i32 
 }
@@ -53,6 +55,8 @@ pub struct PreparedInvResp {
     pub raw_item_id: Option<i32>, 
     pub category: String, 
     pub pos_display_name: String, 
+    pub variant_group: Option<String>, 
+    pub variant_name: Option<String>,  
     pub current_stock_pieces: i32, 
     pub unit_price: f64, 
     pub is_variable_price: bool,
@@ -70,7 +74,7 @@ pub async fn get_raw_inventory(State(pool): State<PgPool>) -> AppResult<Vec<RawI
 
 pub async fn get_prepared_inventory(State(pool): State<PgPool>) -> AppResult<Vec<PreparedInvResp>> {
     let items = sqlx::query_as::<_, PreparedInvResp>(
-        "SELECT prep_item_id, raw_item_id, category, pos_display_name, current_stock_pieces, unit_price::float8, is_variable_price, photo_url 
+        "SELECT prep_item_id, raw_item_id, category, pos_display_name, variant_group, variant_name, current_stock_pieces, unit_price::float8, is_variable_price, photo_url 
          FROM prepared_inventory ORDER BY pos_display_name"
     ).fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(items))
@@ -130,9 +134,12 @@ pub async fn add_new_raw_item(State(pool): State<PgPool>, Json(payload): Json<Ad
 pub async fn add_prepared_item(State(pool): State<PgPool>, Json(payload): Json<AddPreparedReq>) -> AppResult<()> {
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
-    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, unit_price, is_variable_price, photo_url) VALUES ($1, $2, $3::numeric, $4, $5)")
+    // NEW: Includes variant bindings
+    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, variant_group, variant_name, unit_price, is_variable_price, photo_url) VALUES ($1, $2, $3, $4, $5::numeric, $6, $7)")
         .bind(payload.category)
         .bind(payload.pos_display_name)
+        .bind(payload.variant_group)
+        .bind(payload.variant_name)
         .bind(payload.unit_price)
         .bind(payload.is_variable)
         .bind(payload.photo_url)
@@ -143,10 +150,13 @@ pub async fn add_prepared_item(State(pool): State<PgPool>, Json(payload): Json<A
 }
 
 pub async fn update_prepared_item_pricing(State(pool): State<PgPool>, Json(payload): Json<UpdatePricingReq>) -> AppResult<()> {
-    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, is_variable_price = $2, photo_url = $3 WHERE prep_item_id = $4")
+    // NEW: Includes variant bindings
+    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, is_variable_price = $2, photo_url = $3, variant_group = $4, variant_name = $5 WHERE prep_item_id = $6")
         .bind(payload.new_price)
         .bind(payload.is_variable)
         .bind(payload.photo_url)
+        .bind(payload.variant_group)
+        .bind(payload.variant_name)
         .bind(payload.prep_item_id)
         .execute(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(()))
@@ -209,20 +219,12 @@ pub async fn get_recent_prep_logs(State(pool): State<PgPool>, Query(q): Query<Li
 }
 
 pub async fn upload_photo(headers: HeaderMap, body: Bytes) -> AppResult<String> {
-    // Get the file extension from our custom header, default to png
     let ext = headers.get("x-file-ext").and_then(|v| v.to_str().ok()).unwrap_or("png");
-    
-    // Create the uploads folder in the root directory if it doesn't exist yet
     let _ = tokio::fs::create_dir_all("../uploads").await;
-    
-    // Generate a unique filename using the current timestamp so files don't overwrite each other
     let unique_name = format!("{}.{}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0), ext);
     let path = format!("../uploads/{}", unique_name);
     
-    // Save the file
     tokio::fs::write(&path, &body).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
-    // Return the web-accessible URL
     Ok(Json(format!("/uploads/{}", unique_name)))
 }
 
@@ -231,7 +233,6 @@ pub async fn serve_upload(Path(file_name): Path<String>) -> impl IntoResponse {
     
     match tokio::fs::read(&path).await {
         Ok(bytes) => {
-            // Check extension to send the correct image type to the browser
             let content_type = if file_name.ends_with(".png") { "image/png" }
             else if file_name.ends_with(".jpg") || file_name.ends_with(".jpeg") { "image/jpeg" }
             else { "application/octet-stream" };

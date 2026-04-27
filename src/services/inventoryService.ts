@@ -11,6 +11,8 @@ export interface PreparedInventoryItem {
   raw_item_id: number | null;
   category: string;
   pos_display_name: string;
+  variant_group: string | null; // NEW
+  variant_name: string | null;  // NEW
   current_stock_pieces: number;
   unit_price: number;
   is_variable_price: boolean;
@@ -91,13 +93,15 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to add new raw item');
   },
 
-  async addPreparedItem(category: string, posDisplayName: string, unitPrice: number, isVariable: boolean, photoUrl?: string | null): Promise<void> {
+  async addPreparedItem(category: string, posDisplayName: string, unitPrice: number, isVariable: boolean, photoUrl?: string | null, variantGroup?: string | null, variantName?: string | null): Promise<void> {
     const res = await fetch(`${API_BASE}/inventory/add-prepared`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         category, 
         pos_display_name: posDisplayName, 
+        variant_group: variantGroup || null,
+        variant_name: variantName || null,
         unit_price: unitPrice, 
         is_variable: isVariable, 
         photo_url: photoUrl || null,
@@ -107,7 +111,7 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to add prepared item');
   },
   
-  async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean, photoUrl: string | null): Promise<void> {
+  async updatePreparedItemPricing(prepItemId: number, newPrice: number, isVariable: boolean, photoUrl: string | null, variantGroup?: string | null, variantName?: string | null): Promise<void> {
     const res = await fetch(`${API_BASE}/inventory/update-pricing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -115,6 +119,8 @@ export const inventoryService = {
         prep_item_id: prepItemId, 
         new_price: newPrice, 
         is_variable: isVariable, 
+        variant_group: variantGroup || null,
+        variant_name: variantName || null,
         photo_url: photoUrl,
         staff_id: CURRENT_ADMIN_ID 
       })
