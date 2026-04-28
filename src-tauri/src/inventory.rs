@@ -37,7 +37,14 @@ pub struct PosCategoryReq { pub category_name: String }
 pub struct CategoryQuery { pub category: String }
 
 #[derive(Deserialize)]
-pub struct LogPrepReq { pub category: String, pub part: String, pub kilos: f64, pub sticks: i32, pub staff_name: Option<String> }
+pub struct LogPrepReq { 
+    pub category: String, 
+    pub part: String, 
+    pub kilos: f64, 
+    pub sticks: i32, 
+    pub prep_item_id: i32, // NEW: Target specific variant
+    pub staff_name: Option<String> 
+}
 
 #[derive(Deserialize)]
 pub struct LimitQuery { pub limit: i64 }
@@ -178,8 +185,9 @@ pub async fn log_prep_transaction(State(pool): State<PgPool>, Json(payload): Jso
     sqlx::query("UPDATE raw_inventory SET current_stock_kg = current_stock_kg - $1::numeric WHERE raw_item_id = $2")
         .bind(payload.kilos).bind(raw_item.0).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    sqlx::query("UPDATE prepared_inventory SET current_stock_pieces = current_stock_pieces + $1 WHERE raw_item_id = $2")
-        .bind(payload.sticks).bind(raw_item.0).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // NEW: Updates the precise prep variant, not the entire raw group
+    sqlx::query("UPDATE prepared_inventory SET current_stock_pieces = current_stock_pieces + $1 WHERE prep_item_id = $2")
+        .bind(payload.sticks).bind(payload.prep_item_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut actual_staff_id = 1i32;
 

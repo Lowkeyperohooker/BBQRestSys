@@ -6,6 +6,7 @@ import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import CheckOrderModal from '../components/modal/CheckOrderModal.vue';
 import MenuItemModal from '../components/modal/MenuItemModal.vue';
+import MenuVariantModal from '../components/modal/MenuVariantModal.vue';
 import MenuSidebar from '../components/layout/MenuSidebar.vue';
 import { useResponsive } from '../composables/useResponsive';
 
@@ -220,7 +221,6 @@ function handleImageError(event: Event) {
       <p :class="['text-on-surface-variant font-medium mb-8', fontLg]">How would you like your order today?</p>
       
       <div class="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-md md:max-w-lg">
-        
         <button @click="selectOrderType('Dine-in')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-5 md:p-6 flex flex-col items-center gap-3 transition-all shadow-sm group">
           <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M6.75 21A3.75 3.75 0 013 17.25V14.16M21 14.16v3.09a3.75 3.75 0 01-3.75 3.75M6.75 21H17.25"></path></svg>
           <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Dine-In</span>
@@ -230,12 +230,10 @@ function handleImageError(event: Event) {
           <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
           <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Takeout</span>
         </button>
-
       </div>
     </div>
 
     <div v-else-if="!generatedQueueNumber" class="flex-1 bg-surface-container-low rounded-2xl overflow-hidden border border-outline-variant/15 flex flex-col min-h-0 relative">
-      
       <div class="z-40 bg-surface-container-low border-b border-outline-variant/20 px-5 py-4 md:px-6 md:py-5 shrink-0 flex justify-between items-center">
         <div>
           <div class="flex items-center gap-4 mb-2">
@@ -248,7 +246,6 @@ function handleImageError(event: Event) {
       </div>
 
       <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface">
-        
         <MenuSidebar 
           :categories="categories" 
           :selected-category="selectedCategory" 
@@ -323,30 +320,12 @@ function handleImageError(event: Event) {
       </BaseButton>
     </div>
 
-    <div v-if="isVariantModalOpen && selectedGroupForVariant" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-surface rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col border border-outline-variant/20 animate-in fade-in zoom-in-95 duration-200">
-        <div class="px-6 py-5 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
-          <h3 :class="['font-black text-on-surface', fontXl]">Select {{ selectedGroupForVariant.display_name }}</h3>
-          <button @click="isVariantModalOpen = false" class="text-on-surface-variant hover:text-error transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-        <div class="p-4 md:p-6 flex-1 overflow-y-auto bg-surface space-y-3">
-          <button v-for="variant in selectedGroupForVariant.variants" :key="variant.prep_item_id"
-            @click="selectVariant(variant)"
-            class="w-full text-left bg-surface-container-low hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary rounded-2xl p-4 flex justify-between items-center transition-all group"
-            :disabled="variant.current_stock_pieces <= 0"
-            :class="{'opacity-50 cursor-not-allowed': variant.current_stock_pieces <= 0}">
-            <div>
-              <h4 :class="['font-bold text-on-surface group-hover:text-primary transition-colors', fontLg]">{{ variant.variant_name || variant.pos_display_name }}</h4>
-              <p v-if="variant.current_stock_pieces > 0" :class="['text-on-surface-variant font-medium', fontSm]">Stock: {{ variant.current_stock_pieces }}</p>
-              <p v-else :class="['text-error font-bold uppercase tracking-wider', fontSm]">Sold Out</p>
-            </div>
-            <span :class="['font-black text-primary-container', fontLg]">₱{{ variant.unit_price.toFixed(2) }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <MenuVariantModal
+      :is-open="isVariantModalOpen"
+      :group="selectedGroupForVariant"
+      @close="isVariantModalOpen = false; selectedGroupForVariant = null"
+      @select-variant="selectVariant"
+    />
 
     <CheckOrderModal 
       :is-open="isCartModalOpen"

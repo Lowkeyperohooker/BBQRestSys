@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { inventoryService, type RawInventoryItem } from '../services/inventoryService';
+import { inventoryService, type RawInventoryItem, type PreparedInventoryItem } from '../services/inventoryService';
 import { staffService } from '../services/staffService';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
@@ -10,6 +10,7 @@ const { fontSm, fontBase, fontLg } = useResponsive();
 
 const selectedCategory = ref('');
 const selectedPart = ref('');
+const selectedPrepItemId = ref<number | "">("");
 const rawKilos = ref<number | null>(null);
 const skewersProduced = ref<number | null>(null);
 const selectedStaff = ref('');
@@ -17,6 +18,7 @@ const selectedStaff = ref('');
 const staffMembers = ref<any[]>([]);
 const availableCategories = ref<string[]>([]);
 const availableParts = ref<RawInventoryItem[]>([]);
+const allPreparedItems = ref<PreparedInventoryItem[]>([]);
 const currentStockInfo = ref<RawInventoryItem | null>(null);
 
 const isLoadingData = ref(true);
@@ -27,8 +29,14 @@ const maxKilosAllowed = computed(() => {
   return currentStockInfo.value.current_stock_kg;
 });
 
+// Filters POS items to only show variants matching the selected raw meat
+const availableOutputItems = computed(() => {
+  if (!currentStockInfo.value) return [];
+  return allPreparedItems.value.filter(item => item.raw_item_id === currentStockInfo.value!.raw_item_id);
+});
+
 const canPrep = computed(() => {
-  if (!selectedCategory.value || !selectedPart.value || !rawKilos.value || !skewersProduced.value || !selectedStaff.value) {
+  if (!selectedCategory.value || !selectedPart.value || selectedPrepItemId.value === "" || !rawKilos.value || !skewersProduced.value || !selectedStaff.value) {
     return false;
   }
   if (!currentStockInfo.value) return false;
@@ -92,6 +100,8 @@ function updateCurrentStockInfo() {
   } else {
     currentStockInfo.value = null;
   }
+  // Reset selected output when the meat changes
+  selectedPrepItemId.value = "";
 }
 
 async function handleSavePrep() {
@@ -110,14 +120,19 @@ async function handleSavePrep() {
       selectedPart.value, 
       rawKilos.value!, 
       skewersProduced.value!,
+      Number(selectedPrepItemId.value),
       selectedStaff.value
     );
 
     await loadCategories();
     await loadParts(selectedCategory.value);
     
+    // Refresh all prepared items so we have the latest variant counts
+    allPreparedItems.value = await inventoryService.getPreparedInventory();
+    
     rawKilos.value = null;
     skewersProduced.value = null;
+    selectedPrepItemId.value = "";
     
     alert("Prep log successfully saved! Inventory has been updated.");
 
@@ -142,6 +157,7 @@ onMounted(async () => {
   try {
     await loadStaff();
     await loadCategories();
+    allPreparedItems.value = await inventoryService.getPreparedInventory();
   } finally {
     setTimeout(() => {
       isLoadingData.value = false;
@@ -206,6 +222,21 @@ onMounted(async () => {
             <div class="hidden md:block text-on-surface-variant opacity-30">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
+          </div>
+
+          <div class="md:col-span-2 bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl shadow-sm">
+            <label :class="['block font-bold text-primary-container uppercase tracking-widest mb-2', fontSm]">Target Output Variant</label>
+            <select 
+              v-model="selectedPrepItemId" 
+              :disabled="availableOutputItems.length === 0"
+              required
+              :class="['w-full bg-surface text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors', fontBase]"
+            >
+              <option value="" disabled>-- Select the precise menu item being skewered --</option>
+              <option v-for="item in availableOutputItems" :key="item.prep_item_id" :value="item.prep_item_id">
+                {{ item.variant_group ? `${item.variant_group} - ${item.variant_name}` : item.pos_display_name }}
+              </option>
+            </select>
           </div>
           
           <div class="col-span-1">

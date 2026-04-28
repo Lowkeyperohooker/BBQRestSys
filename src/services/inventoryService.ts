@@ -137,11 +137,12 @@ export const inventoryService = {
     return await res.json();
   },
   
-  async logPrepTransaction(category: string, part: string, kilos: number, sticks: number, staffName?: string): Promise<void> {
+  // NEW: Accepts prepItemId to target specific variants
+  async logPrepTransaction(category: string, part: string, kilos: number, sticks: number, prepItemId: number, staffName?: string): Promise<void> {
     const res = await fetch(`${API_BASE}/inventory/log-prep`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, part, kilos, sticks, staff_name: staffName ?? null })
+      body: JSON.stringify({ category, part, kilos, sticks, prep_item_id: prepItemId, staff_name: staffName ?? null })
     });
     if (!res.ok) throw new Error('Failed to log prep transaction');
   },
@@ -157,6 +158,7 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to fetch recent prep logs');
     return await res.json();
   },
+  
   async uploadPhoto(file: File): Promise<string> {
     const ext = file.name.split('.').pop() || 'png';
     const res = await fetch(`${API_BASE}/inventory/upload-photo`, {
