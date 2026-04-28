@@ -43,6 +43,7 @@ pub fn run() {
                     .route("/add-raw", post(inventory::add_new_raw_item))
                     .route("/add-prepared", post(inventory::add_prepared_item))
                     .route("/update-pricing", post(inventory::update_prepared_item_pricing))
+                    .route("/delete-prepared", post(inventory::delete_prepared_item))
                     .route("/raw-categories", get(inventory::get_available_categories))
                     .route("/parts", get(inventory::get_available_parts))
                     .route("/log-prep", post(inventory::log_prep_transaction))

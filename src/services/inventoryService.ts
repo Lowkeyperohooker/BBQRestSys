@@ -173,4 +173,14 @@ export const inventoryService = {
     if (!res.ok) throw new Error('Failed to upload photo');
     return await res.json();
   },
+
+  // Add this inside export const inventoryService = { ... }
+  async deletePreparedItem(prepItemId: number): Promise<void> {
+    const res = await fetch(`${API_BASE}/inventory/delete-prepared`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prep_item_id: prepItemId })
+    });
+    if (!res.ok) throw new Error('Failed to delete item');
+  },
 };

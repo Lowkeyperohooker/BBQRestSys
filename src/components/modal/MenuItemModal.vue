@@ -4,7 +4,7 @@ import BaseButton from '../ui/BaseButton.vue';
 import { useResponsive } from '../../composables/useResponsive';
 import type { PosItem } from '../../services/posService';
 
-const { fontSm, fontBase, fontLg, fontXl, font2xl } = useResponsive();
+const { fontSm, font2xl, fontXl } = useResponsive();
 
 const props = defineProps<{
   isOpen: boolean;
@@ -19,9 +19,7 @@ const emit = defineEmits<{
 const qty = ref(1);
 
 watch(() => props.isOpen, (newVal) => {
-  if (newVal && props.item) {
-    qty.value = 1;
-  }
+  if (newVal && props.item) qty.value = 1;
 });
 
 const totalValue = computed(() => {
@@ -30,15 +28,11 @@ const totalValue = computed(() => {
 });
 
 function increment() {
-  if (props.item && qty.value < props.item.current_stock_pieces) {
-    qty.value++;
-  }
+  if (props.item && qty.value < props.item.current_stock_pieces) qty.value++;
 }
 
 function decrement() {
-  if (qty.value > 1) {
-    qty.value--;
-  }
+  if (qty.value > 1) qty.value--;
 }
 
 function handleConfirm() {
@@ -85,7 +79,7 @@ function handleConfirm() {
           <span :class="['font-bold text-on-surface-variant uppercase tracking-widest', fontSm]">Item Total</span>
           <span :class="['font-black text-primary-container', font2xl]">₱{{ totalValue.toFixed(2) }}</span>
         </div>
-        <BaseButton variant="primary" @click="handleConfirm" class="w-full py-4.5 text-lg shadow-[0_8px_20px_rgba(255,109,0,0.25)] hover:shadow-[0_12px_28px_rgba(255,109,0,0.4)] transition-all duration-300">
+        <BaseButton variant="primary" @click="handleConfirm" class="w-full py-4 text-lg shadow-[0_8px_20px_rgba(255,109,0,0.25)] hover:shadow-[0_12px_28px_rgba(255,109,0,0.4)] transition-all duration-300">
           <span class="font-black uppercase tracking-widest">Add to Cart</span>
         </BaseButton>
       </div>

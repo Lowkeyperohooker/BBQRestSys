@@ -4,6 +4,7 @@ import type { RawInventoryItem, PreparedInventoryItem, POSCategory } from '../se
 import { inventoryService } from '../services/inventoryService';
 import EditInventoryModal from '../components/modal/EditInventoryModal.vue';
 import EditPriceModal from '../components/modal/EditPriceModal.vue';
+import AddVariantModal from '../components/modal/AddVariantModal.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
@@ -20,7 +21,10 @@ const isLoadingData = ref(true);
 
 const isInventoryModalOpen = ref(false);
 const isPriceModalOpen = ref(false);
+const isAddVariantModalOpen = ref(false);
+
 const selectedPreparedItem = ref<PreparedInventoryItem | null>(null);
+const selectedGroupForVariant = ref<any | null>(null);
 
 const expandedGroups = ref<Set<string>>(new Set());
 
@@ -82,6 +86,11 @@ function openEditPriceModal(item: PreparedInventoryItem) {
   isPriceModalOpen.value = true;
 }
 
+function openAddVariantModal(groupOrItem: any) {
+  selectedGroupForVariant.value = groupOrItem;
+  isAddVariantModalOpen.value = true;
+}
+
 async function handleSavePrice(data: { prepItemId: number; unitPrice: number; photoUrl: string | null; variantGroup: string | null; variantName: string | null }) {
   try {
     await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.photoUrl, data.variantGroup, data.variantName);
@@ -89,6 +98,52 @@ async function handleSavePrice(data: { prepItemId: number; unitPrice: number; ph
     await loadData();
   } catch (error) {
     alert("Failed to update item details.");
+  }
+}
+
+async function handleSaveNewVariant(data: { name: string; price: number; photoUrl: string | null }) {
+  try {
+    if (!selectedGroupForVariant.value.is_group && !selectedGroupForVariant.value.item.variant_group) {
+      // Convert standard item into a group first
+      const baseItem = selectedGroupForVariant.value.item;
+      await inventoryService.updatePreparedItemPricing(baseItem.prep_item_id, baseItem.unit_price, baseItem.photo_url, baseItem.pos_display_name, "Regular");
+      
+      // Add the new variant
+      await inventoryService.addPreparedItem(baseItem.category, baseItem.pos_display_name, data.price, data.photoUrl, baseItem.pos_display_name, data.name);
+    } else {
+      // Add to existing group
+      const groupName = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.group_name : selectedGroupForVariant.value.item.variant_group;
+      const category = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.variants[0].category : selectedGroupForVariant.value.item.category;
+      const displayName = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.variants[0].pos_display_name : selectedGroupForVariant.value.item.pos_display_name;
+
+      await inventoryService.addPreparedItem(category, displayName, data.price, data.photoUrl, groupName, data.name);
+    }
+    isAddVariantModalOpen.value = false;
+    await loadData();
+  } catch (error) {
+    alert("Failed to add variant.");
+  }
+}
+
+async function handleDeleteItem(prepItemId: number, name: string) {
+  if (!confirm(`Are you sure you want to remove ${name}?`)) return;
+  try {
+    await inventoryService.deletePreparedItem(prepItemId);
+    await loadData();
+  } catch (error: any) {
+    alert(error.message || "Failed to delete item.");
+  }
+}
+
+async function handleDeleteGroup(group: any) {
+  if (!confirm(`Are you sure you want to remove the entire ${group.group_name} group and all its variants?`)) return;
+  try {
+    for (const variant of group.variants) {
+      await inventoryService.deletePreparedItem(variant.prep_item_id);
+    }
+    await loadData();
+  } catch (error: any) {
+    alert("Failed to delete some items. They may have active sales records.");
   }
 }
 
@@ -106,9 +161,7 @@ function getStatusText(current: number, threshold: number): string {
 
 function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement;
-  if (target) {
-    target.style.display = 'none';
-  }
+  if (target) target.style.display = 'none';
 }
 
 onMounted(() => loadData());
@@ -127,8 +180,8 @@ onMounted(() => loadData());
         </div>
         
         <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="[isMobile ? 'w-full' : '', 'py-2 px-4 text-xs rounded-lg h-[38px] shadow-sm hover:shadow transition-shadow']">
-          <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span class="tracking-widest uppercase font-bold">Edit Inventory</span>
+          <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span class="tracking-widest uppercase font-bold">Add Item</span>
         </BaseButton>
       </div>
 
@@ -178,9 +231,9 @@ onMounted(() => loadData());
           <table class="w-full text-left border-collapse">
             <thead>
               <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest', fontSm]">
-                <th class="pb-3 pt-2 font-bold px-4">Item Name</th>
-                <th class="pb-3 pt-2 font-bold px-4">Stock Count</th>
-                <th class="pb-3 pt-2 font-bold px-4">Price (PHP)</th>
+                <th class="pb-3 pt-2 font-bold px-4 w-1/3">Item Name</th>
+                <th class="pb-3 pt-2 font-bold px-4">Stock</th>
+                <th class="pb-3 pt-2 font-bold px-4">Price</th>
                 <th class="pb-3 pt-2 font-bold px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -190,7 +243,7 @@ onMounted(() => loadData());
               </tr>
               
               <template v-for="(group, index) in groupedPreparedItems" :key="index">
-                <tr v-if="!group.is_group" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+                <tr v-if="!group.is_group" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors group">
                   <td :class="['py-3 px-4', fontBase]">
                     <div class="flex items-center gap-4">
                       <div v-if="group.item.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm">
@@ -205,11 +258,15 @@ onMounted(() => loadData());
                   <td :class="['py-3 font-black text-on-surface px-4', fontBase]">{{ group.item.current_stock_pieces }}</td>
                   <td :class="['py-3 font-black text-primary px-4', fontBase]">₱{{ group.item.unit_price.toFixed(2) }}</td>
                   <td class="py-3 px-4 text-right">
-                    <button @click="openEditPriceModal(group.item)" :class="['text-primary hover:text-primary-container font-bold px-3 py-1 transition-colors uppercase tracking-widest', fontSm]">Edit Details</button>
+                    <div class="flex justify-end gap-3 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button @click="openAddVariantModal(group)" class="text-success hover:text-success/80 font-bold px-2 py-1 text-xs uppercase tracking-widest flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Variant</button>
+                      <button @click="openEditPriceModal(group.item)" class="text-primary hover:text-primary-container font-bold px-2 py-1 text-xs uppercase tracking-widest">Edit</button>
+                      <button @click="handleDeleteItem(group.item.prep_item_id, group.item.pos_display_name)" class="text-error hover:text-error/80 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    </div>
                   </td>
                 </tr>
 
-                <tr v-else class="border-b border-outline-variant/10 bg-surface hover:bg-surface-container-high transition-colors cursor-pointer" @click="toggleGroup(group.group_name)">
+                <tr v-else class="border-b border-outline-variant/10 bg-surface hover:bg-surface-container-high transition-colors group cursor-pointer" @click="toggleGroup(group.group_name)">
                   <td :class="['py-3 px-4', fontBase]">
                     <div class="flex items-center gap-4">
                       <div v-if="group.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm opacity-90">
@@ -227,15 +284,16 @@ onMounted(() => loadData());
                   <td :class="['py-3 font-black text-on-surface px-4', fontBase]">{{ group.total_stock }}</td>
                   <td :class="['py-3 font-bold text-on-surface-variant px-4', fontBase]">Multiple Prices</td>
                   <td class="py-3 px-4 text-right">
-                    <button class="text-on-surface-variant hover:text-primary font-bold px-3 py-1 transition-colors uppercase tracking-widest text-xs flex items-center justify-end w-full gap-1">
-                      {{ expandedGroups.has(group.group_name) ? 'Hide Variants' : 'Show Variants' }}
-                      <svg :class="['w-4 h-4 transition-transform', expandedGroups.has(group.group_name) ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
+                    <div class="flex justify-end gap-3 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button @click.stop="openAddVariantModal(group)" class="text-success hover:text-success/80 font-bold px-2 py-1 text-xs uppercase tracking-widest flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Variant</button>
+                      <button @click.stop="handleDeleteGroup(group)" class="text-error hover:text-error/80 p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                      <svg :class="['w-4 h-4 ml-2 text-on-surface-variant transition-transform', expandedGroups.has(group.group_name) ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                   </td>
                 </tr>
 
                 <template v-if="group.is_group && expandedGroups.has(group.group_name)">
-                  <tr v-for="variant in group.variants" :key="variant.prep_item_id" class="border-b border-outline-variant/5 bg-surface-container-low hover:bg-surface-container transition-colors">
+                  <tr v-for="variant in group.variants" :key="variant.prep_item_id" class="border-b border-outline-variant/5 bg-surface-container-low hover:bg-surface-container transition-colors group/variant">
                     <td :class="['py-2 px-4 pl-20', fontBase]">
                       <div class="flex items-center gap-3">
                         <svg class="w-4 h-4 text-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -245,7 +303,10 @@ onMounted(() => loadData());
                     <td :class="['py-2 font-bold text-on-surface-variant px-4', fontBase]">{{ variant.current_stock_pieces }}</td>
                     <td :class="['py-2 font-black text-primary px-4', fontBase]">₱{{ variant.unit_price.toFixed(2) }}</td>
                     <td class="py-2 px-4 text-right">
-                      <button @click="openEditPriceModal(variant)" :class="['text-primary hover:text-primary-container font-bold px-3 py-1 transition-colors uppercase tracking-widest text-[10px]']">Edit</button>
+                      <div class="flex justify-end gap-3 items-center mr-6 opacity-0 group-hover/variant:opacity-100 transition-opacity">
+                        <button @click="openEditPriceModal(variant)" :class="['text-primary hover:text-primary-container font-bold px-2 py-1 transition-colors uppercase tracking-widest text-[10px]']">Edit</button>
+                        <button @click="handleDeleteItem(variant.prep_item_id, variant.variant_name || variant.pos_display_name)" class="text-error hover:text-error/80 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                      </div>
                     </td>
                   </tr>
                 </template>
@@ -259,5 +320,6 @@ onMounted(() => loadData());
 
     <EditInventoryModal :is-open="isInventoryModalOpen" @close="isInventoryModalOpen = false" @refresh="loadData" />
     <EditPriceModal :is-open="isPriceModalOpen" :item="selectedPreparedItem" @close="isPriceModalOpen = false; selectedPreparedItem = null" @save="handleSavePrice" />
+    <AddVariantModal :is-open="isAddVariantModalOpen" :base-item-name="selectedGroupForVariant?.is_group ? selectedGroupForVariant?.group_name : selectedGroupForVariant?.item?.pos_display_name" @close="isAddVariantModalOpen = false; selectedGroupForVariant = null" @save="handleSaveNewVariant" />
   </div>
 </template>

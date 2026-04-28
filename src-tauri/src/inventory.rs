@@ -240,3 +240,24 @@ pub async fn serve_upload(Path(file_name): Path<String>) -> impl IntoResponse {
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
+
+#[derive(Deserialize)]
+pub struct DeleteItemReq { pub prep_item_id: i32 }
+
+pub async fn delete_prepared_item(State(pool): State<PgPool>, Json(payload): Json<DeleteItemReq>) -> AppResult<()> {
+    let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM order_item WHERE prep_item_id = $1")
+        .bind(payload.prep_item_id).fetch_one(&mut *tx).await.unwrap_or((0,));
+        
+    if count.0 > 0 {
+        sqlx::query("UPDATE prepared_inventory SET category = 'Archived', current_stock_pieces = 0 WHERE prep_item_id = $1")
+            .bind(payload.prep_item_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    } else {
+        sqlx::query("DELETE FROM prepared_inventory WHERE prep_item_id = $1")
+            .bind(payload.prep_item_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
+    
+    tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(()))
+}
