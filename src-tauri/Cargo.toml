@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 # Tauri Core (For the Main PC Desktop App)
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+dotenvy = "0.15"
 
 # Axum Web Server (To serve the Raspberry Pis)
 axum = "0.7"
