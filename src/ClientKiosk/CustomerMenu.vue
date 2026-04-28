@@ -25,6 +25,9 @@ const isCartModalOpen = ref(false);
 const isItemModalOpen = ref(false);
 const selectedItemForModal = ref<PosItem | null>(null);
 
+const isVariantModalOpen = ref(false);
+const selectedGroupForVariant = ref<any>(null);
+
 async function loadMenu() {
   isLoadingData.value = true;
   try {
@@ -42,13 +45,11 @@ onMounted(() => {
 
 const categories = computed(() => {
   const uniqueCats = Array.from(new Set(availableItems.value.map(item => item.category)));
-  
   const otherCats = uniqueCats.filter(cat => cat !== 'Skewered').sort();
   
   if (uniqueCats.includes('Skewered')) {
     return ['Skewered', ...otherCats];
   }
-  
   return otherCats;
 });
 
@@ -62,6 +63,42 @@ const filteredItems = computed(() => {
   return availableItems.value.filter(item => item.category === selectedCategory.value);
 });
 
+const groupedItems = computed(() => {
+  const groups: any[] = [];
+  const groupMap = new Map();
+
+  filteredItems.value.forEach(item => {
+    if (item.variant_group) {
+      if (groupMap.has(item.variant_group)) {
+        groupMap.get(item.variant_group).variants.push(item);
+      } else {
+        const newGroup = {
+          is_group: true,
+          display_name: item.variant_group,
+          category: item.category,
+          photo_url: item.photo_url,
+          variants: [item],
+          get unit_price() { return Math.min(...this.variants.map((v: any) => v.unit_price)); },
+          get current_stock_pieces() { return this.variants.reduce((sum: number, v: any) => sum + v.current_stock_pieces, 0); }
+        };
+        groupMap.set(item.variant_group, newGroup);
+        groups.push(newGroup);
+      }
+    } else {
+      groups.push({
+        is_group: false,
+        display_name: item.pos_display_name,
+        category: item.category,
+        photo_url: item.photo_url,
+        unit_price: item.unit_price,
+        current_stock_pieces: item.current_stock_pieces,
+        item: item
+      });
+    }
+  });
+  return groups;
+});
+
 const subtotal = computed(() => cart.value.reduce((sum, item) => sum + (item.unit_price * item.qty), 0));
 const tax = computed(() => subtotal.value * 0.0);
 const total = computed(() => subtotal.value + tax.value);
@@ -70,6 +107,21 @@ const totalCartItems = computed(() => cart.value.reduce((sum, item) => sum + ite
 function selectOrderType(type: 'Dine-in' | 'Takeout') {
   orderType.value = type;
   hasSelectedOrderType.value = true;
+}
+
+function handleItemClick(group: any) {
+  if (group.is_group) {
+    selectedGroupForVariant.value = group;
+    isVariantModalOpen.value = true;
+  } else {
+    openItemModal(group.item);
+  }
+}
+
+function selectVariant(variant: PosItem) {
+  isVariantModalOpen.value = false;
+  selectedGroupForVariant.value = null;
+  openItemModal(variant);
 }
 
 function openItemModal(item: PosItem) {
@@ -209,36 +261,35 @@ function handleImageError(event: Event) {
           </div>
 
           <div v-else>
-            <div v-if="filteredItems.length === 0" class="flex flex-col items-center justify-center h-64 text-on-surface-variant">
+            <div v-if="groupedItems.length === 0" class="flex flex-col items-center justify-center h-64 text-on-surface-variant">
               <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
               <p class="text-lg font-medium">No items available in this category.</p>
             </div>
 
             <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4']">
-              <div v-for="item in filteredItems" :key="item.prep_item_id" @click="openItemModal(item)"
-                class="bg-surface-container-low p-4 md:p-5 rounded-2xl shadow-sm border border-outline-variant/15 cursor-pointer hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all group relative flex flex-col h-full min-h-55">
-                
-                <span v-if="item.is_variable_price" class="absolute top-3 right-3 bg-tertiary-container/10 text-tertiary-container border border-tertiary-container/20 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm tracking-wider uppercase">VAR</span>
+              <div v-for="(group, idx) in groupedItems" :key="idx" @click="handleItemClick(group)"
+                class="bg-surface-container-low p-4 md:p-5 rounded-2xl shadow-sm border border-outline-variant/15 cursor-pointer hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all relative flex flex-col h-full min-h-55 group-hover">
 
-                <div class="h-28 md:h-36 bg-surface-container rounded-xl mb-3 md:mb-4 flex items-center justify-center text-on-surface-variant overflow-hidden border border-outline-variant/10 relative group-hover:opacity-90 transition-opacity">
+                <div class="h-28 md:h-36 bg-surface-container rounded-xl mb-3 md:mb-4 flex items-center justify-center text-on-surface-variant overflow-hidden border border-outline-variant/10 relative opacity-100 transition-opacity hover:opacity-90">
                   <img 
-                    v-if="item.photo_url" 
-                    :src="`http://localhost:3000${item.photo_url}`" 
+                    v-if="group.photo_url" 
+                    :src="`http://localhost:3000${group.photo_url}`" 
                     class="w-full h-full object-cover" 
                     @error="handleImageError" 
                   />
                   <svg v-else class="w-10 h-10 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 </div>
                 
-                <h4 :class="['font-black text-on-surface mb-1 leading-tight tracking-tight', fontLg]" :title="item.pos_display_name">{{ item.pos_display_name }}</h4>
+                <h4 :class="['font-black text-on-surface mb-1 leading-tight tracking-tight', fontLg]" :title="group.display_name">{{ group.display_name }}</h4>
                 
                 <div class="flex justify-between items-end mt-auto pt-3">
                   <div class="flex flex-col">
-                    <span v-if="item.is_variable_price" class="text-[9px] text-on-surface-variant font-medium uppercase tracking-widest mb-0.5">Starts at</span>
-                    <span :class="['text-primary-container font-black leading-none', fontXl]">₱{{ item.unit_price.toFixed(2) }}</span>
+                    <span v-if="group.is_group" class="text-[9px] text-on-surface-variant font-medium uppercase tracking-widest mb-0.5">Starts at</span>
+                    <span :class="['text-primary-container font-black leading-none', fontXl]">₱{{ group.unit_price.toFixed(2) }}</span>
                   </div>
-                  <p v-if="item.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-error font-black uppercase tracking-wider">Sold Out</p>
-                  <p v-else-if="item.current_stock_pieces < 10" class="text-[10px] md:text-xs text-tertiary-container font-bold uppercase tracking-wider">Only {{ item.current_stock_pieces }} left</p>
+                  <p v-if="group.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-error font-black uppercase tracking-wider">Sold Out</p>
+                  <p v-else-if="group.is_group" class="text-[10px] md:text-xs text-primary font-bold uppercase tracking-wider">Options</p>
+                  <p v-else-if="group.current_stock_pieces < 10" class="text-[10px] md:text-xs text-tertiary-container font-bold uppercase tracking-wider">Only {{ group.current_stock_pieces }} left</p>
                   <p v-else class="text-[10px] md:text-xs text-on-surface-variant font-medium uppercase tracking-wider">Available</p>
                 </div>
               </div>
@@ -270,6 +321,31 @@ function handleImageError(event: Event) {
         <span :class="['font-black uppercase tracking-widest text-on-primary-container', fontLg]">Check Order</span>
         <span :class="['font-black ml-2 text-on-primary-container', fontLg]">₱{{ total.toFixed(2) }}</span>
       </BaseButton>
+    </div>
+
+    <div v-if="isVariantModalOpen && selectedGroupForVariant" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-surface rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col border border-outline-variant/20 animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-6 py-5 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
+          <h3 :class="['font-black text-on-surface', fontXl]">Select {{ selectedGroupForVariant.display_name }}</h3>
+          <button @click="isVariantModalOpen = false" class="text-on-surface-variant hover:text-error transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="p-4 md:p-6 flex-1 overflow-y-auto bg-surface space-y-3">
+          <button v-for="variant in selectedGroupForVariant.variants" :key="variant.prep_item_id"
+            @click="selectVariant(variant)"
+            class="w-full text-left bg-surface-container-low hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary rounded-2xl p-4 flex justify-between items-center transition-all group"
+            :disabled="variant.current_stock_pieces <= 0"
+            :class="{'opacity-50 cursor-not-allowed': variant.current_stock_pieces <= 0}">
+            <div>
+              <h4 :class="['font-bold text-on-surface group-hover:text-primary transition-colors', fontLg]">{{ variant.variant_name || variant.pos_display_name }}</h4>
+              <p v-if="variant.current_stock_pieces > 0" :class="['text-on-surface-variant font-medium', fontSm]">Stock: {{ variant.current_stock_pieces }}</p>
+              <p v-else :class="['text-error font-bold uppercase tracking-wider', fontSm]">Sold Out</p>
+            </div>
+            <span :class="['font-black text-primary-container', fontLg]">₱{{ variant.unit_price.toFixed(2) }}</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <CheckOrderModal 

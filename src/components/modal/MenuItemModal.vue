@@ -17,17 +17,16 @@ const emit = defineEmits<{
 }>();
 
 const qty = ref(1);
-const customPrice = ref(0);
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.item) {
     qty.value = 1;
-    customPrice.value = props.item.unit_price;
   }
 });
 
 const totalValue = computed(() => {
-  return qty.value * customPrice.value;
+  if (!props.item) return 0;
+  return qty.value * props.item.unit_price;
 });
 
 function increment() {
@@ -44,11 +43,7 @@ function decrement() {
 
 function handleConfirm() {
   if (!props.item) return;
-  if (props.item.is_variable_price && (!customPrice.value || customPrice.value <= 0)) {
-    alert("Please enter a valid price greater than 0.");
-    return;
-  }
-  emit('confirm', { qty: qty.value, customPrice: Number(customPrice.value) });
+  emit('confirm', { qty: qty.value, customPrice: props.item.unit_price });
 }
 </script>
 
@@ -58,9 +53,8 @@ function handleConfirm() {
       
       <div class="p-5 border-b border-outline-variant/10 bg-surface-container-highest/30 flex justify-between items-start">
         <div>
-          <span v-if="item.is_variable_price" class="bg-tertiary-container/10 text-tertiary-container border border-tertiary-container/20 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block">Variable Price</span>
           <h3 :class="['font-black text-on-surface leading-tight', fontXl]">{{ item.pos_display_name }}</h3>
-          <p :class="['text-on-surface-variant font-medium mt-1', fontSm]">Stock: {{ (item.current_stock_pieces > 0)?"Available":"Out of stock"  }}</p>
+          <p :class="['text-on-surface-variant font-medium mt-1', fontSm]">Stock: {{ (item.current_stock_pieces > 0) ? "Available" : "Out of stock" }}</p>
         </div>
         <button @click="$emit('close')" class="text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-surface-container-high p-2 rounded-full transition-colors ml-4 active:scale-90">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -79,16 +73,6 @@ function handleConfirm() {
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
           </div>
-        </div>
-
-        <div v-if="item.is_variable_price" class="flex flex-col">
-          <label :class="['font-bold text-on-surface-variant mb-3 uppercase tracking-widest text-center', fontSm]">Set Item Price (PHP)</label>
-          <input 
-            v-model.number="customPrice" 
-            type="number" 
-            min="1"
-            class="w-full text-center border border-tertiary/30 bg-tertiary/10 text-tertiary rounded-xl px-4 py-3 font-black text-xl focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors"
-          />
         </div>
       </div>
 

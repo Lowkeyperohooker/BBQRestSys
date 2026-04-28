@@ -3,7 +3,6 @@ use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
 use crate::models::*;
 
-// --- Request Payloads ---
 #[derive(Deserialize)]
 pub struct EditStockReq { pub item_type: String, pub item_id: i32, pub quantity_change: f64, pub reason: String, pub staff_id: i32 }
 
@@ -14,10 +13,9 @@ pub struct AddNewRawItemReq { pub category: String, pub part: String, pub initia
 pub struct AddPreparedReq { 
     pub category: String, 
     pub pos_display_name: String, 
-    pub variant_group: Option<String>, // NEW
-    pub variant_name: Option<String>,  // NEW
+    pub variant_group: Option<String>,
+    pub variant_name: Option<String>, 
     pub unit_price: f64, 
-    pub is_variable: bool, 
     pub photo_url: Option<String>, 
     pub staff_id: i32 
 }
@@ -26,9 +24,8 @@ pub struct AddPreparedReq {
 pub struct UpdatePricingReq { 
     pub prep_item_id: i32, 
     pub new_price: f64, 
-    pub is_variable: bool, 
-    pub variant_group: Option<String>, // NEW
-    pub variant_name: Option<String>,  // NEW
+    pub variant_group: Option<String>,
+    pub variant_name: Option<String>, 
     pub photo_url: Option<String>,
     pub staff_id: i32 
 }
@@ -45,7 +42,6 @@ pub struct LogPrepReq { pub category: String, pub part: String, pub kilos: f64, 
 #[derive(Deserialize)]
 pub struct LimitQuery { pub limit: i64 }
 
-// --- Response Payloads ---
 #[derive(Serialize, sqlx::FromRow)]
 pub struct PosCategoryResp { pub category_name: String, pub is_removable: bool }
 
@@ -59,11 +55,9 @@ pub struct PreparedInvResp {
     pub variant_name: Option<String>,  
     pub current_stock_pieces: i32, 
     pub unit_price: f64, 
-    pub is_variable_price: bool,
     pub photo_url: Option<String>
 }
 
-// --- Endpoints ---
 pub async fn get_raw_inventory(State(pool): State<PgPool>) -> AppResult<Vec<RawInventory>> {
     let items = sqlx::query_as::<_, RawInventory>(
         "SELECT raw_item_id, category, specific_part, current_stock_kg::float8, alert_threshold_kg::float8 
@@ -74,7 +68,7 @@ pub async fn get_raw_inventory(State(pool): State<PgPool>) -> AppResult<Vec<RawI
 
 pub async fn get_prepared_inventory(State(pool): State<PgPool>) -> AppResult<Vec<PreparedInvResp>> {
     let items = sqlx::query_as::<_, PreparedInvResp>(
-        "SELECT prep_item_id, raw_item_id, category, pos_display_name, variant_group, variant_name, current_stock_pieces, unit_price::float8, is_variable_price, photo_url 
+        "SELECT prep_item_id, raw_item_id, category, pos_display_name, variant_group, variant_name, current_stock_pieces, unit_price::float8, photo_url 
          FROM prepared_inventory ORDER BY pos_display_name"
     ).fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(items))
@@ -134,14 +128,12 @@ pub async fn add_new_raw_item(State(pool): State<PgPool>, Json(payload): Json<Ad
 pub async fn add_prepared_item(State(pool): State<PgPool>, Json(payload): Json<AddPreparedReq>) -> AppResult<()> {
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
-    // NEW: Includes variant bindings
-    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, variant_group, variant_name, unit_price, is_variable_price, photo_url) VALUES ($1, $2, $3, $4, $5::numeric, $6, $7)")
+    sqlx::query("INSERT INTO prepared_inventory (category, pos_display_name, variant_group, variant_name, unit_price, photo_url) VALUES ($1, $2, $3, $4, $5::numeric, $6)")
         .bind(payload.category)
         .bind(payload.pos_display_name)
         .bind(payload.variant_group)
         .bind(payload.variant_name)
         .bind(payload.unit_price)
-        .bind(payload.is_variable)
         .bind(payload.photo_url)
         .execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         
@@ -150,10 +142,8 @@ pub async fn add_prepared_item(State(pool): State<PgPool>, Json(payload): Json<A
 }
 
 pub async fn update_prepared_item_pricing(State(pool): State<PgPool>, Json(payload): Json<UpdatePricingReq>) -> AppResult<()> {
-    // NEW: Includes variant bindings
-    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, is_variable_price = $2, photo_url = $3, variant_group = $4, variant_name = $5 WHERE prep_item_id = $6")
+    sqlx::query("UPDATE prepared_inventory SET unit_price = $1::numeric, photo_url = $2, variant_group = $3, variant_name = $4 WHERE prep_item_id = $5")
         .bind(payload.new_price)
-        .bind(payload.is_variable)
         .bind(payload.photo_url)
         .bind(payload.variant_group)
         .bind(payload.variant_name)

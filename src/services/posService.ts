@@ -10,7 +10,6 @@ export interface PosItem {
   variant_name: string | null;
   current_stock_pieces: number;
   unit_price: number;
-  is_variable_price: boolean;
   photo_url: string | null;
 }
 

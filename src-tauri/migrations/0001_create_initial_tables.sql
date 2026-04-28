@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS prepared_inventory (
     variant_name TEXT DEFAULT NULL,
     current_stock_pieces INTEGER DEFAULT 0,
     unit_price DECIMAL(10,2) NOT NULL,
-    is_variable_price BOOLEAN DEFAULT FALSE,
     photo_url TEXT,
     FOREIGN KEY (raw_item_id) REFERENCES raw_inventory(raw_item_id)
 );
@@ -92,10 +91,8 @@ CREATE TABLE IF NOT EXISTS pos_category (
     is_removable BOOLEAN DEFAULT TRUE
 );
 
--- NEW: Database Sequence to auto-generate Kiosk numbers 1000 -> 9090
 CREATE SEQUENCE IF NOT EXISTS kiosk_queue_seq START 1000 MAXVALUE 9090 CYCLE;
 
--- NEW: Tables for the pending Kiosk Queue
 CREATE TABLE IF NOT EXISTS kiosk_queue (
     queue_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     queue_number INTEGER NOT NULL,

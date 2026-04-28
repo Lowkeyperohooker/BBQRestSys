@@ -10,11 +10,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  save: [data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null; variantGroup: string | null; variantName: string | null }];
+  save: [data: { prepItemId: number; unitPrice: number; photoUrl: string | null; variantGroup: string | null; variantName: string | null }];
 }>();
 
 const formPrice = ref<number | "">("");
-const formIsVariable = ref<boolean>(false);
 const formVariantGroup = ref<string>("");
 const formVariantName = ref<string>("");
 
@@ -27,7 +26,6 @@ const isDragging = ref(false);
 watch(() => props.isOpen, (newVal) => {
   if (newVal && props.item) {
     formPrice.value = props.item.unit_price;
-    formIsVariable.value = props.item.is_variable_price;
     formVariantGroup.value = props.item.variant_group || "";
     formVariantName.value = props.item.variant_name || "";
     
@@ -82,7 +80,6 @@ async function handleSubmit() {
   emit('save', {
     prepItemId: props.item.prep_item_id,
     unitPrice: Number(formPrice.value),
-    isVariablePrice: formIsVariable.value,
     photoUrl: finalPhotoUrl,
     variantGroup: formVariantGroup.value.trim() || null,
     variantName: formVariantName.value.trim() || null
@@ -149,23 +146,6 @@ async function handleSubmit() {
         <div>
           <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Base Unit Price (PHP)</label>
           <input v-model.number="formPrice" type="number" step="0.01" min="0" required class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors">
-        </div>
-
-        <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20">
-          <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-3">Pricing Type</label>
-          <div class="space-y-3">
-            <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-surface-container transition-colors">
-              <input v-model="formIsVariable" type="radio" :value="false" class="w-4 h-4 text-primary-container bg-surface border-outline-variant/30 focus:ring-primary-container focus:ring-offset-surface">
-              <span class="text-sm font-bold text-on-surface">Fixed Price</span>
-            </label>
-            <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-surface-container transition-colors">
-              <input v-model="formIsVariable" type="radio" :value="true" class="w-4 h-4 text-primary-container bg-surface border-outline-variant/30 focus:ring-primary-container focus:ring-offset-surface">
-              <div>
-                <span class="text-sm font-bold text-on-surface block">Variable Price</span>
-                <span class="text-xs text-on-surface-variant mt-0.5 block">Cashier inputs price at checkout</span>
-              </div>
-            </label>
-          </div>
         </div>
 
         <div class="flex gap-3 pt-2">

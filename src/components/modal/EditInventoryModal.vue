@@ -26,7 +26,6 @@ const newPrepName = ref('');
 const newPrepVariantGroup = ref('');
 const newPrepVariantName = ref('');
 const newPrepPrice = ref<number | "">("");
-const newPrepVariable = ref(false);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -113,7 +112,6 @@ async function handleAddNewItem() {
         newPrepCategory.value, 
         newPrepName.value, 
         Number(newPrepPrice.value), 
-        newPrepVariable.value,
         finalPhotoUrl,
         newPrepVariantGroup.value.trim() || null,
         newPrepVariantName.value.trim() || null
@@ -280,15 +278,9 @@ async function handleRemoveCategory(name: string) {
               </div>
             </div>
 
-            <div class="flex items-center gap-4">
-              <div class="flex-1">
-                <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Base Price (PHP)</label>
-                <input v-model.number="newPrepPrice" type="number" step="0.01" required class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors" />
-              </div>
-              <div class="flex items-center mt-6">
-                <input v-model="newPrepVariable" type="checkbox" id="varPrice" class="w-5 h-5 text-primary-container bg-surface-container border-outline-variant/30 rounded focus:ring-primary-container focus:ring-offset-surface" />
-                <label for="varPrice" class="ml-2 text-sm font-bold text-on-surface">Variable Price</label>
-              </div>
+            <div>
+              <label class="block text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-1.5">Base Price (PHP)</label>
+              <input v-model.number="newPrepPrice" type="number" step="0.01" required class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors" />
             </div>
           </template>
 

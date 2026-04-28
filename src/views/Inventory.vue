@@ -22,6 +22,8 @@ const isInventoryModalOpen = ref(false);
 const isPriceModalOpen = ref(false);
 const selectedPreparedItem = ref<PreparedInventoryItem | null>(null);
 
+const expandedGroups = ref<Set<string>>(new Set());
+
 async function loadData() {
   isLoadingData.value = true;
   try {
@@ -35,19 +37,54 @@ async function loadData() {
   }
 }
 
-const currentPreparedItems = computed(() => {
-  return preparedInventory.value.filter(item => item.category === viewMode.value);
+const groupedPreparedItems = computed(() => {
+  const items = preparedInventory.value.filter(item => item.category === viewMode.value);
+  const groups: any[] = [];
+  const groupMap = new Map();
+
+  items.forEach(item => {
+    if (item.variant_group) {
+      if (groupMap.has(item.variant_group)) {
+        const group = groupMap.get(item.variant_group);
+        group.variants.push(item);
+        group.total_stock += item.current_stock_pieces;
+      } else {
+        const newGroup = {
+          is_group: true,
+          group_name: item.variant_group,
+          total_stock: item.current_stock_pieces,
+          photo_url: item.photo_url,
+          variants: [item]
+        };
+        groupMap.set(item.variant_group, newGroup);
+        groups.push(newGroup);
+      }
+    } else {
+      groups.push({
+        is_group: false,
+        item: item
+      });
+    }
+  });
+  return groups;
 });
+
+function toggleGroup(groupName: string) {
+  if (expandedGroups.value.has(groupName)) {
+    expandedGroups.value.delete(groupName);
+  } else {
+    expandedGroups.value.add(groupName);
+  }
+}
 
 function openEditPriceModal(item: PreparedInventoryItem) {
   selectedPreparedItem.value = item;
   isPriceModalOpen.value = true;
 }
 
-// NEW: Accepts variant inputs
-async function handleSavePrice(data: { prepItemId: number; unitPrice: number; isVariablePrice: boolean; photoUrl: string | null; variantGroup: string | null; variantName: string | null }) {
+async function handleSavePrice(data: { prepItemId: number; unitPrice: number; photoUrl: string | null; variantGroup: string | null; variantName: string | null }) {
   try {
-    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.isVariablePrice, data.photoUrl, data.variantGroup, data.variantName);
+    await inventoryService.updatePreparedItemPricing(data.prepItemId, data.unitPrice, data.photoUrl, data.variantGroup, data.variantName);
     isPriceModalOpen.value = false;
     await loadData();
   } catch (error) {
@@ -144,41 +181,76 @@ onMounted(() => loadData());
                 <th class="pb-3 pt-2 font-bold px-4">Item Name</th>
                 <th class="pb-3 pt-2 font-bold px-4">Stock Count</th>
                 <th class="pb-3 pt-2 font-bold px-4">Price (PHP)</th>
-                <th class="pb-3 pt-2 font-bold px-4 hidden md:table-cell">Pricing Type</th>
                 <th class="pb-3 pt-2 font-bold px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody class="text-on-surface">
-              <tr v-if="currentPreparedItems.length === 0">
-                <td colspan="5" class="py-8 text-center text-on-surface-variant">No items found in this category.</td>
+              <tr v-if="groupedPreparedItems.length === 0">
+                <td colspan="4" class="py-8 text-center text-on-surface-variant">No items found in this category.</td>
               </tr>
-              <tr v-for="item in currentPreparedItems" :key="item.prep_item_id" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-                
-                <td :class="['py-3 px-4', fontBase]">
-                  <div class="flex items-center gap-4">
-                    <div v-if="item.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm">
-                      <img :src="`http://localhost:3000${item.photo_url}`" class="w-full h-full object-cover" @error="handleImageError" />
+              
+              <template v-for="(group, index) in groupedPreparedItems" :key="index">
+                <tr v-if="!group.is_group" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+                  <td :class="['py-3 px-4', fontBase]">
+                    <div class="flex items-center gap-4">
+                      <div v-if="group.item.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm">
+                        <img :src="`http://localhost:3000${group.item.photo_url}`" class="w-full h-full object-cover" @error="handleImageError" />
+                      </div>
+                      <div v-else class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/10 text-on-surface-variant opacity-50">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      </div>
+                      <span class="font-black text-on-surface">{{ group.item.pos_display_name }}</span>
                     </div>
-                    <div v-else class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/10 text-on-surface-variant opacity-50">
-                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    
-                    <div class="flex flex-col">
-                      <span class="font-black text-on-surface">{{ item.pos_display_name }}</span>
-                      <span v-if="item.variant_group" class="text-[10px] text-on-surface-variant font-bold mt-0.5 uppercase tracking-widest">{{ item.variant_group }} - {{ item.variant_name }}</span>
-                    </div>
-                  </div>
-                </td>
+                  </td>
+                  <td :class="['py-3 font-black text-on-surface px-4', fontBase]">{{ group.item.current_stock_pieces }}</td>
+                  <td :class="['py-3 font-black text-primary px-4', fontBase]">₱{{ group.item.unit_price.toFixed(2) }}</td>
+                  <td class="py-3 px-4 text-right">
+                    <button @click="openEditPriceModal(group.item)" :class="['text-primary hover:text-primary-container font-bold px-3 py-1 transition-colors uppercase tracking-widest', fontSm]">Edit Details</button>
+                  </td>
+                </tr>
 
-                <td :class="['py-3 font-black text-on-surface px-4', fontBase]">{{ item.current_stock_pieces }}</td>
-                <td :class="['py-3 font-black text-primary px-4', fontBase]">₱{{ item.unit_price.toFixed(2) }}</td>
-                <td class="py-3 px-4 hidden md:table-cell">
-                  <BaseBadge :text="item.is_variable_price ? 'Variable' : 'Fixed'" :variant="item.is_variable_price ? 'warning' : 'info'" />
-                </td>
-                <td class="py-3 px-4 text-right">
-                  <button @click="openEditPriceModal(item)" :class="['text-primary hover:text-primary-container font-bold px-3 py-1 transition-colors uppercase tracking-widest', fontSm]">Edit Details</button>
-                </td>
-              </tr>
+                <tr v-else class="border-b border-outline-variant/10 bg-surface hover:bg-surface-container-high transition-colors cursor-pointer" @click="toggleGroup(group.group_name)">
+                  <td :class="['py-3 px-4', fontBase]">
+                    <div class="flex items-center gap-4">
+                      <div v-if="group.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm opacity-90">
+                        <img :src="`http://localhost:3000${group.photo_url}`" class="w-full h-full object-cover" @error="handleImageError" />
+                      </div>
+                      <div v-else class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/10 text-on-surface-variant opacity-50">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="font-black text-on-surface">{{ group.group_name }}</span>
+                        <span class="text-[10px] text-primary font-bold mt-0.5 uppercase tracking-widest">{{ group.variants.length }} Variants</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td :class="['py-3 font-black text-on-surface px-4', fontBase]">{{ group.total_stock }}</td>
+                  <td :class="['py-3 font-bold text-on-surface-variant px-4', fontBase]">Multiple Prices</td>
+                  <td class="py-3 px-4 text-right">
+                    <button class="text-on-surface-variant hover:text-primary font-bold px-3 py-1 transition-colors uppercase tracking-widest text-xs flex items-center justify-end w-full gap-1">
+                      {{ expandedGroups.has(group.group_name) ? 'Hide Variants' : 'Show Variants' }}
+                      <svg :class="['w-4 h-4 transition-transform', expandedGroups.has(group.group_name) ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                  </td>
+                </tr>
+
+                <template v-if="group.is_group && expandedGroups.has(group.group_name)">
+                  <tr v-for="variant in group.variants" :key="variant.prep_item_id" class="border-b border-outline-variant/5 bg-surface-container-low hover:bg-surface-container transition-colors">
+                    <td :class="['py-2 px-4 pl-20', fontBase]">
+                      <div class="flex items-center gap-3">
+                        <svg class="w-4 h-4 text-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <span class="font-bold text-on-surface-variant">{{ variant.variant_name || variant.pos_display_name }}</span>
+                      </div>
+                    </td>
+                    <td :class="['py-2 font-bold text-on-surface-variant px-4', fontBase]">{{ variant.current_stock_pieces }}</td>
+                    <td :class="['py-2 font-black text-primary px-4', fontBase]">₱{{ variant.unit_price.toFixed(2) }}</td>
+                    <td class="py-2 px-4 text-right">
+                      <button @click="openEditPriceModal(variant)" :class="['text-primary hover:text-primary-container font-bold px-3 py-1 transition-colors uppercase tracking-widest text-[10px]']">Edit</button>
+                    </td>
+                  </tr>
+                </template>
+              </template>
+              
             </tbody>
           </table>
         </div>

@@ -20,11 +20,10 @@ pub struct PreparedInventoryItem {
     pub raw_item_id: Option<i32>,
     pub category: String,
     pub pos_display_name: String,
-    pub variant_group: Option<String>, // NEW
-    pub variant_name: Option<String>,  // NEW
+    pub variant_group: Option<String>,
+    pub variant_name: Option<String>,
     pub current_stock_pieces: i32,
     pub unit_price: f64,
-    pub is_variable_price: bool,
     pub photo_url: Option<String>,
 }
 
