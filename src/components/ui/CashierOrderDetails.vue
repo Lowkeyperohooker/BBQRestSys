@@ -153,7 +153,7 @@ function saveEdit() {
             
             <div v-if="!isEditing" class="space-y-2">
               <div v-for="(item, idx) in selectedPending.cart_items" :key="idx" class="flex flex-col xl:flex-row xl:justify-between xl:items-center bg-surface-container py-2 px-3 rounded-lg border border-outline-variant/10 group hover:bg-surface-container-high transition-colors gap-1 xl:gap-0">
-                <p :class="['font-bold text-on-surface min-w-0 break-words', fontSm]"><span class="text-primary-container mr-1">{{ item.qty }}x</span> {{ item.pos_display_name }}</p>
+                <p :class="['font-bold text-on-surface min-w-0 wrap-break-word', fontSm]"><span class="text-primary-container mr-1">{{ item.qty }}x</span> {{ item.pos_display_name }}</p>
                 <span :class="['font-bold text-on-surface-variant group-hover:text-on-surface self-end xl:self-auto shrink-0', fontSm]">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
               </div>
             </div>
@@ -240,7 +240,7 @@ function saveEdit() {
             
             <div v-if="selectedOrder.cart_items && selectedOrder.cart_items.length > 0" class="space-y-2">
               <div v-for="(item, idx) in selectedOrder.cart_items" :key="idx" class="flex flex-col xl:flex-row xl:justify-between xl:items-center bg-surface-container py-2 px-3 rounded-lg border border-outline-variant/10 group hover:bg-surface-container-high transition-colors gap-1 xl:gap-0">
-                <p :class="['font-bold text-on-surface min-w-0 break-words', fontSm]"><span class="text-primary-container mr-1">{{ item.qty }}x</span> {{ item.pos_display_name || 'Item' }}</p>
+                <p :class="['font-bold text-on-surface min-w-0 wrap-break-word', fontSm]"><span class="text-primary-container mr-1">{{ item.qty }}x</span> {{ item.pos_display_name || 'Item' }}</p>
                 <span :class="['font-bold text-on-surface-variant group-hover:text-on-surface self-end xl:self-auto shrink-0', fontSm]">₱{{ (item.unit_price * item.qty).toFixed(2) }}</span>
               </div>
             </div>

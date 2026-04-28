@@ -43,7 +43,7 @@ function handleConfirm() {
 
 <template>
   <div v-if="isOpen && item" class="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-opacity duration-300" @click.self="$emit('close')">
-    <div class="bg-surface rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex flex-col border border-outline-variant/10 overflow-hidden animate-in fade-in zoom-in-95 duration-300 ease-out">
+    <div class="bg-surface rounded-4xl w-full max-w-sm shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex flex-col border border-outline-variant/10 overflow-hidden animate-in fade-in zoom-in-95 duration-300 ease-out">
       
       <div class="p-6 flex justify-between items-start bg-surface-container-lowest">
         <div>

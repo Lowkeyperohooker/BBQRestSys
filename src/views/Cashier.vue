@@ -171,7 +171,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-[1600px] mx-auto h-full flex flex-row gap-2 md:gap-4 lg:gap-6 items-stretch">
+  <div class="w-full max-w-400 mx-auto h-full flex flex-row gap-2 md:gap-4 lg:gap-6 items-stretch">
 
     <div class="w-[calc(70%-4px)] md:w-[calc(60%-8px)] lg:w-[calc(60%-12px)] h-full min-h-0 transition-all duration-300">
       <CashierOrderDetails 

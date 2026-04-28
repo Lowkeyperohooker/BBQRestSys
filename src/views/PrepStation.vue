@@ -167,7 +167,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full max-w-[1600px] mx-auto h-full flex flex-col">
+  <div class="w-full max-w-400 mx-auto h-full flex flex-col">
     
     <div v-if="isLoadingData" class="w-full h-full bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15 flex items-center justify-center">
       <DataLoader message="Loading preparation environment..." />
@@ -290,7 +290,7 @@ onMounted(async () => {
               type="submit" 
               variant="primary"
               :disabled="!canPrep"
-              :class="['w-full py-4 text-lg h-[50px] md:h-[54px]', fontBase]"
+              :class="['w-full py-4 text-lg h-12.5 md:h-13.5', fontBase]"
             >
               <span class="font-black uppercase tracking-widest text-sm">Save Prep Log</span>
             </BaseButton>

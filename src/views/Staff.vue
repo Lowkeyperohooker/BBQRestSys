@@ -110,8 +110,8 @@ onMounted(() => {
       <DataLoader v-if="isLoadingData" message="Loading staff records..." class="m-auto" />
 
       <div v-else class="flex-1 min-h-0 bg-surface rounded-xl border border-outline-variant/15 overflow-auto custom-scrollbar">
-        <table class="w-full text-left border-collapse min-w-[600px] lg:min-w-full">
-          <thead class="sticky top-0 bg-surface-container z-10 shadow-sm outline outline-1 outline-outline-variant/20">
+        <table class="w-full text-left border-collapse min-w-150 lg:min-w-full">
+          <thead class="sticky top-0 bg-surface-container z-10 shadow-sm outline outline-outline-variant/20">
             <tr :class="['text-on-surface-variant uppercase tracking-widest font-bold', fontSm]">
               <th class="py-3 px-2 sm:py-4 sm:px-4 bg-surface-container">Name</th>
               <th class="py-3 px-2 sm:py-4 sm:px-4 bg-surface-container">Role</th>

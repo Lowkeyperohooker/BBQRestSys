@@ -104,14 +104,10 @@ async function handleSavePrice(data: { prepItemId: number; unitPrice: number; ph
 async function handleSaveNewVariant(data: { name: string; price: number; photoUrl: string | null }) {
   try {
     if (!selectedGroupForVariant.value.is_group && !selectedGroupForVariant.value.item.variant_group) {
-      // Convert standard item into a group first
       const baseItem = selectedGroupForVariant.value.item;
       await inventoryService.updatePreparedItemPricing(baseItem.prep_item_id, baseItem.unit_price, baseItem.photo_url, baseItem.pos_display_name, "Regular");
-      
-      // Add the new variant
       await inventoryService.addPreparedItem(baseItem.category, baseItem.pos_display_name, data.price, data.photoUrl, baseItem.pos_display_name, data.name);
     } else {
-      // Add to existing group
       const groupName = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.group_name : selectedGroupForVariant.value.item.variant_group;
       const category = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.variants[0].category : selectedGroupForVariant.value.item.category;
       const displayName = selectedGroupForVariant.value.is_group ? selectedGroupForVariant.value.variants[0].pos_display_name : selectedGroupForVariant.value.item.pos_display_name;
@@ -168,10 +164,10 @@ onMounted(() => loadData());
 </script>
 
 <template>
-  <div class="h-full flex flex-col space-y-6">
-    <div class="bg-surface-container-low p-3 rounded-xl shadow-sm border border-outline-variant/15">
+  <div class="h-full flex flex-col min-h-0">
+    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0">
       
-      <div class="sticky top-0 z-40 bg-surface-container/80 backdrop-blur-xl -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-xl">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
         <div>
           <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">Inventory Management</h3>
           <p :class="['text-on-surface-variant mt-1 font-bold tracking-widest uppercase text-[10px]', fontSm]">
@@ -179,13 +175,13 @@ onMounted(() => loadData());
           </p>
         </div>
         
-        <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="[isMobile ? 'w-full' : '', 'py-2 px-4 text-xs rounded-lg h-[38px] shadow-sm hover:shadow transition-shadow']">
+        <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="[isMobile ? 'w-full' : '', 'py-2 px-4 text-xs rounded-lg h-9.5 shadow-sm hover:shadow transition-shadow']">
           <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span class="tracking-widest uppercase font-bold">Add Item</span>
         </BaseButton>
       </div>
 
-      <div class="flex overflow-x-auto pb-3 mb-4 gap-2 border-b border-outline-variant/10">
+      <div class="flex overflow-x-auto pb-4 mb-2 gap-2 border-b border-outline-variant/10 shrink-0">
         <button @click="viewMode = 'raw'" :class="[viewMode === 'raw' ? 'bg-primary-container text-on-primary-container shadow-sm border-primary-container' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border-transparent', 'px-6 py-2.5 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors shrink-0 border']">
           Raw Meats
         </button>
@@ -196,23 +192,23 @@ onMounted(() => loadData());
 
       <DataLoader v-if="isLoadingData" message="Fetching latest inventory records..." />
 
-      <div v-else>
-        <div v-if="viewMode === 'raw'" class="overflow-x-auto bg-surface-container-low">
+      <div v-else class="flex-1 flex flex-col min-h-0">
+        <div v-if="viewMode === 'raw'" class="flex-1 overflow-auto bg-surface border border-outline-variant/15 rounded-xl">
           <table class="w-full text-left border-collapse">
-            <thead>
+            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
               <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest', fontSm]">
-                <th class="pb-3 pt-2 font-bold px-4">Category</th>
-                <th class="pb-3 pt-2 font-bold px-4">Specific Part</th>
-                <th class="pb-3 pt-2 font-bold px-4">Current Stock</th>
-                <th class="pb-3 pt-2 font-bold px-4 hidden md:table-cell">Threshold</th>
-                <th class="pb-3 pt-2 font-bold px-4 text-right">Status</th>
+                <th class="py-4 font-bold px-4">Category</th>
+                <th class="py-4 font-bold px-4">Specific Part</th>
+                <th class="py-4 font-bold px-4">Current Stock</th>
+                <th class="py-4 font-bold px-4 hidden md:table-cell">Threshold</th>
+                <th class="py-4 font-bold px-4 text-right">Status</th>
               </tr>
             </thead>
-            <tbody class="text-on-surface">
+            <tbody class="text-on-surface divide-y divide-outline-variant/10">
               <tr v-if="rawInventory.length === 0">
-                <td colspan="5" class="py-8 text-center text-on-surface-variant">No raw inventory found.</td>
+                <td colspan="5" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">No raw inventory found.</td>
               </tr>
-              <tr v-for="item in rawInventory" :key="item.raw_item_id" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+              <tr v-for="item in rawInventory" :key="item.raw_item_id" class="hover:bg-surface-container-high transition-colors">
                 <td :class="['py-4 font-black text-on-surface px-4', fontBase]">{{ item.category }}</td>
                 <td :class="['py-4 font-bold text-on-surface-variant px-4', fontBase]">{{ item.specific_part }}</td>
                 <td :class="['py-4 font-black px-4', item.current_stock_kg <= item.alert_threshold_kg ? 'text-error' : 'text-primary', fontBase]">
@@ -227,19 +223,19 @@ onMounted(() => loadData());
           </table>
         </div>
 
-        <div v-else class="overflow-x-auto bg-surface-container-low">
+        <div v-else class="flex-1 overflow-auto bg-surface border border-outline-variant/15 rounded-xl">
           <table class="w-full text-left border-collapse">
-            <thead>
+            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
               <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest', fontSm]">
-                <th class="pb-3 pt-2 font-bold px-4 w-1/3">Item Name</th>
-                <th class="pb-3 pt-2 font-bold px-4">Stock</th>
-                <th class="pb-3 pt-2 font-bold px-4">Price</th>
-                <th class="pb-3 pt-2 font-bold px-4 text-right">Actions</th>
+                <th class="py-4 font-bold px-4 w-1/3">Item Name</th>
+                <th class="py-4 font-bold px-4">Stock Count</th>
+                <th class="py-4 font-bold px-4">Price (PHP)</th>
+                <th class="py-4 font-bold px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody class="text-on-surface">
               <tr v-if="groupedPreparedItems.length === 0">
-                <td colspan="4" class="py-8 text-center text-on-surface-variant">No items found in this category.</td>
+                <td colspan="4" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">No items found in this category.</td>
               </tr>
               
               <template v-for="(group, index) in groupedPreparedItems" :key="index">

@@ -126,7 +126,7 @@ onMounted(() => {
 
           <div class="w-full sm:w-auto flex">
             <BaseButton v-if="!currentActiveShift" variant="success" @click="handleClockIn"
-              :disabled="!selectedStaffId || isProcessing" class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-[38px] uppercase tracking-wider">
+              :disabled="!selectedStaffId || isProcessing" class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-9.5 uppercase tracking-wider">
               <svg v-if="!isProcessing" class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
               </svg>
@@ -134,7 +134,7 @@ onMounted(() => {
             </BaseButton>
 
             <BaseButton v-else variant="danger" @click="handleClockOut" :disabled="!selectedStaffId || isProcessing"
-              class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-[38px] uppercase tracking-wider">
+              class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-9.5 uppercase tracking-wider">
               <svg v-if="!isProcessing" class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
