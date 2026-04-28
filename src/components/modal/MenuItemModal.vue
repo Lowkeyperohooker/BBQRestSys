@@ -48,40 +48,44 @@ function handleConfirm() {
 </script>
 
 <template>
-  <div v-if="isOpen && item" class="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" @click.self="$emit('close')">
-    <div class="bg-surface-container-low border border-outline-variant/20 w-full max-w-sm rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+  <div v-if="isOpen && item" class="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-opacity duration-300" @click.self="$emit('close')">
+    <div class="bg-surface rounded-[2rem] w-full max-w-sm shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex flex-col border border-outline-variant/10 overflow-hidden animate-in fade-in zoom-in-95 duration-300 ease-out">
       
-      <div class="p-5 border-b border-outline-variant/10 bg-surface-container-highest/30 flex justify-between items-start">
+      <div class="p-6 flex justify-between items-start bg-surface-container-lowest">
         <div>
-          <h3 :class="['font-black text-on-surface leading-tight', fontXl]">{{ item.pos_display_name }}</h3>
-          <p :class="['text-on-surface-variant font-medium mt-1', fontSm]">Stock: {{ (item.current_stock_pieces > 0) ? "Available" : "Out of stock" }}</p>
+          <h3 :class="['font-black text-on-surface leading-tight tracking-tight', fontXl]">{{ item.pos_display_name }}</h3>
+          <div class="mt-2 flex items-center gap-2">
+            <span v-if="item.current_stock_pieces > 0" class="inline-block w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(var(--color-success),0.6)]"></span>
+            <span v-else class="inline-block w-2 h-2 rounded-full bg-error shadow-[0_0_8px_rgba(var(--color-error),0.6)]"></span>
+            <p :class="['text-on-surface-variant font-bold uppercase tracking-widest', fontSm]">
+              {{ (item.current_stock_pieces > 0) ? "Available" : "Out of stock" }}
+            </p>
+          </div>
         </div>
-        <button @click="$emit('close')" class="text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-surface-container-high p-2 rounded-full transition-colors ml-4 active:scale-90">
+        <button @click="$emit('close')" class="text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-surface-container-high p-2.5 rounded-full transition-all ml-4 active:scale-90">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <div class="p-6 space-y-6 bg-surface">
-        <div class="flex flex-col items-center">
-          <label :class="['font-bold text-on-surface-variant mb-3 uppercase tracking-widest', fontSm]">Quantity</label>
-          <div class="flex items-center gap-4 bg-surface-container-low p-2 rounded-2xl border border-outline-variant/15">
-            <button @click="decrement" :disabled="qty <= 1" class="w-12 h-12 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center justify-center text-on-surface hover:bg-surface-container-high disabled:opacity-50 transition-colors active:scale-90 disabled:active:scale-100">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
-            </button>
-            <span :class="['w-12 text-center font-black text-on-surface', font2xl]">{{ qty }}</span>
-            <button @click="increment" :disabled="qty >= item.current_stock_pieces" class="w-12 h-12 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center justify-center text-on-surface hover:bg-surface-container-high disabled:opacity-50 transition-colors active:scale-90 disabled:active:scale-100">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            </button>
-          </div>
+      <div class="p-8 flex flex-col items-center justify-center bg-surface border-y border-outline-variant/5">
+        <label :class="['font-black text-on-surface-variant mb-4 uppercase tracking-widest', fontSm]">Quantity</label>
+        <div class="flex items-center gap-6 bg-surface-container-low p-2 rounded-3xl border border-outline-variant/10 shadow-inner">
+          <button @click="decrement" :disabled="qty <= 1" class="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high hover:shadow-md disabled:opacity-30 disabled:shadow-none transition-all duration-200 active:scale-90 disabled:active:scale-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path></svg>
+          </button>
+          <span :class="['w-16 text-center font-black text-on-surface', font2xl]">{{ qty }}</span>
+          <button @click="increment" :disabled="qty >= item.current_stock_pieces" class="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high hover:shadow-md disabled:opacity-30 disabled:shadow-none transition-all duration-200 active:scale-90 disabled:active:scale-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+          </button>
         </div>
       </div>
 
-      <div class="p-6 bg-surface-container-highest/20 border-t border-outline-variant/10">
-        <div class="flex justify-between items-center mb-5">
+      <div class="p-6 bg-surface-container-lowest">
+        <div class="flex justify-between items-center mb-6 px-2">
           <span :class="['font-bold text-on-surface-variant uppercase tracking-widest', fontSm]">Item Total</span>
           <span :class="['font-black text-primary-container', font2xl]">₱{{ totalValue.toFixed(2) }}</span>
         </div>
-        <BaseButton variant="primary" @click="handleConfirm" class="w-full py-4 text-lg">
+        <BaseButton variant="primary" @click="handleConfirm" class="w-full py-4.5 text-lg shadow-[0_8px_20px_rgba(255,109,0,0.25)] hover:shadow-[0_12px_28px_rgba(255,109,0,0.4)] transition-all duration-300">
           <span class="font-black uppercase tracking-widest">Add to Cart</span>
         </BaseButton>
       </div>

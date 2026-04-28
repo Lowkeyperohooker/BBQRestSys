@@ -213,46 +213,47 @@ function handleImageError(event: Event) {
 <template>
   <div class="h-full flex flex-col relative max-w-7xl mx-auto">
 
-    <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15">
+    <div v-if="!hasSelectedOrderType" class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 bg-surface-container-low rounded-[2rem] shadow-sm border border-outline-variant/10">
       <h1 :class="['font-black text-on-surface tracking-tight mb-2', font2xl]">WELCOME TO</h1>
-      <div class="w-24 h-24 md:w-28 md:h-28 text-primary mb-6">
-        <img src="../assets/bbq-icon.png" class="w-full h-full object-contain" alt="lock icon">
+      <div class="w-24 h-24 md:w-28 md:h-28 text-primary mb-6 animate-in zoom-in duration-500">
+        <img src="../assets/bbq-icon.png" class="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(255,109,0,0.3)]" alt="lock icon">
       </div>
-      <p :class="['text-on-surface-variant font-medium mb-8', fontLg]">How would you like your order today?</p>
+      <p :class="['text-on-surface-variant font-medium mb-10', fontLg]">How would you like your order today?</p>
       
-      <div class="flex flex-col sm:flex-row gap-4 w-full max-w-sm sm:max-w-md md:max-w-lg">
-        <button @click="selectOrderType('Dine-in')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-5 md:p-6 flex flex-col items-center gap-3 transition-all shadow-sm group">
-          <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M6.75 21A3.75 3.75 0 013 17.25V14.16M21 14.16v3.09a3.75 3.75 0 01-3.75 3.75M6.75 21H17.25"></path></svg>
-          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Dine-In</span>
+      <div class="flex flex-col sm:flex-row gap-5 w-full max-w-sm sm:max-w-md md:max-w-lg">
+        <button @click="selectOrderType('Dine-in')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-transparent hover:border-primary-container rounded-[2rem] p-6 md:p-8 flex flex-col items-center gap-4 transition-all duration-300 shadow-sm hover:shadow-[0_12px_32px_rgba(255,109,0,0.15)] hover:-translate-y-2 group active:scale-95">
+          <svg class="w-14 h-14 md:w-16 md:h-16 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M6.75 21A3.75 3.75 0 013 17.25V14.16M21 14.16v3.09a3.75 3.75 0 01-3.75 3.75M6.75 21H17.25"></path></svg>
+          <span :class="['font-black text-on-surface group-hover:text-primary-container tracking-wide', fontLg]">Dine-In</span>
         </button>
         
-        <button @click="selectOrderType('Takeout')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-outline-variant/20 hover:border-primary-container rounded-3xl p-5 md:p-6 flex flex-col items-center gap-3 transition-all shadow-sm group">
-          <svg class="w-12 h-12 md:w-14 md:h-14 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-          <span :class="['font-black text-on-surface group-hover:text-primary-container', fontLg]">Takeout</span>
+        <button @click="selectOrderType('Takeout')" class="flex-1 bg-surface-container hover:bg-surface-container-high border-2 border-transparent hover:border-primary-container rounded-[2rem] p-6 md:p-8 flex flex-col items-center gap-4 transition-all duration-300 shadow-sm hover:shadow-[0_12px_32px_rgba(255,109,0,0.15)] hover:-translate-y-2 group active:scale-95">
+          <svg class="w-14 h-14 md:w-16 md:h-16 text-on-surface-variant group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <span :class="['font-black text-on-surface group-hover:text-primary-container tracking-wide', fontLg]">Takeout</span>
         </button>
       </div>
     </div>
 
-    <div v-else-if="!generatedQueueNumber" class="flex-1 bg-surface-container-low rounded-2xl overflow-hidden border border-outline-variant/15 flex flex-col min-h-0 relative">
-      <div class="z-40 bg-surface-container-low border-b border-outline-variant/20 px-5 py-4 md:px-6 md:py-5 shrink-0 flex justify-between items-center">
+    <div v-else-if="!generatedQueueNumber" class="flex-1 bg-surface-container-low rounded-[2rem] overflow-hidden border border-outline-variant/10 shadow-sm flex flex-col min-h-0 relative">
+      
+      <div class="z-40 bg-surface-container-low border-b border-outline-variant/10 px-6 py-5 md:px-8 md:py-6 shrink-0 flex justify-between items-center shadow-sm">
         <div>
-          <div class="flex items-center gap-4 mb-2">
-            <span class="bg-primary-container/10 border border-primary-container/20 text-primary-container text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">{{ orderType }}</span>
-            <button @click="resetKiosk" class="text-on-surface-variant hover:text-error text-xs font-bold hover:underline transition-colors tracking-wide uppercase">Change</button>
-          </div>
-          <h2 :class="['font-black text-on-surface tracking-tight', font2xl]">Self-Service Menu</h2>
+          <h2 :class="['font-black text-on-surface tracking-tight', font2xl]">Menu</h2>
           <p :class="['font-medium text-on-surface-variant mt-1', fontSm]">Tap items to add them to your order</p>
+        </div>
+        <div class="flex items-center bg-surface-container border border-outline-variant/20 rounded-full p-1.5 shadow-inner">
+          <span class="bg-primary-container text-on-primary-container text-[11px] md:text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-sm">{{ orderType }}</span>
+          <button @click="resetKiosk" class="text-on-surface-variant hover:text-error text-[11px] md:text-xs font-black px-4 py-2 rounded-full transition-colors tracking-widest uppercase active:scale-95">Change</button>
         </div>
       </div>
 
-      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface">
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface-container-lowest">
         <MenuSidebar 
           :categories="categories" 
           :selected-category="selectedCategory" 
           @select="setCategory" 
         />
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-32">
+        <div class="flex-1 overflow-y-auto p-5 md:p-8 pb-32">
           <div v-if="isLoadingData" class="flex-1 flex items-center justify-center h-64">
             <DataLoader message="Loading fresh menu..." />
           </div>
@@ -263,31 +264,35 @@ function handleImageError(event: Event) {
               <p class="text-lg font-medium">No items available in this category.</p>
             </div>
 
-            <div v-else :class="['grid gap-4 md:gap-5', isMobile ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4']">
+            <div v-else :class="['grid gap-4 md:gap-6', isMobile ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4']">
               <div v-for="(group, idx) in groupedItems" :key="idx" @click="handleItemClick(group)"
-                class="bg-surface-container-low p-4 md:p-5 rounded-2xl shadow-sm border border-outline-variant/15 cursor-pointer hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all relative flex flex-col h-full min-h-55 group-hover">
+                class="bg-surface-container p-4 md:p-5 rounded-[1.5rem] border border-outline-variant/10 cursor-pointer transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.2)] hover:-translate-y-1.5 relative flex flex-col h-full min-h-[16rem] group">
 
-                <div class="h-28 md:h-36 bg-surface-container rounded-xl mb-3 md:mb-4 flex items-center justify-center text-on-surface-variant overflow-hidden border border-outline-variant/10 relative opacity-100 transition-opacity hover:opacity-90">
+                <div class="h-32 md:h-40 bg-surface-container-high rounded-2xl mb-4 flex items-center justify-center text-on-surface-variant overflow-hidden border border-outline-variant/5 relative transition-opacity">
                   <img 
                     v-if="group.photo_url" 
                     :src="`http://localhost:3000${group.photo_url}`" 
-                    class="w-full h-full object-cover" 
+                    class="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110" 
                     @error="handleImageError" 
                   />
-                  <svg v-else class="w-10 h-10 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  <svg v-else class="w-12 h-12 opacity-20 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 </div>
                 
-                <h4 :class="['font-black text-on-surface mb-1 leading-tight tracking-tight', fontLg]" :title="group.display_name">{{ group.display_name }}</h4>
+                <h4 :class="['font-black text-on-surface mb-2 leading-tight tracking-tight', fontLg]" :title="group.display_name">{{ group.display_name }}</h4>
                 
-                <div class="flex justify-between items-end mt-auto pt-3">
-                  <div class="flex flex-col">
-                    <span v-if="group.is_group" class="text-[9px] text-on-surface-variant font-medium uppercase tracking-widest mb-0.5">Starts at</span>
-                    <span :class="['text-primary-container font-black leading-none', fontXl]">₱{{ group.unit_price.toFixed(2) }}</span>
+                <div class="flex justify-between items-end mt-auto pt-2 border-t border-outline-variant/5">
+                  <div class="flex flex-col mt-2">
+                    <span v-if="group.is_group" class="text-[9px] text-on-surface-variant font-bold uppercase tracking-widest mb-0.5">Starts at</span>
+                    <span :class="['text-primary-container font-black leading-none drop-shadow-sm', fontXl]">₱{{ group.unit_price.toFixed(2) }}</span>
                   </div>
-                  <p v-if="group.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-error font-black uppercase tracking-wider">Sold Out</p>
-                  <p v-else-if="group.is_group" class="text-[10px] md:text-xs text-primary font-bold uppercase tracking-wider">Options</p>
-                  <p v-else-if="group.current_stock_pieces < 10" class="text-[10px] md:text-xs text-tertiary-container font-bold uppercase tracking-wider">Only {{ group.current_stock_pieces }} left</p>
-                  <p v-else class="text-[10px] md:text-xs text-on-surface-variant font-medium uppercase tracking-wider">Available</p>
+                  
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span v-if="group.current_stock_pieces > 0" class="w-1.5 h-1.5 rounded-full bg-success opacity-80"></span>
+                    <span v-else class="w-1.5 h-1.5 rounded-full bg-error opacity-80"></span>
+                    <p v-if="group.current_stock_pieces <= 0" class="text-[10px] md:text-xs text-error font-bold uppercase tracking-wider">Sold Out</p>
+                    <p v-else-if="group.is_group" class="text-[10px] md:text-xs text-primary font-bold uppercase tracking-wider">Options</p>
+                    <p v-else class="text-[10px] md:text-xs text-on-surface-variant font-bold uppercase tracking-wider">Available</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -296,27 +301,27 @@ function handleImageError(event: Event) {
       </div>
     </div>
 
-    <div v-else class="flex-1 flex flex-col items-center justify-center p-6 bg-surface-container-low rounded-2xl shadow-sm border border-outline-variant/15 text-center">
-      <div class="w-24 h-24 bg-tertiary/10 border border-tertiary/20 rounded-full flex items-center justify-center text-tertiary mb-8 shadow-[0_0_24px_rgba(240,190,116,0.15)]">
-        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+    <div v-else class="flex-1 flex flex-col items-center justify-center p-6 bg-surface-container-low rounded-[2rem] shadow-sm border border-outline-variant/10 text-center animate-in fade-in duration-500">
+      <div class="w-28 h-28 bg-success/10 border border-success/20 rounded-full flex items-center justify-center text-success mb-8 shadow-[0_0_40px_rgba(var(--color-success),0.2)] animate-bounce">
+        <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
       </div>
-      <h2 :class="['font-black text-on-surface mb-2 tracking-tight', font2xl]">Order Placed!</h2>
-      <p :class="['text-on-surface-variant font-medium mb-8', fontLg]">Please proceed to the cashier and present this number:</p>
+      <h2 :class="['font-black text-on-surface mb-3 tracking-tight', font2xl]">Order Placed!</h2>
+      <p :class="['text-on-surface-variant font-medium mb-10', fontLg]">Please proceed to the cashier and present this number:</p>
       
-      <div class="bg-surface-container border border-dashed border-outline-variant/30 rounded-3xl px-16 py-8 mb-12 shadow-inner">
-        <span class="text-7xl font-black text-primary-container tracking-widest">{{ generatedQueueNumber }}</span>
+      <div class="bg-surface-container border-2 border-dashed border-outline-variant/20 rounded-[2rem] px-20 py-10 mb-12 shadow-inner">
+        <span class="text-8xl font-black text-primary-container tracking-widest drop-shadow-md">{{ generatedQueueNumber }}</span>
       </div>
 
-      <BaseButton @click="resetKiosk" variant="primary" class="py-4 px-12 shadow-lg hover:shadow-xl rounded-full">
+      <BaseButton @click="resetKiosk" variant="primary" class="py-5 px-16 shadow-[0_8px_24px_rgba(255,109,0,0.3)] hover:shadow-[0_12px_32px_rgba(255,109,0,0.4)] rounded-full transition-all">
         <span :class="['font-black uppercase tracking-widest', fontLg]">Done</span>
       </BaseButton>
     </div>
 
-    <div v-if="totalCartItems > 0 && hasSelectedOrderType && !generatedQueueNumber" class="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
-      <BaseButton @click="isCartModalOpen = true" variant="primary" class="py-4 shadow-[0_0_32px_rgba(255,109,0,0.3)] flex items-center gap-4 px-6 rounded-full hover:scale-105 transition-transform border border-primary-container/50">
-        <div class="flex items-center justify-center bg-background/30 w-8 h-8 rounded-full text-sm font-black text-primary-fixed">{{ totalCartItems }}</div>
+    <div v-if="totalCartItems > 0 && hasSelectedOrderType && !generatedQueueNumber" class="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-40 animate-in slide-in-from-bottom-10 duration-500">
+      <BaseButton @click="isCartModalOpen = true" variant="primary" class="py-4.5 shadow-[0_12px_40px_rgba(255,109,0,0.4)] flex items-center gap-4 px-7 rounded-full hover:scale-105 active:scale-95 transition-all border border-primary-container/30">
+        <div class="flex items-center justify-center bg-background/40 backdrop-blur-sm w-9 h-9 rounded-full text-sm font-black text-primary-fixed">{{ totalCartItems }}</div>
         <span :class="['font-black uppercase tracking-widest text-on-primary-container', fontLg]">Check Order</span>
-        <span :class="['font-black ml-2 text-on-primary-container', fontLg]">₱{{ total.toFixed(2) }}</span>
+        <span :class="['font-black ml-3 pl-4 border-l border-primary-fixed/20 text-on-primary-container', fontLg]">₱{{ total.toFixed(2) }}</span>
       </BaseButton>
     </div>
 

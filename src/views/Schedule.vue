@@ -30,7 +30,6 @@ async function loadTimeclockData() {
     let activeStaffList = (staff as any[]).filter(s => s.status === 'Active');
     let todaysShiftsList = shifts;
 
-    // Added .value to correctly unwrap the Ref
     if (authStore.currentUser.value?.role !== 'Super Admin') {
       activeStaffList = activeStaffList.filter(s => s.role !== 'Super Admin');
       todaysShiftsList = todaysShiftsList.filter(s => s.role !== 'Super Admin');
@@ -105,18 +104,18 @@ onMounted(() => {
   <div class="h-full flex flex-col space-y-6">
 
     <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 shrink-0">
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
         <div>
           <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">Staff Timeclock</h3>
           <p :class="['text-on-surface-variant mt-1 font-bold uppercase tracking-widest text-[10px]', fontSm]">Select your name to punch in or out for your shift.</p>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
           
-          <div class="flex-1 sm:w-64 lg:w-72">
+          <div class="flex-1 sm:w-56">
             <select v-model="selectedStaffId"
-              :class="['w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-xl px-4 py-3 font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors', fontBase]"
+              class="w-full bg-surface-container text-on-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-medium focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors"
               :disabled="isProcessing">
               <option value="" disabled>-- Select Your Name --</option>
               <option v-for="staff in staffMembers" :key="staff.staff_id" :value="staff.staff_id">
@@ -127,16 +126,16 @@ onMounted(() => {
 
           <div class="w-full sm:w-auto flex">
             <BaseButton v-if="!currentActiveShift" variant="success" @click="handleClockIn"
-              :disabled="!selectedStaffId || isProcessing" :class="['w-full sm:w-40 py-3', fontBase]">
-              <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              :disabled="!selectedStaffId || isProcessing" class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-[38px] uppercase tracking-wider">
+              <svg v-if="!isProcessing" class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
               </svg>
               {{ isProcessing ? 'Wait...' : 'Clock IN' }}
             </BaseButton>
 
             <BaseButton v-else variant="danger" @click="handleClockOut" :disabled="!selectedStaffId || isProcessing"
-              :class="['w-full sm:w-40 py-3', fontBase]">
-              <svg v-if="!isProcessing" class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              class="w-full sm:w-32 py-2 px-4 text-xs font-bold rounded-lg h-[38px] uppercase tracking-wider">
+              <svg v-if="!isProcessing" class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
               {{ isProcessing ? 'Wait...' : 'Clock OUT' }}
