@@ -10,7 +10,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save']);
 
-const authStore = useAuth();
+const { currentUser } = useAuth();
 
 const formId = ref<number | null>(null);
 const formName = ref("");
@@ -78,7 +78,7 @@ function handleSubmit() {
               <option value="Prep Station">Prep Station</option>
               <option value="Grill Cook">Grill Cook</option>
               <option value="Admin">Admin</option>
-              <option value="Super Admin">Super Admin</option>
+              <option v-if="currentUser?.role === 'Super Admin'" value="Super Admin">Super Admin</option>
             </select>
           </div>
           <div class="flex-1">
