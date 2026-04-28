@@ -12,6 +12,7 @@ export interface StaffInput {
   role: string;
   phone: string | null;
   status: string;
+  passcode?: string; // Added to support password changes
 }
 
 const API_BASE = window.location.hostname === 'localhost' 

@@ -106,6 +106,7 @@ pub struct StaffInput {
     pub role: String,
     pub phone: Option<String>,
     pub status: String,
+    pub passcode: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, sqlx::FromRow)]

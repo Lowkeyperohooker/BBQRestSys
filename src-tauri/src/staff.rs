@@ -42,15 +42,22 @@ pub async fn get_all_staff_full(State(pool): State<PgPool>) -> AppResult<Vec<Sta
 pub async fn create_staff(State(pool): State<PgPool>, Json(payload): Json<StaffAdminReq>) -> AppResult<()> {
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
-    // Note: Added default '1234' for passcode since the database strictly requires it now
-    sqlx::query("INSERT INTO staff (full_name, role, phone_number, status, passcode) VALUES ($1, $2, $3, $4, '1234')")
-        .bind(&payload.staff.name).bind(&payload.staff.role).bind(&payload.staff.phone).bind(&payload.staff.status)
+    // Check if a passcode was provided from the frontend; if not, default to "1234"
+    let passcode = payload.staff.passcode.unwrap_or_else(|| "1234".to_string());
+
+    sqlx::query("INSERT INTO staff (full_name, role, phone_number, status, passcode) VALUES ($1, $2, $3, $4, $5)")
+        .bind(&payload.staff.name)
+        .bind(&payload.staff.role)
+        .bind(&payload.staff.phone)
+        .bind(&payload.staff.status)
+        .bind(&passcode)
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('ADMIN', $1, 'Created Staff Profile', $2)")
-        .bind(payload.admin_id).bind(format!("Added {} as {}", payload.staff.name, payload.staff.role))
+        .bind(payload.admin_id)
+        .bind(format!("Added {} as {}", payload.staff.name, payload.staff.role))
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -62,14 +69,33 @@ pub async fn create_staff(State(pool): State<PgPool>, Json(payload): Json<StaffA
 pub async fn update_staff(State(pool): State<PgPool>, Json(payload): Json<UpdateStaffReq>) -> AppResult<()> {
     let mut tx = pool.begin().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
-    sqlx::query("UPDATE staff SET full_name = $1, role = $2, phone_number = $3, status = $4 WHERE staff_id = $5")
-        .bind(&payload.staff.name).bind(&payload.staff.role).bind(&payload.staff.phone).bind(&payload.staff.status).bind(payload.id)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Conditionally update the passcode only if the admin typed one in the modal
+    if let Some(new_passcode) = &payload.staff.passcode {
+        sqlx::query("UPDATE staff SET full_name = $1, role = $2, phone_number = $3, status = $4, passcode = $5 WHERE staff_id = $6")
+            .bind(&payload.staff.name)
+            .bind(&payload.staff.role)
+            .bind(&payload.staff.phone)
+            .bind(&payload.staff.status)
+            .bind(new_passcode)
+            .bind(payload.id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    } else {
+        sqlx::query("UPDATE staff SET full_name = $1, role = $2, phone_number = $3, status = $4 WHERE staff_id = $5")
+            .bind(&payload.staff.name)
+            .bind(&payload.staff.role)
+            .bind(&payload.staff.phone)
+            .bind(&payload.staff.status)
+            .bind(payload.id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    }
 
     sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('ADMIN', $1, 'Updated Staff Profile', $2)")
-        .bind(payload.admin_id).bind(format!("Updated details for {}", payload.staff.name))
+        .bind(payload.admin_id)
+        .bind(format!("Updated details for {}", payload.staff.name))
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -88,7 +114,8 @@ pub async fn delete_staff(State(pool): State<PgPool>, Json(payload): Json<Delete
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('ADMIN', $1, 'Deleted Staff Profile', $2)")
-        .bind(payload.admin_id).bind(format!("Permanently removed staff ID: {}", payload.id))
+        .bind(payload.admin_id)
+        .bind(format!("Permanently removed staff ID: {}", payload.id))
         .execute(&mut *tx)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
