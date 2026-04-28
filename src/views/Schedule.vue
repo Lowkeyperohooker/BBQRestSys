@@ -101,7 +101,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col space-y-6">
+  <div class="h-full flex flex-col gap-5 overflow-hidden">
 
     <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 shrink-0">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -146,7 +146,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0">
+    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0 overflow-hidden">
       <div class="mb-4 shrink-0">
         <h3 :class="['font-black text-on-surface tracking-tight uppercase', fontLg]">Today's Timesheet</h3>
       </div>
@@ -155,8 +155,8 @@ onMounted(() => {
 
       <div v-else class="flex-1 overflow-auto border border-outline-variant/15 rounded-xl bg-surface">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
-            <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest font-bold', fontSm]">
+          <thead class="bg-surface-container sticky top-0 z-10 shadow-sm outline outline-outline-variant/10">
+            <tr :class="['text-on-surface-variant uppercase tracking-widest font-bold', fontSm]">
               <th class="p-3 md:p-4">Employee</th>
               <th class="p-3 md:p-4 hidden md:table-cell">Role</th>
               <th class="p-3 md:p-4">Time In</th>
@@ -165,14 +165,14 @@ onMounted(() => {
               <th class="p-3 md:p-4 text-right">Status</th>
             </tr>
           </thead>
-          <tbody class="text-on-surface">
+          <tbody class="text-on-surface divide-y divide-outline-variant/10">
             <tr v-if="todayShifts.length === 0">
               <td colspan="6" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">
                 <svg class="w-8 h-8 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 No one has clocked in yet today.
               </td>
             </tr>
-            <tr v-for="shift in todayShifts" :key="shift.shift_id" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+            <tr v-for="shift in todayShifts" :key="shift.shift_id" class="hover:bg-surface-container-high transition-colors">
               <td :class="['p-3 md:p-4 font-black text-on-surface', fontBase]">{{ shift.full_name }}</td>
               <td :class="['p-3 md:p-4 text-on-surface-variant font-medium hidden md:table-cell', fontSm]">{{ shift.role }}</td>
               <td :class="['p-3 md:p-4 font-bold text-tertiary', fontBase]">{{ formatTimeOnly(shift.clock_in_time) }}</td>

@@ -164,8 +164,8 @@ onMounted(() => loadData());
 </script>
 
 <template>
-  <div class="h-full flex flex-col min-h-0">
-    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0">
+  <div class="h-full flex flex-col overflow-hidden">
+    <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0 overflow-hidden">
       
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
         <div>
@@ -192,11 +192,11 @@ onMounted(() => loadData());
 
       <DataLoader v-if="isLoadingData" message="Fetching latest inventory records..." />
 
-      <div v-else class="flex-1 flex flex-col min-h-0">
-        <div v-if="viewMode === 'raw'" class="flex-1 overflow-auto bg-surface border border-outline-variant/15 rounded-xl">
+      <div v-else class="flex-1 overflow-auto bg-surface border border-outline-variant/15 rounded-xl">
+        <div v-if="viewMode === 'raw'">
           <table class="w-full text-left border-collapse">
-            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
-              <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest', fontSm]">
+            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm outline outline-outline-variant/10">
+              <tr :class="['text-on-surface-variant uppercase tracking-widest', fontSm]">
                 <th class="py-4 font-bold px-4">Category</th>
                 <th class="py-4 font-bold px-4">Specific Part</th>
                 <th class="py-4 font-bold px-4">Current Stock</th>
@@ -223,23 +223,23 @@ onMounted(() => loadData());
           </table>
         </div>
 
-        <div v-else class="flex-1 overflow-auto bg-surface border border-outline-variant/15 rounded-xl">
+        <div v-else>
           <table class="w-full text-left border-collapse">
-            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm">
-              <tr :class="['border-b border-outline-variant/20 text-on-surface-variant uppercase tracking-widest', fontSm]">
+            <thead class="bg-surface-container sticky top-0 z-10 shadow-sm outline outline-outline-variant/10">
+              <tr :class="['text-on-surface-variant uppercase tracking-widest', fontSm]">
                 <th class="py-4 font-bold px-4 w-1/3">Item Name</th>
                 <th class="py-4 font-bold px-4">Stock Count</th>
                 <th class="py-4 font-bold px-4">Price (PHP)</th>
                 <th class="py-4 font-bold px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="text-on-surface">
+            <tbody class="text-on-surface divide-y divide-outline-variant/10">
               <tr v-if="groupedPreparedItems.length === 0">
                 <td colspan="4" class="py-12 text-center text-on-surface-variant font-bold uppercase tracking-widest text-sm">No items found in this category.</td>
               </tr>
               
               <template v-for="(group, index) in groupedPreparedItems" :key="index">
-                <tr v-if="!group.is_group" class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors group">
+                <tr v-if="!group.is_group" class="hover:bg-surface-container-high transition-colors group">
                   <td :class="['py-3 px-4', fontBase]">
                     <div class="flex items-center gap-4">
                       <div v-if="group.item.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm">
@@ -262,7 +262,7 @@ onMounted(() => loadData());
                   </td>
                 </tr>
 
-                <tr v-else class="border-b border-outline-variant/10 bg-surface hover:bg-surface-container-high transition-colors group cursor-pointer" @click="toggleGroup(group.group_name)">
+                <tr v-else class="hover:bg-surface-container-high transition-colors group cursor-pointer" @click="toggleGroup(group.group_name)">
                   <td :class="['py-3 px-4', fontBase]">
                     <div class="flex items-center gap-4">
                       <div v-if="group.photo_url" class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20 shadow-sm opacity-90">
@@ -289,7 +289,7 @@ onMounted(() => loadData());
                 </tr>
 
                 <template v-if="group.is_group && expandedGroups.has(group.group_name)">
-                  <tr v-for="variant in group.variants" :key="variant.prep_item_id" class="border-b border-outline-variant/5 bg-surface-container-low hover:bg-surface-container transition-colors group/variant">
+                  <tr v-for="variant in group.variants" :key="variant.prep_item_id" class="bg-surface-container-low hover:bg-surface-container transition-colors group/variant">
                     <td :class="['py-2 px-4 pl-20', fontBase]">
                       <div class="flex items-center gap-3">
                         <svg class="w-4 h-4 text-outline-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
