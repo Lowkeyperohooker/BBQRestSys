@@ -54,6 +54,20 @@ async function handleSearchQueue() {
     const found = currentQueue.find(q => q.queue_number === queueNum);
     
     if (found) {
+      // Map the backend data to match the strict CartItem frontend interface
+      found.cart_items = found.cart_items.map((item: any) => ({
+        prep_item_id: item.prep_item_id,
+        pos_display_name: item.pos_display_name,
+        qty: item.qty,
+        unit_price: item.unit_price,
+        is_variable_price: item.is_variable_price || false,
+        photo_url: item.photo_url || null,
+        category: "Kiosk Order",
+        current_stock_pieces: 0,
+        variant_group: null,
+        variant_name: null
+      }));
+
       selectedPending.value = found;
       selectedOrder.value = null; 
       searchQueueInput.value = ''; 

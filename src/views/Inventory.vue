@@ -316,6 +316,6 @@ onMounted(() => loadData());
 
     <EditInventoryModal :is-open="isInventoryModalOpen" @close="isInventoryModalOpen = false" @refresh="loadData" />
     <EditPriceModal :is-open="isPriceModalOpen" :item="selectedPreparedItem" @close="isPriceModalOpen = false; selectedPreparedItem = null" @save="handleSavePrice" />
-    <AddVariantModal :is-open="isAddVariantModalOpen" :base-item-name="selectedGroupForVariant?.is_group ? selectedGroupForVariant?.group_name : selectedGroupForVariant?.item?.pos_display_name" @close="isAddVariantModalOpen = false; selectedGroupForVariant = null" @save="handleSaveNewVariant" />
+    <AddVariantModal :is-open="isAddVariantModalOpen" :base-item-name="(selectedGroupForVariant?.is_group ? selectedGroupForVariant?.group_name : selectedGroupForVariant?.item?.pos_display_name) || null" @close="isAddVariantModalOpen = false; selectedGroupForVariant = null" @save="handleSaveNewVariant" />
   </div>
 </template>

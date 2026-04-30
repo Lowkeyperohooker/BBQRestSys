@@ -38,7 +38,6 @@ pub struct PendingCartItemRes {
     pub pos_display_name: String,
     pub qty: i32,
     pub unit_price: f64,
-    pub is_variable_price: bool,
     pub photo_url: Option<String>,
 }
 
@@ -114,7 +113,7 @@ pub async fn get_queue(State(pool): State<PgPool>) -> Result<Json<Vec<PendingOrd
 
     for q in queues {
         let items = sqlx::query_as::<_, PendingCartItemRes>(
-            "SELECT pi.prep_item_id, pi.pos_display_name, kqi.quantity as qty, kqi.unit_price::float8, pi.is_variable_price, pi.photo_url 
+            "SELECT pi.prep_item_id, pi.pos_display_name, kqi.quantity as qty, kqi.unit_price::float8, pi.photo_url 
              FROM kiosk_queue_item kqi 
              JOIN prepared_inventory pi ON kqi.prep_item_id = pi.prep_item_id 
              WHERE kqi.queue_id = $1"
