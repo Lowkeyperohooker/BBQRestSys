@@ -110,5 +110,12 @@ export const posService = {
       body: JSON.stringify({ order_id: orderId, status, staff_id: staffId })
     });
     if (!res.ok) throw new Error('Failed to update status');
-  }
+  },
+
+  // Add this inside posService in src/services/posService.ts
+  async getNextTableNumber(): Promise<number> {
+    const res = await fetch(`${API_BASE}/pos/next-table`);
+    if (!res.ok) throw new Error('Failed to get next table number');
+    return await res.json();
+  },
 };

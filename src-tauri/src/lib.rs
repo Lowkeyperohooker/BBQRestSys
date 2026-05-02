@@ -58,7 +58,8 @@ pub fn run() {
                     .route("/send-to-grill", post(pos::send_to_grill))
                     .route("/settle", post(pos::settle_payment))
                     .route("/update-status", post(pos::update_order_status_with_log))
-                    .route("/edit-order", post(pos::edit_active_order));
+                    .route("/edit-order", post(pos::edit_active_order))
+                    .route("/next-table", axum::routing::get(pos::get_next_table_number));
 
                 let schedule_routes = Router::new()
                     .route("/today", get(schedule::get_today_shifts))

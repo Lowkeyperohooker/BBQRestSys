@@ -2,12 +2,13 @@
 import { ref, onMounted } from 'vue';
 import { posService, type ActiveOrder, type PosItem } from '../services/posService';
 import { queueService, type PendingOrder } from '../services/queueService';
-import DataLoader from '../components/ui/DataLoader.vue';
 import CashierOrderDetails from '../components/ui/CashierOrderDetails.vue';
+import ActiveTabsModal from '../components/modal/ActiveTabsModal.vue';
+import BaseButton from '../components/ui/BaseButton.vue';
 import { useResponsive } from '../composables/useResponsive';
 import { useAuth } from '../stores/authStore';
 
-const { fontSm, fontBase, isMobile, isTablet } = useResponsive();
+const { fontSm, fontBase, fontLg, isMobile, isTablet } = useResponsive();
 const { currentUser } = useAuth();
 
 const activeOrders = ref<ActiveOrder[]>([]);
@@ -20,6 +21,7 @@ const isSearching = ref(false);
 
 const tableNumberInput = ref('');
 const isLoadingData = ref(true);
+const showTabsModal = ref(false);
 
 const staffId = currentUser.value?.id || 1;
 
@@ -54,7 +56,6 @@ async function handleSearchQueue() {
     const found = currentQueue.find(q => q.queue_number === queueNum);
     
     if (found) {
-      // Map the backend data to match the strict CartItem frontend interface
       found.cart_items = found.cart_items.map((item: any) => ({
         prep_item_id: item.prep_item_id,
         pos_display_name: item.pos_display_name,
@@ -71,7 +72,14 @@ async function handleSearchQueue() {
       selectedPending.value = found;
       selectedOrder.value = null; 
       searchQueueInput.value = ''; 
-      tableNumberInput.value = ''; 
+      
+      if (found.order_type === 'Dine-in') {
+        const nextNum = await posService.getNextTableNumber();
+        tableNumberInput.value = nextNum.toString();
+      } else {
+        tableNumberInput.value = ''; 
+      }
+      
     } else {
       alert(`Queue #${queueNum} not found. It may have already been processed.`);
     }
@@ -185,19 +193,49 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full max-w-400 mx-auto h-full flex flex-row gap-2 md:gap-4 lg:gap-6 items-stretch">
+  <div class="w-full max-w-400 mx-auto h-full flex flex-col gap-4 md:gap-6 items-stretch">
+    
+    <header class="bg-surface-container-low border border-outline-variant/15 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shadow-sm shrink-0">
+      <div class="min-w-0">
+        <h1 :class="['font-bold text-on-surface tracking-tight truncate', fontLg]">Order Details</h1>
+        <p :class="['text-on-surface-variant truncate', fontSm]">Manage and fulfill selected tab</p>
+      </div>
 
-    <div class="w-[calc(70%-4px)] md:w-[calc(60%-8px)] lg:w-[calc(60%-12px)] h-full min-h-0 transition-all duration-300">
+      <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
+        <div class="relative flex-1 sm:w-48 lg:w-56 min-w-[140px]">
+          <input 
+            v-model="searchQueueInput" 
+            @keyup.enter="handleSearchQueue"
+            type="number" 
+            placeholder="Queue #" 
+            :class="['w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-full pl-9 pr-3 py-1.5 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors', fontSm]"
+          />
+          <svg class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        
+        <BaseButton variant="secondary" @click="handleSearchQueue" :disabled="!searchQueueInput || isSearching" class="py-1.5 px-4 rounded-full!">
+          <span :class="fontSm">{{ isSearching ? '...' : 'Search' }}</span>
+        </BaseButton>
+
+        <div class="hidden sm:block w-px h-6 bg-outline-variant/30 mx-1"></div>
+
+        <button @click="showTabsModal = true" class="relative bg-surface-container-high hover:bg-surface-variant border border-outline-variant/20 px-4 py-1.5 rounded-full transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5 text-on-surface" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          <span :class="['font-bold text-on-surface hidden sm:block', fontSm]">Active Tabs</span>
+          <span v-if="activeOrders.length > 0" class="absolute -top-1.5 -right-1.5 bg-error text-on-error text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm">
+            {{ activeOrders.length }}
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <div class="w-full h-full min-h-0 flex-1 transition-all duration-300">
       <CashierOrderDetails 
         :selected-order="selectedOrder"
         :selected-pending="selectedPending"
         :available-items="availableItems"
-        :search-queue-input="searchQueueInput"
-        :is-searching="isSearching"
         :table-number-input="tableNumberInput"
-        @update:search-queue-input="searchQueueInput = $event"
         @update:table-number-input="tableNumberInput = $event"
-        @search="handleSearchQueue"
         @clear-pending="selectedPending = null"
         @reject-pending="handleRejectPending"
         @accept-pending="handleAcceptPending"
@@ -208,41 +246,14 @@ onMounted(() => {
       />
     </div>
 
-    <div class="w-[calc(30%-4px)] md:w-[calc(40%-8px)] lg:w-[calc(40%-12px)] h-full flex flex-col bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm shrink-0 overflow-hidden transition-all duration-300">
-      
-      <div class="p-2 sm:p-4 border-b border-outline-variant/20 bg-surface-container-highest/20 flex flex-wrap justify-between items-center gap-1 shrink-0">
-        <h3 :class="['font-black text-on-surface tracking-wide uppercase truncate', fontBase]">Active Tabs</h3>
-        <span v-if="activeOrders.length > 0" class="bg-error text-on-error text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm shrink-0">{{ activeOrders.length }}</span>
-      </div>
+    <ActiveTabsModal
+      :show="showTabsModal"
+      :active-orders="activeOrders"
+      :is-loading-data="isLoadingData"
+      :selected-order-id="selectedOrder?.order_id"
+      @close="showTabsModal = false"
+      @select-order="selectOrder"
+    />
 
-      <div class="flex-1 p-2 sm:p-3 overflow-y-auto bg-surface min-h-0">
-        <DataLoader v-if="isLoadingData" message="Loading..." />
-        
-        <div v-else-if="activeOrders.length === 0" class="h-full flex flex-col items-center justify-center text-on-surface-variant pt-10 text-center">
-          <svg class="w-6 h-6 md:w-8 md:h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-          <p :class="['font-medium uppercase tracking-widest text-[9px] sm:text-xs', fontSm]">No tabs open</p>
-        </div>
-
-        <div v-else class="space-y-2">
-          <div v-for="order in activeOrders" :key="order.order_id" @click="selectOrder(order)"
-            :class="['p-2 sm:p-3 rounded-xl cursor-pointer transition-all border', selectedOrder?.order_id === order.order_id ? 'border-primary-container bg-primary-container/5 shadow-[0_0_12px_rgba(255,109,0,0.1)]' : 'border-outline-variant/15 bg-surface-container hover:border-outline-variant/30']">
-            
-            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-2 gap-1">
-              <h4 :class="['font-black text-on-surface line-clamp-1 w-full', fontSm]">{{ order.customer_identifier }}</h4>
-              <span :class="[order.status === 'Cooking' ? 'text-tertiary-container bg-tertiary-container/10 border-tertiary-container/20' : 'text-tertiary bg-tertiary/10 border-tertiary/20', 'font-bold text-[8px] md:text-[10px] uppercase tracking-wider px-1.5 md:px-2 py-0.5 rounded-full border shrink-0']">
-                {{ order.status === 'Cooking' ? 'Grilling' : 'Ready' }}
-              </span>
-            </div>
-            
-            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-1 mt-2 xl:mt-0">
-              <span class="text-on-surface-variant font-bold text-[8px] md:text-[10px] uppercase tracking-widest truncate w-full">#{{ order.order_id }} • {{ order.order_type }}</span>
-              <span :class="['font-black text-primary shrink-0', fontBase]">₱{{ order.total_amount.toFixed(2) }}</span>
-            </div>
-            
-          </div>
-        </div>
-
-      </div>
-    </div>
   </div>
 </template>

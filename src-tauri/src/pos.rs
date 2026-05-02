@@ -200,3 +200,31 @@ pub async fn update_order_status_with_log(State(pool): State<PgPool>, Json(paylo
     tx.commit().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(()))
 }
+
+// Add this at the bottom of src-tauri/src/pos.rs
+
+pub async fn get_next_table_number(State(pool): State<PgPool>) -> Result<Json<i32>, (StatusCode, String)> {
+    // Find the most recent Dine-in order that includes "Table" in the identifier
+    let row: Option<(String,)> = sqlx::query_as(
+        "SELECT customer_identifier FROM orders 
+         WHERE order_type = 'Dine-in' AND customer_identifier LIKE '%Table %' 
+         ORDER BY timestamp DESC LIMIT 1"
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut next_table = 1;
+
+    // If an order was found, parse out the number and increment it
+    if let Some((identifier,)) = row {
+        // e.g., Splits "Queue #1006 - Table 5" into ["Queue #1006 - ", "5"]
+        if let Some(table_str) = identifier.split("Table ").last() {
+            if let Ok(current_table) = table_str.trim().parse::<i32>() {
+                next_table = if current_table >= 100 { 1 } else { current_table + 1 };
+            }
+        }
+    }
+
+    Ok(Json(next_table))
+}

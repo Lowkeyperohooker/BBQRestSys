@@ -11,15 +11,11 @@ const props = defineProps<{
   selectedOrder: ActiveOrder | null;
   selectedPending: PendingOrder | null;
   availableItems: PosItem[];
-  searchQueueInput: string;
-  isSearching: boolean;
   tableNumberInput: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:searchQueueInput', val: string): void;
   (e: 'update:tableNumberInput', val: string): void;
-  (e: 'search'): void;
   (e: 'clear-pending'): void;
   (e: 'reject-pending'): void;
   (e: 'accept-pending'): void;
@@ -97,32 +93,8 @@ function saveEdit() {
 </script>
 
 <template>
-  <div class="w-full h-full bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/15 flex flex-col min-h-0 relative">
+  <div class="w-full h-full bg-surface-container-low rounded-xl border border-outline-variant/15 flex flex-col min-h-0 relative overflow-hidden">
     
-    <div class="sticky top-0 z-40 bg-surface-container-low/80 backdrop-blur-xl px-4 sm:px-5 pt-5 pb-3 border-b border-outline-variant/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
-      <div class="min-w-0">
-        <h2 :class="['font-bold text-on-surface tracking-tight truncate', fontLg]">Order Details</h2>
-        <p :class="['text-on-surface-variant truncate', fontSm]">Manage and fulfill selected tab</p>
-      </div>
-      
-      <div class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0">
-        <div class="relative flex-1 sm:w-40 lg:w-56">
-          <input 
-            :value="searchQueueInput" 
-            @input="emit('update:searchQueueInput', ($event.target as HTMLInputElement).value)"
-            @keyup.enter="emit('search')"
-            type="number" 
-            placeholder="Queue #" 
-            :class="['w-full bg-surface-container text-on-surface placeholder-on-surface-variant/50 border border-outline-variant/30 rounded-full pl-9 pr-3 py-1.5 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors', fontSm]"
-          />
-          <svg class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        </div>
-        <BaseButton variant="secondary" @click="emit('search')" :disabled="!searchQueueInput || isSearching" class="py-1.5 px-4 rounded-full!">
-          <span :class="fontSm">{{ isSearching ? '...' : 'Search' }}</span>
-        </BaseButton>
-      </div>
-    </div>
-
     <div class="flex-1 p-4 bg-surface flex flex-col min-h-0">
       
       <div v-if="!selectedOrder && !selectedPending" class="h-full flex flex-col items-center justify-center text-on-surface-variant space-y-3 m-auto px-4 text-center">
@@ -130,11 +102,11 @@ function saveEdit() {
         <p :class="['font-medium', fontBase]">Select an active tab from the right,<br class="hidden sm:block"/>or search a Customer Queue # above.</p>
       </div>
 
-      <div v-else-if="selectedPending" class="h-full max-w-2xl w-full mx-auto flex flex-col gap-4 animate-in fade-in duration-300">
+      <div v-else-if="selectedPending" class="h-full max-w-2xl w-full mx-auto flex flex-col gap-1 animate-in fade-in duration-300">
         <div class="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 sm:p-4 relative flex flex-col flex-1 min-h-0 overflow-hidden">
           <div class="bg-primary-container absolute top-0 left-0 w-full h-1 animate-pulse shadow-[0_0_12px_rgba(255,109,0,0.8)]"></div>
           
-          <div class="flex justify-between items-start mb-3 shrink-0 mt-1 gap-2">
+          <div class="flex justify-between items-start mb-0 shrink-0 mt-1 gap-2">
             <div class="min-w-0 pr-2">
               <span class="text-primary font-bold tracking-widest uppercase text-[10px]">Kiosk Order Ready</span>
               <h3 :class="['font-black text-on-surface mt-1 truncate', fontLg]">Queue #{{ selectedPending.queue_number }}</h3>
@@ -146,7 +118,7 @@ function saveEdit() {
           </div>
 
           <div class="flex-1 overflow-y-auto border-t border-b border-outline-variant/10 py-3 my-2 pr-1 sm:pr-2">
-            <div class="flex justify-between items-center mb-3 sticky top-0 bg-surface-container-low z-10 pb-2">
+            <div class="flex justify-between items-center mb-0 sticky top-0 bg-surface-container-low z-10 pb-2">
               <h4 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest">Customer Cart</h4>
               <button v-if="!isEditing" @click="startEdit" class="text-primary text-xs font-bold hover:underline transition-all">Edit Order</button>
             </div>
@@ -222,7 +194,7 @@ function saveEdit() {
         <div class="bg-surface-container-low border border-outline-variant/15 rounded-xl p-3 sm:p-4 relative flex flex-col flex-1 min-h-0 overflow-hidden">
           <div :class="selectedOrder.status === 'Cooking' ? 'bg-tertiary-container shadow-[0_0_12px_rgba(191,146,76,0.5)]' : 'bg-tertiary shadow-[0_0_12px_rgba(240,190,116,0.5)]'" class="absolute top-0 left-0 w-full h-1"></div>
           
-          <div class="flex justify-between items-start mb-3 shrink-0 mt-1 gap-2">
+          <div class="flex justify-between items-start mb-0 shrink-0 mt-1 gap-2">
             <div class="min-w-0 pr-2">
               <span class="text-on-surface-variant font-bold tracking-widest uppercase text-[10px]">Order #{{ selectedOrder.order_id }}</span>
               <h3 :class="['font-black text-on-surface mt-1 truncate', fontLg]">{{ selectedOrder.customer_identifier }}</h3>
@@ -234,7 +206,7 @@ function saveEdit() {
           </div>
 
           <div class="flex-1 overflow-y-auto border-t border-b border-outline-variant/10 py-3 my-2 pr-1 sm:pr-2">
-            <div class="flex justify-between items-center mb-3 sticky top-0 bg-surface-container-low z-10 pb-2">
+            <div class="flex justify-between items-center mb-0 sticky top-0 bg-surface-container-low z-10 pb-2">
               <h4 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest">Order Items</h4>
             </div>
             
