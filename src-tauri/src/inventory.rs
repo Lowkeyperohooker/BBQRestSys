@@ -185,19 +185,21 @@ pub async fn log_prep_transaction(State(pool): State<PgPool>, Json(payload): Jso
     sqlx::query("UPDATE raw_inventory SET current_stock_kg = current_stock_kg - $1::numeric WHERE raw_item_id = $2")
         .bind(payload.kilos).bind(raw_item.0).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // NEW: Updates the precise prep variant, not the entire raw group
     sqlx::query("UPDATE prepared_inventory SET current_stock_pieces = current_stock_pieces + $1 WHERE prep_item_id = $2")
         .bind(payload.sticks).bind(payload.prep_item_id).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let mut actual_staff_id = 1i32;
+    let mut actual_staff_id = 1i32; // Default to Admin to ensure logs never fail
 
+    // Verify staff exists
     if let Some(ref name) = payload.staff_name {
         if let Ok(Some((id,))) = sqlx::query_as::<_, (i32,)>("SELECT staff_id FROM staff WHERE full_name = $1").bind(name).fetch_optional(&mut *tx).await {
             actual_staff_id = id;
-            sqlx::query("INSERT INTO prep_log (staff_id, raw_item_id, kilos_deducted, skewers_added) VALUES ($1, $2, $3::numeric, $4)")
-                .bind(actual_staff_id).bind(raw_item.0).bind(payload.kilos).bind(payload.sticks).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         }
     }
+
+    // FIX: Moved this INSERT OUTSIDE the if-statement so it always properly logs
+    sqlx::query("INSERT INTO prep_log (staff_id, raw_item_id, kilos_deducted, skewers_added) VALUES ($1, $2, $3::numeric, $4)")
+        .bind(actual_staff_id).bind(raw_item.0).bind(payload.kilos).bind(payload.sticks).execute(&mut *tx).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let details = format!("Meat Category: {}\nSpecific Part / Cut: {}\nRaw Meat Consumed: {:.2} kg\nYield Produced: {} pieces/sticks\nStaff Member: {}", payload.category, payload.part, payload.kilos, payload.sticks, payload.staff_name.as_deref().unwrap_or("System Admin"));
     sqlx::query("INSERT INTO system_log (log_category, staff_id, description, details) VALUES ('PREP', $1, 'Skewers Prepared', $2)")

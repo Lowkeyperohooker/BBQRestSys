@@ -29,10 +29,17 @@ const maxKilosAllowed = computed(() => {
   return currentStockInfo.value.current_stock_kg;
 });
 
-// Filters POS items to only show variants matching the selected raw meat
+// FIX: Filters by matching Category instead of strictly relying on raw_item_id
 const availableOutputItems = computed(() => {
   if (!currentStockInfo.value) return [];
-  return allPreparedItems.value.filter(item => item.raw_item_id === currentStockInfo.value!.raw_item_id);
+  
+  const matched = allPreparedItems.value.filter(item => 
+    item.category === currentStockInfo.value!.category || 
+    item.raw_item_id === currentStockInfo.value!.raw_item_id
+  );
+
+  // Fallback: If categories mismatch, show all items so the staff isn't blocked
+  return matched.length > 0 ? matched : allPreparedItems.value;
 });
 
 const canPrep = computed(() => {
