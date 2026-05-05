@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { logService, type SystemLog } from '../services/logService';
+import Header from '../components/layout/Header.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseBadge from '../components/ui/BaseBadge.vue';
@@ -83,29 +84,32 @@ onMounted(() => {
   <div class="h-full flex flex-col relative">
     <div class="bg-surface-container-low p-3 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col overflow-hidden">
 
-      <div class="sticky top-0 z-40 bg-surface-container/80 backdrop-blur-xl -mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-t-2xl">
-        <div>
-          <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">System Logs</h3>
-          <p :class="['text-on-surface-variant mt-1 font-bold tracking-widest uppercase text-[10px]', fontSm]">Immutable audit trail of all system transactions.</p>
-        </div>
-
-        <div :class="['flex items-center gap-3 w-full md:w-auto', isMobile ? 'flex-col items-stretch' : '']">
-          <label :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px]', fontSm, isMobile ? 'hidden' : 'block']">Filter by Event:</label>
-          <select v-model="filterCategory"
-            :class="['bg-surface-container border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg px-4 py-2 font-bold uppercase tracking-wider text-xs w-full md:w-auto transition-colors']">
-            <option v-for="category in availableCategories" :key="category" :value="category">
-              {{ category === 'All' ? 'All Events' : category }}
-            </option>
-          </select>
-          <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-4 py-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-              </path>
-            </svg>
-          </BaseButton>
-        </div>
-      </div>
+      <Header 
+        title="System Logs" 
+        subtitle="Immutable audit trail of all system transactions."
+        isSticky
+        isGlass
+        customClass="-mt-3 md:-mt-4 -mx-3 md:-mx-4 px-3 md:px-4 pt-3 md:pt-4 pb-4 mb-6 border-b border-outline-variant/20 rounded-t-2xl"
+      >
+        <template #actions>
+          <div :class="['flex items-center gap-3 w-full md:w-auto', isMobile ? 'flex-col items-stretch' : '']">
+            <label :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px]', fontSm, isMobile ? 'hidden' : 'block']">Filter by Event:</label>
+            <select v-model="filterCategory"
+              :class="['bg-surface-container border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg px-4 py-2 font-bold uppercase tracking-wider text-xs w-full md:w-auto transition-colors']">
+              <option v-for="category in availableCategories" :key="category" :value="category">
+                {{ category === 'All' ? 'All Events' : category }}
+              </option>
+            </select>
+            <BaseButton variant="secondary" @click="loadLogs" title="Refresh Logs" class="px-4 py-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
+              </svg>
+            </BaseButton>
+          </div>
+        </template>
+      </Header>
 
       <DataLoader v-if="isLoadingData" message="Retrieving secure audit trails..." />
 

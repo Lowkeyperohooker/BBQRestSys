@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { posService, type ActiveOrder, type PosItem } from '../services/posService';
 import { queueService, type PendingOrder } from '../services/queueService';
+import Header from '../components/layout/Header.vue';
 import CashierOrderDetails from '../components/ui/CashierOrderDetails.vue';
 import ActiveTabsModal from '../components/modal/ActiveTabsModal.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
@@ -195,13 +196,12 @@ onMounted(() => {
 <template>
   <div class="w-full max-w-400 mx-auto h-full flex flex-col gap-4 md:gap-6 items-stretch">
     
-    <header class="bg-surface-container-low border border-outline-variant/15 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shadow-sm shrink-0">
-      <div class="min-w-0">
-        <h1 :class="['font-bold text-on-surface tracking-tight truncate', fontLg]">Order Details</h1>
-        <p :class="['text-on-surface-variant truncate', fontSm]">Manage and fulfill selected tab</p>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
+    <Header 
+      title="Order Details" 
+      subtitle="Manage and fulfill selected tab"
+      customClass="bg-surface-container-low border border-outline-variant/15 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 shadow-sm"
+    >
+      <template #actions>
         <div class="relative flex-1 sm:w-48 lg:w-56 min-w-[140px]">
           <input 
             v-model="searchQueueInput" 
@@ -226,8 +226,8 @@ onMounted(() => {
             {{ activeOrders.length }}
           </span>
         </button>
-      </div>
-    </header>
+      </template>
+    </Header>
 
     <div class="w-full h-full min-h-0 flex-1 transition-all duration-300">
       <CashierOrderDetails 

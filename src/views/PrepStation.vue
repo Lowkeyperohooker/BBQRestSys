@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { inventoryService, type RawInventoryItem, type PreparedInventoryItem } from '../services/inventoryService';
 import { staffService } from '../services/staffService';
+import Header from '../components/layout/Header.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import { useResponsive } from '../composables/useResponsive';
@@ -181,12 +182,12 @@ onMounted(async () => {
     </div>
 
     <div v-else class="w-full h-full bg-surface-container-low border border-outline-variant/15 rounded-2xl shadow-sm flex flex-col overflow-hidden">
-      <div class="p-4 md:px-6 md:py-4 border-b border-outline-variant/10 shrink-0 bg-surface-container-highest/30 flex justify-between items-center">
-        <div>
-          <h2 :class="['font-black text-on-surface tracking-tight', fontLg]">Prep Station</h2>
-          <p :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[10px] mt-1', fontSm]">Log skewering tasks</p>
-        </div>
-      </div>
+      
+      <Header 
+        title="Prep Station" 
+        subtitle="Log skewering tasks"
+        customClass="p-4 md:px-6 md:py-4 border-b border-outline-variant/10 bg-surface-container-highest/30"
+      />
 
       <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-surface">
         <form @submit.prevent="handleSavePrep" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">

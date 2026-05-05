@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { staffService } from "../services/staffService";
 import { useAuth } from "../stores/authStore";
+import Header from "../components/layout/Header.vue";
 import StaffModal from "../components/modal/StaffModal.vue";
 import StaffTimesheetModal from "../components/modal/StaffTimesheetModal.vue";
 import DataLoader from "../components/ui/DataLoader.vue";
@@ -93,18 +94,20 @@ onMounted(() => {
   <div class="h-full flex flex-col overflow-hidden">
     <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0 overflow-hidden">
 
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4 mb-4 shrink-0">
-        <div>
-          <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">Staff Directory</h3>
-          <p :class="['text-on-surface-variant font-bold uppercase tracking-widest text-[10px] mt-1', fontSm]">Manage employee records and system access</p>
-        </div>
-        <BaseButton variant="primary" @click="openModal()" :class="['w-full md:w-auto flex justify-center py-2.5 px-4 h-9.5', fontBase]">
-          <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          <span class="tracking-widest uppercase text-xs font-bold">Add Staff Member</span>
-        </BaseButton>
-      </div>
+      <Header 
+        title="Staff Directory" 
+        subtitle="Manage employee records and system access"
+        customClass="mb-4"
+      >
+        <template #actions>
+          <BaseButton variant="primary" @click="openModal()" :class="['w-full md:w-auto flex justify-center py-2.5 px-4 h-9.5', fontBase]">
+            <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span class="tracking-widest uppercase text-xs font-bold">Add Staff Member</span>
+          </BaseButton>
+        </template>
+      </Header>
 
       <DataLoader v-if="isLoadingData" message="Loading staff records..." class="m-auto" />
 

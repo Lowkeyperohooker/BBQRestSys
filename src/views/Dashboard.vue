@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, shallowRef, watch, nextTick } from 'vue';
 import { dashboardService, type PeriodMetrics } from '../services/dashboardService';
+import Header from '../components/layout/Header.vue';
 import DataLoader from '../components/ui/DataLoader.vue';
 import Chart from 'chart.js/auto';
 import { useResponsive } from '../composables/useResponsive';
@@ -219,24 +220,33 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col">
+    <!-- Main Scrollable Container -->
+    <div class="flex-1 overflow-y-auto space-y-4 pb-6">
 
-    <div v-if="isLoadingData" class="flex-1 bg-surface-container-low rounded-xl shadow-sm border border-outline-variant/15 flex items-center justify-center">
-      <DataLoader message="Compiling live metrics..." />
-    </div>
+      <!-- Header Always Visible -->
+      <Header 
+        title="Business Overview" 
+        isSticky 
+        isGlass 
+        customClass="-mt-4 pt-4 pb-3 mb-4 border-b border-outline-variant/20 md:pl-3"
+      >
+        <template #actions>
+          <div class="flex bg-surface-container-low rounded-lg shadow-sm border border-outline-variant/30 p-1 w-full md:w-auto">
+            <button @click="selectedPeriod = 'daily'" :class="[selectedPeriod === 'daily' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Daily</button>
+            <button @click="selectedPeriod = 'weekly'" :class="[selectedPeriod === 'weekly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Weekly</button>
+            <button @click="selectedPeriod = 'monthly'" :class="[selectedPeriod === 'monthly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Monthly</button>
+            <button @click="selectedPeriod = 'yearly'" :class="[selectedPeriod === 'yearly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Yearly</button>
+          </div>
+        </template>
+      </Header>
 
-    <div v-else class="flex-1 overflow-y-auto space-y-4 pb-6">
-
-      <div class="sticky top-0 z-40 bg-surface-container/90 backdrop-blur-md -mt-4 pt-4 pb-3 mb-8 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <h3 :class="['font-black text-on-surface tracking-tight pl-3', fontXl]">Business Overview</h3>
-        <div class="flex bg-surface-container-low rounded-lg shadow-sm border border-outline-variant/30 p-1 w-full md:w-auto">
-          <button @click="selectedPeriod = 'daily'" :class="[selectedPeriod === 'daily' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Daily</button>
-          <button @click="selectedPeriod = 'weekly'" :class="[selectedPeriod === 'weekly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Weekly</button>
-          <button @click="selectedPeriod = 'monthly'" :class="[selectedPeriod === 'monthly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Monthly</button>
-          <button @click="selectedPeriod = 'yearly'" :class="[selectedPeriod === 'yearly' ? 'bg-primary-container/20 text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container', 'flex-1 md:flex-none px-3 py-1 font-medium rounded transition-colors uppercase tracking-widest text-[10px]']">Yearly</button>
-        </div>
+      <!-- Loading State: Rendered below the header -->
+      <div v-if="isLoadingData" class="flex flex-col items-center justify-center min-h-[50vh] bg-surface-container-low rounded-xl shadow-sm border border-outline-variant/15 mx-1">
+        <DataLoader message="Compiling live metrics..." />
       </div>
 
-      <div class="grid grid-cols-12 gap-4">
+      <!-- Dashboard Data Grid: Rendered below the header once loaded -->
+      <div v-else class="grid grid-cols-12 gap-4 mx-1">
         
         <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex items-center gap-3">
@@ -244,7 +254,7 @@ onMounted(() => {
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <div>
-              <p class="['font-bold text-on-surface-variant uppercase tracking-widest text-[9px] leading-tight mb-0.5',fontSm]">Live Sales (Today)</p>
+              <p :class="['font-bold text-on-surface-variant uppercase tracking-widest text-[9px] leading-tight mb-0.5',fontSm]">Live Sales (Today)</p>
               <h3 :class="['font-black text-on-surface leading-none', fontXl]">₱{{ todaySales.toFixed(2) }}</h3>
             </div>
           </div>
@@ -271,7 +281,6 @@ onMounted(() => {
         </div>
 
         <div class="col-span-12 lg:col-span-8 relative bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">
-        <!-- <div class="col-span-12 lg:col-span-8 w-[calc(100%-4px)] relative bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">  -->
           <div v-if="isUpdatingChart" class="absolute inset-0 z-10 bg-surface/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
             <p class="font-black text-primary uppercase tracking-widest animate-pulse text-xs">Updating...</p>
           </div>
@@ -292,7 +301,6 @@ onMounted(() => {
         </div>
 
         <div class="col-span-12 lg:col-span-4 bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">
-        <!-- <div class="col-span-12 lg:col-span-4 w-[calc(100%-4px)] bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col">   -->
           <div class="flex justify-between items-start mb-4">
             <h3 :class="['font-black text-on-surface tracking-tight leading-none', fontLg]">Volume</h3>
             <div class="text-right">

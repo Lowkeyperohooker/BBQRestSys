@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import type { RawInventoryItem, PreparedInventoryItem, POSCategory } from '../services/inventoryService';
 import { inventoryService } from '../services/inventoryService';
+import Header from '../components/layout/Header.vue';
 import EditInventoryModal from '../components/modal/EditInventoryModal.vue';
 import EditPriceModal from '../components/modal/EditPriceModal.vue';
 import AddVariantModal from '../components/modal/AddVariantModal.vue';
@@ -167,19 +168,18 @@ onMounted(() => loadData());
   <div class="h-full flex flex-col overflow-hidden">
     <div class="bg-surface-container-low p-4 md:p-6 rounded-2xl shadow-sm border border-outline-variant/15 flex-1 flex flex-col min-h-0 overflow-hidden">
       
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
-        <div>
-          <h3 :class="['font-black text-on-surface tracking-tight', fontXl]">Inventory Management</h3>
-          <p :class="['text-on-surface-variant mt-1 font-bold tracking-widest uppercase text-[10px]', fontSm]">
-            {{ viewMode === 'raw' ? 'Monitored in Kilograms (kg)' : 'Monitored in Sticks/Pieces' }}
-          </p>
-        </div>
-        
-        <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="[isMobile ? 'w-full' : '', 'py-2 px-4 text-xs rounded-lg h-9.5 shadow-sm hover:shadow transition-shadow']">
-          <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span class="tracking-widest uppercase font-bold">Add Item</span>
-        </BaseButton>
-      </div>
+      <Header 
+        title="Inventory Management" 
+        :subtitle="viewMode === 'raw' ? 'Monitored in Kilograms (kg)' : 'Monitored in Sticks/Pieces'"
+        customClass="mb-4"
+      >
+        <template #actions>
+          <BaseButton variant="primary" @click="isInventoryModalOpen = true" :class="[isMobile ? 'w-full' : '', 'py-2 px-4 text-xs rounded-lg h-9.5 shadow-sm hover:shadow transition-shadow']">
+            <svg class="w-4 h-4 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="tracking-widest uppercase font-bold">Add Item</span>
+          </BaseButton>
+        </template>
+      </Header>
 
       <div class="flex overflow-x-auto pb-4 mb-2 gap-2 border-b border-outline-variant/10 shrink-0">
         <button @click="viewMode = 'raw'" :class="[viewMode === 'raw' ? 'bg-primary-container text-on-primary-container shadow-sm border-primary-container' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high border-transparent', 'px-6 py-2.5 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors shrink-0 border']">
