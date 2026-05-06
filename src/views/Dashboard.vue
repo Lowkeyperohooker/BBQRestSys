@@ -10,12 +10,16 @@ const { fontSm, fontBase, fontLg, fontXl, font2xl } = useResponsive();
 
 const isLoadingData = ref(true);
 const isUpdatingChart = ref(false);
+const isLoadingTopItems = ref(false);
+
 const todaySales = ref(0);
 const activeStaff = ref(0);
 const lowStockAlerts = ref<any[]>([]);
 const topItems = ref<any[]>([]);
 
 const selectedPeriod = ref<'daily' | 'weekly' | 'monthly' | 'yearly'>('weekly');
+const topItemsPeriod = ref<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+
 const salesChartCanvas = ref<HTMLCanvasElement | null>(null);
 const meatChartCanvas = ref<HTMLCanvasElement | null>(null);
 
@@ -36,18 +40,19 @@ const chartLabelText = ref("");
 async function loadDashboard() {
   isLoadingData.value = true;
   try {
-    const [sales, staff, alerts, tops] = await Promise.all([
+    const [sales, staff, alerts] = await Promise.all([
       dashboardService.getTodaySales(),
       dashboardService.getActiveStaffCount(),
-      dashboardService.getLowStockAlerts(),
-      dashboardService.getTopSellingItems()
+      dashboardService.getLowStockAlerts()
     ]);
     todaySales.value = sales;
     activeStaff.value = staff;
     lowStockAlerts.value = alerts;
-    topItems.value = tops;
     
-    await fetchPeriodMetrics();
+    await Promise.all([
+      fetchPeriodMetrics(),
+      fetchTopItems()
+    ]);
   } catch (error) {
     console.error("Error loading dashboard metrics:", error);
   } finally {
@@ -71,6 +76,18 @@ async function fetchPeriodMetrics() {
     console.error("Error fetching period metrics:", error);
   } finally {
     isUpdatingChart.value = false;
+  }
+}
+
+async function fetchTopItems() {
+  isLoadingTopItems.value = true;
+  try {
+    // Requires updating dashboardService.ts and backend to accept the period parameter
+    topItems.value = await dashboardService.getTopSellingItems(topItemsPeriod.value);
+  } catch (error) {
+    console.error("Error fetching top items:", error);
+  } finally {
+    isLoadingTopItems.value = false;
   }
 }
 
@@ -213,6 +230,10 @@ watch(selectedPeriod, () => {
   fetchPeriodMetrics();
 });
 
+watch(topItemsPeriod, () => {
+  fetchTopItems();
+});
+
 onMounted(() => {
   loadDashboard();
 });
@@ -326,10 +347,23 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="col-span-12 bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15">
-          <h3 :class="['font-black text-on-surface tracking-tight mb-3 leading-none', fontLg]">Top Items</h3>
+        <div class="col-span-12 bg-surface-container-low p-4 rounded-xl shadow-sm border border-outline-variant/15 relative">
+          <div v-if="isLoadingTopItems" class="absolute inset-0 z-10 bg-surface/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
+            <p class="font-black text-primary uppercase tracking-widest animate-pulse text-xs">Fetching...</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+            <h3 :class="['font-black text-on-surface tracking-tight leading-none', fontLg]">Top Performing Items</h3>
+            <select v-model="topItemsPeriod" class="bg-surface-container border border-outline-variant/30 text-on-surface text-[10px] font-bold uppercase tracking-widest rounded-lg px-3 py-1.5 outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors">
+              <option value="daily">Today</option>
+              <option value="weekly">This Week</option>
+              <option value="monthly">This Month</option>
+              <option value="yearly">This Year</option>
+            </select>
+          </div>
+          
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            <div v-if="topItems.length === 0" class="col-span-full text-center text-on-surface-variant text-xs py-2">No items sold yet.</div>
+            <div v-if="topItems.length === 0" class="col-span-full text-center text-on-surface-variant text-xs py-2">No items sold for this period.</div>
             <div v-for="(item, index) in topItems.slice(0, 5)" :key="index" class="bg-surface-container border border-outline-variant/10 rounded-lg p-2.5 flex items-center justify-between">
               <div class="overflow-hidden pr-2">
                 <p class="text-[9px] text-on-surface-variant font-black mb-0.5 uppercase tracking-widest leading-none">#{{ index + 1 }}</p>

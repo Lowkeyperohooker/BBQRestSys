@@ -29,8 +29,9 @@ export const dashboardService = {
     return await res.json();
   },
   
-  async getTopSellingItems(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/dashboard/top-items`);
+  // FIX: Added 'period' parameter
+  async getTopSellingItems(period: string = 'daily'): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/dashboard/top-items?period=${period}`);
     if (!res.ok) throw new Error('Failed to fetch top items');
     return await res.json();
   },

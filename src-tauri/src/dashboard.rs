@@ -5,7 +5,7 @@ use crate::models::*;
 
 #[derive(Deserialize)]
 pub struct PeriodQuery {
-    pub period: String,
+    pub period: Option<String>, // Make optional so existing calls without it don't break
 }
 
 #[derive(Serialize, sqlx::FromRow)]
@@ -55,23 +55,41 @@ pub async fn get_low_stock_alerts(State(pool): State<PgPool>) -> AppResult<Vec<L
     Ok(Json(alerts))
 }
 
-pub async fn get_top_selling_items(State(pool): State<PgPool>) -> AppResult<Vec<TopSellingItem>> {
-    let items = sqlx::query_as::<_, TopSellingItem>(
+// FIX: Updated to accept and filter by the period query
+pub async fn get_top_selling_items(State(pool): State<PgPool>, Query(q): Query<PeriodQuery>) -> AppResult<Vec<TopSellingItem>> {
+    let period = q.period.unwrap_or_else(|| "daily".to_string());
+    
+    let trunc_unit = match period.as_str() {
+        "daily" => "day",
+        "weekly" => "week",
+        "monthly" => "month",
+        "yearly" => "year",
+        _ => "day",
+    };
+
+    let query = format!(
         "SELECT pi.pos_display_name, SUM(oi.quantity) as total_sold
          FROM order_item oi
          JOIN prepared_inventory pi ON oi.prep_item_id = pi.prep_item_id
+         JOIN orders o ON oi.order_id = o.order_id
+         WHERE o.status = 'Completed' AND o.timestamp AT TIME ZONE 'Asia/Manila' >= DATE_TRUNC('{}', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')
          GROUP BY pi.pos_display_name
          ORDER BY total_sold DESC
-         LIMIT 5"
-    )
-    .fetch_all(&pool).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+         LIMIT 5", trunc_unit
+    );
+
+    let items = sqlx::query_as::<_, TopSellingItem>(&query)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     
     Ok(Json(items))
 }
 
 pub async fn get_period_metrics(State(pool): State<PgPool>, Query(q): Query<PeriodQuery>) -> AppResult<PeriodMetrics> {
-    // Determine the Postgres DATE_TRUNC parameter based on the selected period
-    let trunc_unit = match q.period.as_str() {
+    let period = q.period.unwrap_or_else(|| "daily".to_string());
+
+    let trunc_unit = match period.as_str() {
         "daily" => "day",
         "weekly" => "week",
         "monthly" => "month",
